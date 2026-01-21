@@ -31,10 +31,10 @@ struct MainView: View {
         UIScreen.main.bounds.width * 0.80
     }
     
-    // Edge zone for opening drawer - 25% of screen width from left edge
-    // Wide enough to be easy to trigger, but not so wide it conflicts with chat interactions
+    // Edge zone for opening drawer - narrow strip at left edge
+    // Small enough to not conflict with chat action buttons
     private var edgeZoneWidth: CGFloat {
-        UIScreen.main.bounds.width * 0.25
+        20
     }
     
     // Current offset based on drawer state and drag
@@ -114,7 +114,7 @@ struct MainView: View {
                     }
                     
                     // Dimmed overlay - blocks chat interaction when open
-                    Color.primary.opacity(overlayOpacity)
+                    Color.black.opacity(overlayOpacity)
                         .ignoresSafeArea()
                         .allowsHitTesting(isDrawerOpen || isDragging)
                         .onTapGesture {

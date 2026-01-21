@@ -15,6 +15,7 @@ protocol DependencyContaining: Sendable {
     var keychainService: KeychainServiceProtocol { get }
     var networkService: NetworkServiceProtocol { get }
     var e2eeService: E2EEServiceProtocol { get }
+    var passkeyService: PasskeyServiceProtocol { get }
     var chatRepository: ChatRepositoryProtocol { get }
     var noteRepository: NoteRepositoryProtocol { get }
     var folderRepository: FolderRepositoryProtocol { get }
@@ -47,6 +48,11 @@ final class DependencyContainer: DependencyContaining, @unchecked Sendable {
     )
     private lazy var _authService: AuthServiceProtocol = AuthService(
         networkService: _networkService
+    )
+    private lazy var _passkeyService: PasskeyServiceProtocol = PasskeyService(
+        networkService: _networkService,
+        cryptoService: _cryptoService,
+        keychainService: _keychainService
     )
     private lazy var _e2eeService: E2EEServiceProtocol = E2EEService(
         cryptoService: _cryptoService,
@@ -84,6 +90,7 @@ final class DependencyContainer: DependencyContaining, @unchecked Sendable {
     var keychainService: KeychainServiceProtocol { _keychainService }
     var networkService: NetworkServiceProtocol { _networkService }
     var e2eeService: E2EEServiceProtocol { _e2eeService }
+    var passkeyService: PasskeyServiceProtocol { _passkeyService }
     var chatRepository: ChatRepositoryProtocol { _chatRepository }
     var noteRepository: NoteRepositoryProtocol { _noteRepository }
     var folderRepository: FolderRepositoryProtocol { _folderRepository }
@@ -127,6 +134,7 @@ final class MockDependencyContainer: DependencyContaining, @unchecked Sendable {
     var keychainService: KeychainServiceProtocol
     var networkService: NetworkServiceProtocol
     var e2eeService: E2EEServiceProtocol
+    var passkeyService: PasskeyServiceProtocol
     var chatRepository: ChatRepositoryProtocol
     var noteRepository: NoteRepositoryProtocol
     var folderRepository: FolderRepositoryProtocol
@@ -144,6 +152,7 @@ final class MockDependencyContainer: DependencyContaining, @unchecked Sendable {
         keychainService: KeychainServiceProtocol? = nil,
         networkService: NetworkServiceProtocol? = nil,
         e2eeService: E2EEServiceProtocol? = nil,
+        passkeyService: PasskeyServiceProtocol? = nil,
         chatRepository: ChatRepositoryProtocol? = nil,
         noteRepository: NoteRepositoryProtocol? = nil,
         folderRepository: FolderRepositoryProtocol? = nil,
@@ -166,6 +175,7 @@ final class MockDependencyContainer: DependencyContaining, @unchecked Sendable {
         self.secureSession = session
         self.authService = authService ?? MockAuthService()
         self.e2eeService = e2eeService ?? MockE2EEService()
+        self.passkeyService = passkeyService ?? MockPasskeyService()
         self.chatRepository = chatRepository ?? MockChatRepository()
         self.noteRepository = noteRepository ?? MockNoteRepository()
         self.folderRepository = folderRepository ?? MockFolderRepository()

@@ -118,4 +118,20 @@ enum APIEndpoint {
         static let update = "folders.update"
         static let delete = "folders.remove"
     }
+    
+    // MARK: - WebAuthn (Passkeys)
+    
+    enum WebAuthn {
+        // Queries (GET)
+        static let hasPasskeys = "webauthn.hasPasskeys"
+        static let list = "webauthn.list"
+        
+        // Mutations (POST)
+        static let generateRegistrationOptions = "webauthn.generateRegistrationOptions"
+        static let verifyRegistration = "webauthn.verifyRegistration"
+        static let generateAuthenticationOptions = "webauthn.generateAuthenticationOptions"
+        static let verifyAuthentication = "webauthn.verifyAuthentication"
+        static let rename = "webauthn.rename"
+        static let delete = "webauthn.delete"
+    }
 }

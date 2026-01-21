@@ -80,6 +80,27 @@ enum Configuration {
             nonisolated static let deviceId = "deviceId"
             nonisolated static let encryptedDeviceShare = "encryptedDeviceShare"
             nonisolated static let deviceShareNonce = "deviceShareNonce"
+            nonisolated static let passkeyKEK = "passkeyKEK"
+            nonisolated static let passkeyCredentialId = "passkeyCredentialId"
+        }
+    }
+    
+    // MARK: - WebAuthn Configuration
+    
+    enum WebAuthn {
+        static var rpID: String {
+            switch AppEnvironment.current {
+            case .development:
+                return "localhost"
+            case .staging:
+                return "staging.onera.app"
+            case .production:
+                return "onera.app"
+            }
+        }
+        
+        static var rpName: String {
+            return "Onera"
         }
     }
     

@@ -30,24 +30,23 @@ struct ChatView: View {
                         showingModelDropdown: $showingModelDropdown
                     )
                 }
-                
-                ZStack {
-                    // Tappable background to dismiss selection
-                    Color(.systemBackground)
-                        .ignoresSafeArea()
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            dismissSelection()
+                ZStack(alignment: .bottom) {
+                    ZStack {
+                        // Background - does NOT intercept taps so buttons work
+                        Color(.systemBackground)
+                            .ignoresSafeArea()
+                            .allowsHitTesting(false)
+                        
+                        if viewModel.messages.isEmpty {
+                            emptyStateView
+                        } else {
+                            messagesView
+                                .padding(.bottom, 24)
                         }
-                    
-                    if viewModel.messages.isEmpty {
-                        emptyStateView
-                    } else {
-                        messagesView
                     }
+                    
+                    inputSection
                 }
-                
-                inputSection
             }
             
             // Model dropdown overlay - rendered at top level so it's not clipped
@@ -124,23 +123,11 @@ struct ChatView: View {
                             .id(message.id)
                     }
                     
-                    // Spacer at bottom to allow tapping to dismiss
+                    // Spacer at bottom for scroll padding
                     Color.clear
                         .frame(height: 20)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            dismissSelection()
-                        }
                 }
                 .padding()
-                // Background tap to dismiss selection
-                .background(
-                    Color.clear
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            dismissSelection()
-                        }
-                )
             }
             .scrollDismissesKeyboard(.interactively)
             .onChange(of: viewModel.messages.count) { _, _ in
@@ -243,7 +230,7 @@ struct ChatView: View {
             )
             .focused($isInputFocused)
         }
-        .background(Color(.systemBackground))
+        .background(Color.clear)
     }
     
     private func scrollToBottom(_ proxy: ScrollViewProxy) {

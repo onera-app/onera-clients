@@ -30,68 +30,85 @@ struct MessageInputView: View {
     
     @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var showingDocumentPicker = false
-    @State private var showingAttachmentMenu = false
+    @State private var showingCamera = false
+    @State private var showingPhotosPicker = false
+    @State private var showingAttachmentOptions = false
     
     var body: some View {
         VStack(spacing: 0) {
-            // Recording indicator
+            // Recording indicator (floats above the main input)
             if isRecording {
                 recordingIndicator
+                    .padding(.bottom, 8)
             }
             
-            // Attachment previews if any
+            // Attachment previews if any (floats above the main input)
             if !attachments.isEmpty {
                 attachmentPreviews
+                    .padding(.bottom, 8)
             }
             
-            HStack(spacing: 12) {
-                // Plus Button with menu
+            // Each element floats independently with glass effect
+            HStack(spacing: 8) {
+                // Plus Button - floating glass pill
                 attachmentButton
                 
-                // Input Field
+                // Input Field - floating glass pill
                 HStack(spacing: 8) {
-                    TextField("", text: $text, prompt: Text("Ask anything").foregroundStyle(Color.secondary))
+                    TextField("", text: $text, prompt: Text("Ask anything").foregroundStyle(.secondary))
                         .font(.body)
-                        .foregroundStyle(Color.primary)
-                        .tint(Color.primary)
+                        .foregroundStyle(.primary)
+                        .tint(.primary)
                         .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
+                        .padding(.vertical, 12)
                         .accessibilityIdentifier("messageInput")
                     
                     if text.isEmpty && !isRecording {
                         // Placeholder action icon
                         Image(systemName: "waveform")
-                            .font(.system(size: 20))
-                            .foregroundStyle(Color.secondary)
+                            .font(.system(size: 18))
+                            .foregroundStyle(.secondary)
                             .padding(.trailing, 12)
                     } else if !text.isEmpty {
                         // Send button when text present
                         Button(action: onSend) {
                             Image(systemName: "arrow.up")
-                                .font(.system(size: 18, weight: .bold))
+                                .font(.system(size: 16, weight: .bold))
                                 .foregroundStyle(Color(.systemBackground))
-                                .frame(width: 32, height: 32)
+                                .frame(width: 30, height: 30)
                                 .background(Color.primary)
                                 .clipShape(Circle())
                         }
-                        .padding(.trailing, 4)
+                        .padding(.trailing, 6)
                         .disabled(!canSend || isSending)
                         .accessibilityIdentifier("sendButton")
                     }
                 }
-                .background(Color(.secondarySystemBackground))
-                .clipShape(Capsule())
+                .background(
+                    Capsule()
+                        .fill(.ultraThinMaterial)
+                        .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 2)
+                )
+                .overlay(
+                    Capsule()
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [.white.opacity(0.4), .white.opacity(0.1)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 0.5
+                        )
+                )
                 
-                // Mic Button
+                // Mic Button - floating glass circle
                 if text.isEmpty || isRecording {
                     micButton
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 8)
+            .padding(.vertical, 12)
         }
-        .background(Color(.systemBackground))
         .onChange(of: selectedPhotos) { _, newPhotos in
             Task {
                 await processSelectedPhotos(newPhotos)
@@ -106,33 +123,66 @@ struct MessageInputView: View {
     // MARK: - Attachment Button
     
     private var attachmentButton: some View {
-        Menu {
-            Button {
-                // Trigger photo picker
-            } label: {
-                Label("Photo Library", systemImage: "photo")
-            }
-            
-            Button {
-                showingDocumentPicker = true
-            } label: {
-                Label("Browse Files", systemImage: "folder")
-            }
+        Button {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            showingAttachmentOptions = true
         } label: {
-            Image(systemName: "plus.circle.fill")
-                .font(.system(size: 36))
-                .foregroundStyle(Color(.systemGray2))
-                .symbolRenderingMode(.hierarchical)
-        } primaryAction: {
-            // Default action opens photo picker
-        }
-        .frame(height: 48)
-        .overlay {
-            // Invisible PhotosPicker over the button
-            PhotosPicker(selection: $selectedPhotos, matching: .any(of: [.images, .screenshots])) {
-                Color.clear
+            ZStack {
+                Circle()
+                    .fill(.ultraThinMaterial)
+                    .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 2)
+                
+                Circle()
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [.white.opacity(0.4), .white.opacity(0.1)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 0.5
+                    )
+                
+                Image(systemName: "plus")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(.primary)
             }
-            .frame(height: 48)
+            .frame(width: 44, height: 44)
+        }
+        .confirmationDialog("Add Attachment", isPresented: $showingAttachmentOptions, titleVisibility: .visible) {
+            Button("Take Photo") {
+                showingCamera = true
+            }
+            Button("Photo Library") {
+                showingPhotosPicker = true
+            }
+            Button("Choose File") {
+                showingDocumentPicker = true
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+        .photosPicker(isPresented: $showingPhotosPicker, selection: $selectedPhotos, matching: .any(of: [.images, .screenshots]))
+        .fullScreenCover(isPresented: $showingCamera) {
+            CameraPicker { image in
+                handleCameraImage(image)
+            }
+            .ignoresSafeArea()
+        }
+    }
+    
+    private func handleCameraImage(_ image: UIImage) {
+        let fileName = "photo_\(UUID().uuidString.prefix(8)).jpg"
+        
+        if let onProcess = onProcessImage {
+            onProcess(image, fileName)
+        } else if let data = image.jpegData(compressionQuality: 0.8) {
+            let attachment = Attachment(
+                type: .image,
+                data: data,
+                mimeType: "image/jpeg",
+                fileName: fileName
+            )
+            attachments.append(attachment)
         }
     }
     
@@ -237,8 +287,12 @@ struct MessageInputView: View {
             .foregroundStyle(.primary)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(Color(.secondarySystemBackground))
+        .padding(.vertical, 10)
+        .background(
+            Capsule()
+                .fill(.ultraThinMaterial)
+        )
+        .padding(.horizontal, 12)
     }
     
     // MARK: - Attachment Previews
@@ -254,8 +308,13 @@ struct MessageInputView: View {
                 }
             }
             .padding(.horizontal, 16)
+            .padding(.vertical, 10)
         }
-        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(.ultraThinMaterial)
+        )
+        .padding(.horizontal, 12)
     }
     
     // MARK: - Mic Button
@@ -268,10 +327,28 @@ struct MessageInputView: View {
                 onStartRecording?()
             }
         } label: {
-            Image(systemName: isRecording ? "stop.circle.fill" : "mic.fill")
-                .font(.system(size: 22))
-                .foregroundStyle(isRecording ? .red : Color.primary)
+            Image(systemName: isRecording ? "stop.fill" : "mic.fill")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(isRecording ? .red : .primary)
+                .frame(width: 44, height: 44)
+                .background(
+                    Circle()
+                        .fill(.ultraThinMaterial)
+                        .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 2)
+                )
+                .overlay(
+                    Circle()
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [.white.opacity(0.4), .white.opacity(0.1)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 0.5
+                        )
+                )
         }
+        .buttonStyle(.plain)
         .animation(.easeInOut(duration: 0.2), value: isRecording)
     }
 }
@@ -390,6 +467,47 @@ struct DocumentPicker: UIViewControllerRepresentable {
         func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
             guard let url = urls.first else { return }
             onDocumentPicked(url)
+        }
+    }
+}
+
+// MARK: - Camera Picker
+
+struct CameraPicker: UIViewControllerRepresentable {
+    let onImageCaptured: (UIImage) -> Void
+    @Environment(\.dismiss) private var dismiss
+    
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.delegate = context.coordinator
+        return picker
+    }
+    
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onImageCaptured: onImageCaptured, dismiss: dismiss)
+    }
+    
+    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let onImageCaptured: (UIImage) -> Void
+        let dismiss: DismissAction
+        
+        init(onImageCaptured: @escaping (UIImage) -> Void, dismiss: DismissAction) {
+            self.onImageCaptured = onImageCaptured
+            self.dismiss = dismiss
+        }
+        
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            if let image = info[.originalImage] as? UIImage {
+                onImageCaptured(image)
+            }
+            dismiss()
+        }
+        
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            dismiss()
         }
     }
 }

@@ -34,6 +34,7 @@ struct MessageBubbleView: View {
     @State private var isEditing = false
     @State private var editText = ""
     @State private var showCopiedFeedback = false
+    @State private var isRegenerating = false
     @FocusState private var isEditFocused: Bool
     
     /// Parse the message content for thinking tags
@@ -325,86 +326,127 @@ struct MessageBubbleView: View {
     // MARK: - Subviews
     
     private var assistantActionButtons: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 8) {
             // Copy button with feedback
-            Button {
-                UIPasteboard.general.string = parsedContent.displayContent
-                let generator = UINotificationFeedbackGenerator()
-                generator.notificationOccurred(.success)
-                
-                // Show "Copied" feedback
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    showCopiedFeedback = true
-                }
-                
-                // Auto-dismiss after 2 seconds
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        showCopiedFeedback = false
-                    }
-                }
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: showCopiedFeedback ? "checkmark" : "doc.on.doc")
-                        .font(.system(size: 14))
-                        .foregroundStyle(showCopiedFeedback ? .green : Color(.systemGray))
-                    
-                    if showCopiedFeedback {
-                        Text("Copied")
-                            .font(.caption)
-                            .foregroundStyle(.green)
-                            .transition(.opacity.combined(with: .scale))
-                    }
-                }
-                .frame(minHeight: 44)
-                .contentShape(Rectangle())
-                .animation(.easeInOut(duration: 0.2), value: showCopiedFeedback)
-            }
-            .buttonStyle(.plain)
-            .disabled(showCopiedFeedback)
-            .accessibilityIdentifier("copyButton")
+            copyButton
             
             // Regenerate button
-            if let regenerate = onRegenerate {
-                Button {
-                    let generator = UIImpactFeedbackGenerator(style: .medium)
-                    generator.impactOccurred()
-                    regenerate()
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 14))
-                        .frame(minWidth: 44, minHeight: 44)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("regenerateButton")
+            if onRegenerate != nil {
+                regenerateButton
             }
             
             // Read aloud button
             if onSpeak != nil || onStopSpeaking != nil {
-                Button {
-                    let generator = UIImpactFeedbackGenerator(style: .light)
-                    generator.impactOccurred()
-                    if isSpeaking {
-                        onStopSpeaking?()
-                    } else {
-                        onSpeak?(parsedContent.displayContent)
-                    }
-                } label: {
-                    Image(systemName: isSpeaking ? "stop.fill" : "speaker.wave.2")
-                        .font(.system(size: 14))
-                        .foregroundStyle(isSpeaking ? .red : Color(.systemGray))
-                        .frame(minWidth: 44, minHeight: 44)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("speakButton")
+                speakButton
             }
             
             Spacer()
         }
-        .foregroundStyle(Color(.systemGray))
+        .frame(minHeight: 44)
         .padding(.top, 8)
+        .padding(.bottom, 4)
+        .contentShape(Rectangle())
+        .zIndex(1)
+    }
+    
+    private var copyButton: some View {
+        Button(action: doCopy) {
+            Image(systemName: showCopiedFeedback ? "checkmark" : "doc.on.doc")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(showCopiedFeedback ? .green : .secondary)
+                .frame(width: 36, height: 36)
+                .background(showCopiedFeedback ? Color.green.opacity(0.15) : Color(.systemGray6))
+                .clipShape(Circle())
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showCopiedFeedback)
+        }
+        .buttonStyle(ActionButtonStyle())
+        .contentShape(Circle())
+        .accessibilityIdentifier("copyButton")
+    }
+    
+    private func doCopy() {
+        // Copy to clipboard
+        UIPasteboard.general.string = parsedContent.displayContent
+        
+        // Haptic feedback
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+        
+        // Show visual feedback
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            showCopiedFeedback = true
+        }
+        
+        // Auto-dismiss after 2 seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                showCopiedFeedback = false
+            }
+        }
+    }
+    
+    private var regenerateButton: some View {
+        Button(action: doRegenerate) {
+            Image(systemName: "arrow.clockwise")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(isRegenerating ? .blue : .secondary)
+                .frame(width: 36, height: 36)
+                .background(isRegenerating ? Color.blue.opacity(0.15) : Color(.systemGray6))
+                .clipShape(Circle())
+                .rotationEffect(.degrees(isRegenerating ? 360 : 0))
+                .animation(isRegenerating ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isRegenerating)
+        }
+        .buttonStyle(.plain)
+        .contentShape(Circle())
+        .disabled(isRegenerating)
+        .accessibilityIdentifier("regenerateButton")
+    }
+    
+    private func doRegenerate() {
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        
+        // Show visual feedback
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            isRegenerating = true
+        }
+        
+        // Call the regenerate callback
+        onRegenerate?()
+        
+        // Reset after short delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                isRegenerating = false
+            }
+        }
+    }
+    
+    private var speakButton: some View {
+        Button(action: doSpeak) {
+            Image(systemName: isSpeaking ? "stop.fill" : "speaker.wave.2")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(isSpeaking ? .red : .secondary)
+                .frame(width: 36, height: 36)
+                .background(isSpeaking ? Color.red.opacity(0.15) : Color(.systemGray6))
+                .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .contentShape(Circle())
+        .accessibilityIdentifier("speakButton")
+    }
+    
+    private func doSpeak() {
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        
+        if isSpeaking {
+            onStopSpeaking?()
+        } else {
+            onSpeak?(parsedContent.displayContent)
+        }
     }
 }
 
@@ -652,6 +694,21 @@ final class SyntaxHighlighter: @unchecked Sendable {
         }
     }
 }
+
+// MARK: - Action Button Style (Visual Feedback on Press)
+
+struct ActionButtonStyle: ButtonStyle {
+    func makeBody(configuration: ButtonStyleConfiguration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.9 : 1.0)
+            .opacity(configuration.isPressed ? 0.6 : 1.0)
+            .brightness(configuration.isPressed ? -0.1 : 0)
+            .animation(.easeOut(duration: 0.1), value: configuration.isPressed)
+    }
+}
+
+// For backward compatibility
+typealias ResponsiveButtonStyle = ActionButtonStyle
 
 // MARK: - Blinking Cursor Modifier
 

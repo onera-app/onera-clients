@@ -102,6 +102,11 @@ final class AuthService: AuthServiceProtocol {
         } catch let authError as AuthError {
             throw authError
         } catch {
+            print("[AuthService] Google sign-in error: \(error)")
+            print("[AuthService] Error type: \(type(of: error))")
+            if let clerkError = error as? ClerkClientError {
+                print("[AuthService] Clerk error: \(clerkError)")
+            }
             throw AuthError.oauthFailed(provider: "Google")
         }
     }

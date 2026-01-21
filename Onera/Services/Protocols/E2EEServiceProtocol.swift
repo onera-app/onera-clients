@@ -46,6 +46,24 @@ protocol E2EEServiceProtocol: Sendable {
     /// Removes password encryption (requires unlocked session)
     func removePasswordEncryption(token: String) async throws
     
+    // MARK: - Passkey-Based Unlock
+    
+    /// Checks if passkey is supported on this device
+    func isPasskeySupported() -> Bool
+    
+    /// Checks if user has any passkeys registered on server
+    func hasPasskeys(token: String) async throws -> Bool
+    
+    /// Checks if this device has a passkey set up locally
+    func hasLocalPasskey() -> Bool
+    
+    /// Registers a new passkey for the current session
+    /// Requires session to be unlocked (master key available)
+    func registerPasskey(name: String?, token: String) async throws
+    
+    /// Unlocks using passkey (Face ID / Touch ID)
+    func unlockWithPasskey(token: String) async throws
+    
     // MARK: - Recovery Phrase
     
     /// Gets the decrypted recovery phrase (requires unlocked session)

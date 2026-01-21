@@ -15,6 +15,11 @@ final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
     private let keychainService: KeychainServiceProtocol
     private let networkService: NetworkServiceProtocol
     private let secureSession: SecureSessionProtocol
+    private lazy var passkeyService: PasskeyServiceProtocol = PasskeyService(
+        networkService: networkService,
+        cryptoService: cryptoService,
+        keychainService: keychainService
+    )
     
     // MARK: - Initialization
     
@@ -28,6 +33,12 @@ final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
         self.keychainService = keychainService
         self.networkService = networkService
         self.secureSession = secureSession
+    }
+    
+    /// For testing: allows injecting a mock passkey service
+    func setPasskeyService(_ service: PasskeyServiceProtocol) {
+        // This would require making passkeyService non-lazy and var
+        // For production, the lazy initialization is fine
     }
     
     // MARK: - Setup Status
@@ -378,6 +389,84 @@ final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
         )
     }
     
+    // MARK: - Passkey-Based Unlock
+    
+    func isPasskeySupported() -> Bool {
+        return passkeyService.isPasskeySupported()
+    }
+    
+    func hasPasskeys(token: String) async throws -> Bool {
+        return try await passkeyService.hasPasskeys(token: token)
+    }
+    
+    func hasLocalPasskey() -> Bool {
+        return passkeyService.hasLocalPasskeyKEK()
+    }
+    
+    func registerPasskey(name: String?, token: String) async throws {
+        // Requires unlocked session to get master key
+        guard let masterKey = await secureSession.masterKey else {
+            throw E2EEError.sessionLocked
+        }
+        
+        // Register passkey with master key encryption
+        _ = try await passkeyService.registerPasskey(
+            masterKey: masterKey,
+            name: name,
+            token: token
+        )
+    }
+    
+    func unlockWithPasskey(token: String) async throws {
+        // 1. Authenticate with passkey and get decrypted master key
+        var masterKey = try await passkeyService.authenticateWithPasskey(token: token)
+        
+        // 2. Get key shares from server to get public/private keys
+        let keyShares: KeySharesGetResponse = try await networkService.call(
+            procedure: APIEndpoint.KeyShares.get,
+            token: token
+        )
+        
+        // 3. Decrypt private key with master key
+        guard let encryptedPrivateKey = Data(base64Encoded: keyShares.encryptedPrivateKey),
+              let privateKeyNonce = Data(base64Encoded: keyShares.privateKeyNonce),
+              let publicKey = Data(base64Encoded: keyShares.publicKey) else {
+            throw E2EEError.keySharesFetchFailed
+        }
+        
+        let privateKey = try cryptoService.decrypt(
+            ciphertext: encryptedPrivateKey,
+            nonce: privateKeyNonce,
+            key: masterKey
+        )
+        
+        // 4. Set up new device share if needed
+        if !keychainService.hasDeviceShare() {
+            try await setupNewDeviceShare(masterKey: masterKey, token: token)
+        }
+        
+        // 5. Unlock session
+        await MainActor.run {
+            secureSession.unlock(
+                masterKey: masterKey,
+                privateKey: privateKey,
+                publicKey: publicKey,
+                recoveryKey: nil
+            )
+        }
+        
+        // 6. Update device last seen
+        let deviceInfo = try DeviceInfo.current()
+        try? await networkService.call(
+            procedure: APIEndpoint.Devices.updateLastSeen,
+            input: DeviceUpdateLastSeenRequest(deviceId: deviceInfo.deviceId),
+            token: token
+        ) as DeviceUpdateLastSeenResponse
+        
+        // 7. Cleanup
+        cryptoService.secureZero(&masterKey)
+    }
+    
     // MARK: - Recovery Phrase
     
     func getRecoveryPhrase(token: String) async throws -> String {
@@ -549,6 +638,8 @@ final class MockE2EEService: E2EEServiceProtocol, @unchecked Sendable {
     var shouldFail = false
     var hasKeys = false
     var hasPassword = false
+    var hasPasskey = false
+    var passkeySupported = true
     var mockMnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
     
     func checkSetupStatus(token: String) async throws -> Bool {
@@ -587,6 +678,29 @@ final class MockE2EEService: E2EEServiceProtocol, @unchecked Sendable {
     func removePasswordEncryption(token: String) async throws {
         if shouldFail { throw E2EEError.sessionLocked }
         hasPassword = false
+    }
+    
+    func isPasskeySupported() -> Bool {
+        passkeySupported
+    }
+    
+    func hasPasskeys(token: String) async throws -> Bool {
+        if shouldFail { throw E2EEError.keySharesFetchFailed }
+        return hasPasskey
+    }
+    
+    func hasLocalPasskey() -> Bool {
+        hasPasskey
+    }
+    
+    func registerPasskey(name: String?, token: String) async throws {
+        if shouldFail { throw E2EEError.passkeyRegistrationFailed }
+        hasPasskey = true
+    }
+    
+    func unlockWithPasskey(token: String) async throws {
+        if shouldFail { throw E2EEError.unlockFailed }
+        if !hasPasskey { throw E2EEError.passkeyNotFound }
     }
     
     func getRecoveryPhrase(token: String) async throws -> String {

@@ -2,7 +2,7 @@
 //  E2EESetupView.swift
 //  Onera
 //
-//  E2EE setup with recovery phrase display and optional password setup
+//  E2EE setup with recovery phrase display and optional password/passkey setup
 //
 
 import SwiftUI
@@ -27,6 +27,9 @@ struct E2EESetupView: View {
                     
                 case .unlockMethodOptions:
                     unlockMethodOptionsView
+                    
+                case .settingPasskey:
+                    passkeySetupView
                     
                 case .settingPassword:
                     passwordSetupView
@@ -70,13 +73,20 @@ struct E2EESetupView: View {
                 Text(error)
             }
         }
+        .alert("Error", isPresented: $viewModel.showPasskeyError) {
+            Button("OK") { viewModel.clearPasskeyError() }
+        } message: {
+            if let error = viewModel.passkeyError {
+                Text(error)
+            }
+        }
     }
     
     private var navigationTitle: String {
         switch viewModel.state {
         case .loading, .showingPhrase, .confirmPhrase:
             return "Secure Your Account"
-        case .unlockMethodOptions, .settingPassword:
+        case .unlockMethodOptions, .settingPasskey, .settingPassword:
             return "Quick Unlock"
         case .error:
             return "Setup Error"
@@ -214,6 +224,19 @@ struct E2EESetupView: View {
                 
                 // Options
                 VStack(spacing: 16) {
+                    // Passkey option (recommended, if supported)
+                    if viewModel.passkeySupported {
+                        optionButton(
+                            icon: "person.badge.key.fill",
+                            title: "Passkey (Recommended)",
+                            description: "Use Face ID or Touch ID. Fast and secure.",
+                            badge: "Recommended"
+                        ) {
+                            viewModel.selectPasskeySetup()
+                        }
+                    }
+                    
+                    // Password option
                     optionButton(
                         icon: "key.fill",
                         title: "Set Encryption Password",
@@ -245,10 +268,127 @@ struct E2EESetupView: View {
         }
     }
     
+    // MARK: - Passkey Setup
+    
+    private var passkeySetupView: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                // Only show back button if there are other options (passkey not supported or we came from options)
+                if !viewModel.passkeySupported {
+                    Button {
+                        viewModel.backToOptions()
+                    } label: {
+                        HStack {
+                            Image(systemName: "chevron.left")
+                            Text("Back to options")
+                        }
+                    }
+                    .font(.callout)
+                    .disabled(viewModel.isSettingUpPasskey)
+                }
+                
+                Spacer()
+                    .frame(height: viewModel.passkeySupported ? 40 : 20)
+                
+                // Header
+                VStack(spacing: 16) {
+                    Image(systemName: "person.badge.key.fill")
+                        .font(.system(size: 64))
+                        .foregroundStyle(.tint)
+                    
+                    Text("Add a Passkey")
+                        .font(.title2.bold())
+                    
+                    Text("Passkeys are the easiest and most secure way to unlock your data. Your passkey stays on your device and uses Face ID or Touch ID.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                
+                // Benefits
+                VStack(alignment: .leading, spacing: 12) {
+                    passkeyBenefitRow(
+                        icon: "faceid",
+                        text: "Unlock with Face ID or Touch ID"
+                    )
+                    passkeyBenefitRow(
+                        icon: "shield.checkered",
+                        text: "Phishing resistant - can't be stolen"
+                    )
+                    passkeyBenefitRow(
+                        icon: "iphone",
+                        text: "Stays on your device"
+                    )
+                }
+                .padding()
+                .background(.regularMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                
+                Spacer()
+                    .frame(height: 20)
+                
+                // Create passkey button
+                Button {
+                    Task { await viewModel.setupPasskey() }
+                } label: {
+                    Group {
+                        if viewModel.isSettingUpPasskey {
+                            HStack(spacing: 8) {
+                                ProgressView()
+                                    .tint(.white)
+                                Text("Creating passkey...")
+                            }
+                        } else {
+                            Text("Create Passkey")
+                                .fontWeight(.semibold)
+                        }
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 4)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
+                .controlSize(.large)
+                .disabled(viewModel.isSettingUpPasskey)
+                
+                // Show skip option when passkey supported (user can set up later)
+                if viewModel.passkeySupported {
+                    Button {
+                        viewModel.skipPasswordSetup()
+                    } label: {
+                        Text("Skip for now")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(viewModel.isSettingUpPasskey)
+                }
+                
+                Text("You can always add more unlock methods in Settings")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+        }
+    }
+    
+    private func passkeyBenefitRow(icon: String, text: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(.tint)
+                .frame(width: 28)
+            
+            Text(text)
+                .font(.subheadline)
+        }
+    }
+    
     private func optionButton(
         icon: String,
         title: String,
         description: String,
+        badge: String? = nil,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
@@ -260,8 +400,21 @@ struct E2EESetupView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.headline)
+                    HStack(spacing: 8) {
+                        Text(title)
+                            .font(.headline)
+                        
+                        if let badge = badge {
+                            Text(badge)
+                                .font(.caption2)
+                                .fontWeight(.semibold)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(Color.green)
+                                .foregroundStyle(.white)
+                                .clipShape(Capsule())
+                        }
+                    }
                     Text(description)
                         .font(.caption)
                         .foregroundStyle(.secondary)

@@ -62,6 +62,19 @@ final class KeychainService: KeychainServiceProtocol, @unchecked Sendable {
         try delete(forKey: Configuration.Keychain.Keys.deviceShareNonce)
     }
     
+    // MARK: - Passkey KEK
+    
+    func hasPasskeyKEK() -> Bool {
+        (try? get(forKey: Configuration.Keychain.Keys.passkeyKEK)) != nil
+    }
+    
+    func getPasskeyCredentialId() throws -> String? {
+        guard let data = try? get(forKey: Configuration.Keychain.Keys.passkeyCredentialId) else {
+            return nil
+        }
+        return String(data: data, encoding: .utf8)
+    }
+    
     // MARK: - Generic Operations
     
     func save(_ data: Data, forKey key: String) throws {
@@ -114,7 +127,9 @@ final class KeychainService: KeychainServiceProtocol, @unchecked Sendable {
         let keys = [
             Configuration.Keychain.Keys.deviceId,
             Configuration.Keychain.Keys.encryptedDeviceShare,
-            Configuration.Keychain.Keys.deviceShareNonce
+            Configuration.Keychain.Keys.deviceShareNonce,
+            Configuration.Keychain.Keys.passkeyKEK,
+            Configuration.Keychain.Keys.passkeyCredentialId
         ]
         
         for key in keys {
@@ -179,6 +194,17 @@ final class MockKeychainService: KeychainServiceProtocol, @unchecked Sendable {
     func removeDeviceShare() throws {
         storage.removeValue(forKey: "encryptedDeviceShare")
         storage.removeValue(forKey: "deviceShareNonce")
+    }
+    
+    func hasPasskeyKEK() -> Bool {
+        storage[Configuration.Keychain.Keys.passkeyKEK] != nil
+    }
+    
+    func getPasskeyCredentialId() throws -> String? {
+        guard let data = storage[Configuration.Keychain.Keys.passkeyCredentialId] else {
+            return nil
+        }
+        return String(data: data, encoding: .utf8)
     }
     
     func save(_ data: Data, forKey key: String) throws {

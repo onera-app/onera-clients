@@ -2,11 +2,12 @@
 //  E2EESetupViewModel.swift
 //  Onera
 //
-//  E2EE setup view model with optional password setup
+//  E2EE setup view model with optional password and passkey setup
 //
 
 import Foundation
 import Observation
+import UIKit
 
 @MainActor
 @Observable
@@ -19,6 +20,7 @@ final class E2EESetupViewModel {
         case showingPhrase(String)
         case confirmPhrase
         case unlockMethodOptions
+        case settingPasskey
         case settingPassword
         case error(String)
     }
@@ -36,6 +38,14 @@ final class E2EESetupViewModel {
     var showPasswordError: Bool {
         get { passwordError != nil }
         set { if !newValue { passwordError = nil } }
+    }
+    
+    // Passkey setup state
+    private(set) var isSettingUpPasskey = false
+    private(set) var passkeyError: String?
+    var showPasskeyError: Bool {
+        get { passkeyError != nil }
+        set { if !newValue { passkeyError = nil } }
     }
     
     // Stored recovery phrase
@@ -69,6 +79,11 @@ final class E2EESetupViewModel {
     
     var passwordLengthValid: Bool {
         password.count >= 8 || password.isEmpty
+    }
+    
+    /// Check if passkey is supported on this device
+    var passkeySupported: Bool {
+        e2eeService.isPasskeySupported()
     }
     
     // MARK: - Dependencies
@@ -109,8 +124,56 @@ final class E2EESetupViewModel {
     }
     
     func proceedToUnlockMethod() {
-        state = .unlockMethodOptions
+        // If passkey is supported, go directly to passkey setup
+        if passkeySupported {
+            state = .settingPasskey
+        } else {
+            state = .unlockMethodOptions
+        }
     }
+    
+    // MARK: - Passkey Setup
+    
+    func selectPasskeySetup() {
+        state = .settingPasskey
+    }
+    
+    func setupPasskey() async {
+        guard !isSettingUpPasskey else { return }
+        
+        isSettingUpPasskey = true
+        passkeyError = nil
+        
+        do {
+            let token = try await authService.getToken()
+            try await e2eeService.registerPasskey(
+                name: getDeviceName(),
+                token: token
+            )
+            completeSetup()
+        } catch let error as PasskeyError {
+            if case .cancelled = error {
+                // User cancelled, don't show error
+                isSettingUpPasskey = false
+                return
+            }
+            passkeyError = error.localizedDescription
+        } catch {
+            passkeyError = "Failed to set up passkey. Please try again."
+        }
+        
+        isSettingUpPasskey = false
+    }
+    
+    private func getDeviceName() -> String {
+        #if targetEnvironment(simulator)
+        return "iPhone Simulator"
+        #else
+        return UIDevice.current.name
+        #endif
+    }
+    
+    // MARK: - Password Setup
     
     func selectPasswordSetup() {
         state = .settingPassword
@@ -120,6 +183,7 @@ final class E2EESetupViewModel {
         password = ""
         confirmPassword = ""
         passwordError = nil
+        passkeyError = nil
         state = .unlockMethodOptions
     }
     
@@ -161,5 +225,9 @@ final class E2EESetupViewModel {
     
     func clearPasswordError() {
         passwordError = nil
+    }
+    
+    func clearPasskeyError() {
+        passkeyError = nil
     }
 }

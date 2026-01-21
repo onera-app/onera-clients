@@ -75,13 +75,13 @@ struct SidebarDrawerView: View {
     
     private var searchBar: some View {
         HStack(alignment: .center, spacing: 10) {
-            // Search field pill
+            // Search field pill with liquid glass effect
             HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 16))
-                    .foregroundStyle(Color(.systemGray))
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(.secondary)
                 
-                TextField("", text: $searchText, prompt: Text("Search").foregroundStyle(Color(.systemGray)))
+                TextField("", text: $searchText, prompt: Text("Search").foregroundStyle(.secondary))
                     .font(.body)
                     .foregroundStyle(.primary)
                     .accessibilityIdentifier("searchField")
@@ -91,25 +91,56 @@ struct SidebarDrawerView: View {
                         searchText = ""
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(Color(.systemGray))
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
             .padding(.vertical, 10)
             .padding(.horizontal, 14)
-            .background(Color(.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .background(
+                Capsule()
+                    .fill(.ultraThinMaterial)
+                    .shadow(color: .black.opacity(0.08), radius: 6, x: 0, y: 2)
+            )
+            .overlay(
+                Capsule()
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [.white.opacity(0.35), .white.opacity(0.1)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 0.5
+                    )
+            )
             
-            // New chat button (separate from search, no background)
+            // New chat button with liquid glass effect
             Button {
                 onNewChat()
                 withAnimation { isOpen = false }
             } label: {
                 Image(systemName: "square.and.pencil")
-                    .font(.system(size: 20, weight: .medium))
+                    .font(.system(size: 18, weight: .medium))
                     .foregroundStyle(.primary)
-                    .frame(height: 40)
+                    .frame(width: 42, height: 42)
+                    .background(
+                        Circle()
+                            .fill(.ultraThinMaterial)
+                            .shadow(color: .black.opacity(0.08), radius: 6, x: 0, y: 2)
+                    )
+                    .overlay(
+                        Circle()
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [.white.opacity(0.35), .white.opacity(0.1)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                ),
+                                lineWidth: 0.5
+                            )
+                    )
             }
+            .buttonStyle(.plain)
             .accessibilityIdentifier("newChatButton")
         }
     }
@@ -303,24 +334,49 @@ struct SidebarDrawerView: View {
         Button {
             onOpenSettings()
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 if let user = user {
                     userAvatar(user)
                 } else {
                     Image(systemName: "person.circle.fill")
-                        .font(.system(size: 32))
+                        .font(.system(size: 28))
                         .foregroundStyle(.secondary)
                 }
                 
-                Text(user?.displayName ?? "Sign In")
-                    .font(.body)
+                // Show only first name
+                Text(user?.firstName ?? "Sign In")
+                    .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundStyle(.primary)
                 
-                Spacer()
+                // Settings indicator
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.tertiary)
             }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(
+                Capsule()
+                    .fill(.ultraThinMaterial)
+                    .shadow(color: .black.opacity(0.08), radius: 6, x: 0, y: 2)
+            )
+            .overlay(
+                Capsule()
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [.white.opacity(0.35), .white.opacity(0.1)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 0.5
+                    )
+            )
         }
-        .padding(16)
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
         .accessibilityIdentifier("settingsButton")
     }
     

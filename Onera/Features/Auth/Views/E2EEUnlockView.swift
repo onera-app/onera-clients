@@ -2,13 +2,14 @@
 //  E2EEUnlockView.swift
 //  Onera
 //
-//  Enter recovery phrase or password to unlock E2EE
+//  Enter recovery phrase, password, or use passkey to unlock E2EE
 //
 
 import SwiftUI
 
 enum UnlockMethod {
     case options
+    case passkey
     case password
     case recovery
 }
@@ -20,7 +21,7 @@ struct E2EEUnlockView: View {
     
     @State private var currentMethod: UnlockMethod = .options
     @State private var hasPassword = false
-    @State private var isCheckingPassword = true
+    @State private var isCheckingUnlockMethods = true
     
     @FocusState private var focusedWordIndex: Int?
     @FocusState private var passwordFieldFocused: Bool
@@ -50,12 +51,16 @@ struct E2EEUnlockView: View {
                 VStack(spacing: 24) {
                     headerView
                     
-                    if isCheckingPassword {
+                    if isCheckingUnlockMethods || viewModel.isCheckingPasskey {
                         loadingView
+                    } else if viewModel.isUnlockingWithPasskey {
+                        passkeyUnlockingView
                     } else {
                         switch currentMethod {
                         case .options:
                             unlockOptionsView
+                        case .passkey:
+                            passkeyUnlockView
                         case .password:
                             passwordUnlockView
                         case .recovery:
@@ -71,7 +76,7 @@ struct E2EEUnlockView: View {
         }
         .interactiveDismissDisabled()
         .task {
-            await checkPasswordEncryption()
+            await checkUnlockMethods()
         }
         .alert("Error", isPresented: $viewModel.showError) {
             Button("OK") { viewModel.clearError() }
@@ -89,24 +94,30 @@ struct E2EEUnlockView: View {
         }
     }
     
-    // MARK: - Check Password
+    // MARK: - Check Unlock Methods
     
-    private func checkPasswordEncryption() async {
-        isCheckingPassword = true
+    private func checkUnlockMethods() async {
+        isCheckingUnlockMethods = true
+        
+        // Check password encryption
         do {
             let token = try await authService.getToken()
             hasPassword = try await e2eeService.hasPasswordEncryption(token: token)
         } catch {
             hasPassword = false
         }
-        isCheckingPassword = false
+        
+        isCheckingUnlockMethods = false
+        
+        // Check and auto-unlock with passkey
+        await viewModel.checkAndAutoUnlockWithPasskey()
     }
     
     // MARK: - Subviews
     
     private var headerView: some View {
         VStack(spacing: 12) {
-            Image(systemName: "lock.fill")
+            Image(systemName: headerIcon)
                 .font(.system(size: 48))
                 .foregroundStyle(.tint)
             
@@ -121,13 +132,26 @@ struct E2EEUnlockView: View {
         .padding(.top)
     }
     
+    private var headerIcon: String {
+        switch currentMethod {
+        case .passkey:
+            return "person.badge.key.fill"
+        default:
+            return "lock.fill"
+        }
+    }
+    
     private var headerDescription: String {
         switch currentMethod {
         case .options:
-            if hasPassword {
+            if viewModel.canUsePasskey {
+                return "Use Face ID, Touch ID, or another method to unlock."
+            } else if hasPassword {
                 return "Use your password or recovery phrase to unlock your encrypted data."
             }
             return "Enter your recovery phrase to unlock your encrypted data."
+        case .passkey:
+            return "Use Face ID or Touch ID to unlock your encrypted data."
         case .password:
             return "Enter your encryption password to unlock."
         case .recovery:
@@ -145,10 +169,31 @@ struct E2EEUnlockView: View {
         .padding(.vertical, 40)
     }
     
+    private var passkeyUnlockingView: some View {
+        VStack(spacing: 24) {
+            Image(systemName: "person.badge.key.fill")
+                .font(.system(size: 64))
+                .foregroundStyle(.tint)
+            
+            ProgressView()
+            
+            Text("Authenticating with passkey...")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 40)
+    }
+    
     // MARK: - Options View
     
     private var unlockOptionsView: some View {
         VStack(spacing: 16) {
+            // Passkey option (if available)
+            if viewModel.canUsePasskey {
+                passkeyOptionButton
+            }
+            
+            // Password option (if available)
             if hasPassword {
                 optionButton(
                     icon: "key.fill",
@@ -159,6 +204,7 @@ struct E2EEUnlockView: View {
                 }
             }
             
+            // Recovery phrase option
             optionButton(
                 icon: "rectangle.grid.3x2",
                 title: "Use Recovery Phrase",
@@ -167,6 +213,49 @@ struct E2EEUnlockView: View {
                 currentMethod = .recovery
             }
         }
+    }
+    
+    private var passkeyOptionButton: some View {
+        Button {
+            Task { await viewModel.unlockWithPasskey() }
+        } label: {
+            HStack(spacing: 16) {
+                Image(systemName: "person.badge.key.fill")
+                    .font(.title2)
+                    .frame(width: 40, height: 40)
+                    .background(.tint.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text("Unlock with Passkey")
+                            .font(.headline)
+                        
+                        Text("Recommended")
+                            .font(.caption2)
+                            .fontWeight(.medium)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(.tint)
+                            .foregroundStyle(.white)
+                            .clipShape(Capsule())
+                    }
+                    Text("Use Face ID or Touch ID")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+            .background(.regularMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+        .disabled(viewModel.isUnlockingWithPasskey)
     }
     
     private func optionButton(
@@ -201,6 +290,48 @@ struct E2EEUnlockView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
+    }
+    
+    // MARK: - Passkey Unlock View
+    
+    private var passkeyUnlockView: some View {
+        VStack(spacing: 24) {
+            backButton
+            
+            Spacer()
+                .frame(height: 20)
+            
+            Image(systemName: "person.badge.key.fill")
+                .font(.system(size: 64))
+                .foregroundStyle(.tint)
+            
+            Text("Unlock with your passkey using Face ID or Touch ID.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            
+            Button {
+                Task { await viewModel.unlockWithPasskey() }
+            } label: {
+                Group {
+                    if viewModel.isUnlockingWithPasskey {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .tint(.white)
+                            Text("Unlocking...")
+                        }
+                    } else {
+                        Text("Unlock with Passkey")
+                            .fontWeight(.semibold)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 4)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .disabled(viewModel.isUnlockingWithPasskey)
+        }
     }
     
     // MARK: - Password Unlock View
@@ -264,7 +395,8 @@ struct E2EEUnlockView: View {
     
     private var recoveryPhraseView: some View {
         VStack(spacing: 20) {
-            if hasPassword {
+            // Show back button if there are other unlock options
+            if hasPassword || viewModel.canUsePasskey {
                 backButton
             }
             

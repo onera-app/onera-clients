@@ -30,6 +30,14 @@ protocol KeychainServiceProtocol: Sendable {
     /// Removes device share
     func removeDeviceShare() throws
     
+    // MARK: - Passkey KEK (Key Encryption Key)
+    
+    /// Checks if passkey KEK exists locally
+    func hasPasskeyKEK() -> Bool
+    
+    /// Gets the passkey credential ID if stored
+    func getPasskeyCredentialId() throws -> String?
+    
     // MARK: - Generic Operations
     
     /// Saves data to keychain

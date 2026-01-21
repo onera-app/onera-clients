@@ -2,7 +2,7 @@
 //  E2EEUnlockViewModel.swift
 //  Onera
 //
-//  E2EE unlock/recovery view model
+//  E2EE unlock/recovery view model with passkey support
 //
 
 import Foundation
@@ -25,6 +25,11 @@ final class E2EEUnlockViewModel {
         set { if !newValue { error = nil } }
     }
     
+    // Passkey state
+    private(set) var isUnlockingWithPasskey = false
+    private(set) var hasServerPasskey = false
+    private(set) var isCheckingPasskey = true
+    
     var currentPhrase: String {
         if showPasteField && !pastedPhrase.isEmpty {
             return pastedPhrase.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
@@ -42,6 +47,21 @@ final class E2EEUnlockViewModel {
     
     var canUnlock: Bool {
         isValid && !isUnlocking
+    }
+    
+    /// Check if passkey is supported on this device
+    var passkeySupported: Bool {
+        e2eeService.isPasskeySupported()
+    }
+    
+    /// Check if this device has a passkey set up locally
+    var hasLocalPasskey: Bool {
+        e2eeService.hasLocalPasskey()
+    }
+    
+    /// Show passkey option if supported and user has passkey
+    var canUsePasskey: Bool {
+        passkeySupported && hasServerPasskey && hasLocalPasskey
     }
     
     // MARK: - Dependencies
@@ -62,7 +82,54 @@ final class E2EEUnlockViewModel {
         self.onComplete = onComplete
     }
     
-    // MARK: - Actions
+    // MARK: - Passkey Actions
+    
+    /// Check if user has passkeys on server and attempt auto-unlock
+    func checkAndAutoUnlockWithPasskey() async {
+        isCheckingPasskey = true
+        
+        do {
+            let token = try await authService.getToken()
+            hasServerPasskey = try await e2eeService.hasPasskeys(token: token)
+            
+            // If user has passkey on server and locally, auto-trigger unlock
+            if hasServerPasskey && hasLocalPasskey {
+                await unlockWithPasskey()
+            }
+        } catch {
+            // Failed to check passkey status - continue to show unlock options
+            hasServerPasskey = false
+        }
+        
+        isCheckingPasskey = false
+    }
+    
+    /// Unlock using passkey (Face ID / Touch ID)
+    func unlockWithPasskey() async {
+        guard !isUnlockingWithPasskey else { return }
+        
+        isUnlockingWithPasskey = true
+        error = nil
+        
+        do {
+            let token = try await authService.getToken()
+            try await e2eeService.unlockWithPasskey(token: token)
+            onComplete()
+        } catch let passkeyError as PasskeyError {
+            if case .cancelled = passkeyError {
+                // User cancelled - don't show error
+                isUnlockingWithPasskey = false
+                return
+            }
+            self.error = passkeyError.localizedDescription
+        } catch {
+            self.error = "Failed to unlock with passkey. Please try another method."
+        }
+        
+        isUnlockingWithPasskey = false
+    }
+    
+    // MARK: - Recovery Phrase Actions
     
     func unlock() async {
         guard canUnlock else { return }

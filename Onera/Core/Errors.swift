@@ -192,6 +192,10 @@ enum E2EEError: LocalizedError {
     case sessionLocked
     case passwordNotSetup
     case passwordSetupFailed
+    case passkeyNotSupported
+    case passkeyNotFound
+    case passkeyRegistrationFailed
+    case passkeyAuthenticationFailed
     
     var errorDescription: String? {
         switch self {
@@ -215,6 +219,14 @@ enum E2EEError: LocalizedError {
             return "Password encryption not set up for this account"
         case .passwordSetupFailed:
             return "Failed to set up password encryption"
+        case .passkeyNotSupported:
+            return "Passkey is not supported on this device"
+        case .passkeyNotFound:
+            return "No passkey found. Please set up a passkey first."
+        case .passkeyRegistrationFailed:
+            return "Failed to register passkey"
+        case .passkeyAuthenticationFailed:
+            return "Failed to authenticate with passkey"
         }
     }
 }
