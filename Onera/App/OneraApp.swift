@@ -43,6 +43,7 @@ struct OneraApp: App {
             RootView(coordinator: coordinator)
                 .environment(\.clerk, clerk)
                 .withDependencies(activeDependencies)
+                .themed()
                 .preferredColorScheme(preferredScheme)
                 .transaction { transaction in
                     // Disable animations in UI testing mode for more reliable tests

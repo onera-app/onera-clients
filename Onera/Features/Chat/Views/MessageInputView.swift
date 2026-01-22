@@ -11,6 +11,7 @@ import UniformTypeIdentifiers
 
 struct MessageInputView: View {
     
+    @Environment(\.theme) private var theme
     @Binding var text: String
     @Binding var attachments: [Attachment]
     let isSending: Bool
@@ -55,10 +56,10 @@ struct MessageInputView: View {
                 
                 // Input Field - floating glass pill
                 HStack(spacing: OneraSpacing.sm) {
-                    TextField("", text: $text, prompt: Text("Ask anything").foregroundStyle(OneraColors.textSecondary))
+                    TextField("", text: $text, prompt: Text("Ask anything").foregroundStyle(theme.textSecondary))
                         .font(OneraTypography.body)
-                        .foregroundStyle(OneraColors.textPrimary)
-                        .tint(OneraColors.textPrimary)
+                        .foregroundStyle(theme.textPrimary)
+                        .tint(theme.textPrimary)
                         .padding(.horizontal, OneraSpacing.lg)
                         .padding(.vertical, OneraSpacing.md)
                         .accessibilityIdentifier("messageInput")
@@ -67,16 +68,16 @@ struct MessageInputView: View {
                         // Placeholder action icon
                         Image(systemName: "waveform")
                             .font(OneraTypography.iconLarge)
-                            .foregroundStyle(OneraColors.textSecondary)
+                            .foregroundStyle(theme.textSecondary)
                             .padding(.trailing, OneraSpacing.md)
                     } else if !text.isEmpty {
                         // Send button when text present
                         Button(action: onSend) {
                             Image(systemName: "arrow.up")
                                 .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(OneraColors.background)
+                                .foregroundStyle(theme.background)
                                 .frame(width: 30, height: 30)
-                                .background(OneraColors.textPrimary)
+                                .background(theme.textPrimary)
                                 .clipShape(Circle())
                         }
                         .padding(.trailing, OneraSpacing.xs)
@@ -115,7 +116,7 @@ struct MessageInputView: View {
         } label: {
             Image(systemName: "plus")
                 .font(OneraTypography.iconXLarge)
-                .foregroundStyle(OneraColors.textPrimary)
+                .foregroundStyle(theme.textPrimary)
                 .frame(width: 44, height: 44)
                 .glassCircle()
         }
@@ -240,13 +241,13 @@ struct MessageInputView: View {
     private var recordingIndicator: some View {
         HStack(spacing: OneraSpacing.sm) {
             Circle()
-                .fill(OneraColors.recording)
+                .fill(theme.error)
                 .frame(width: 8, height: 8)
                 .modifier(PulsingModifier())
             
             Text("Recording...")
                 .font(OneraTypography.caption)
-                .foregroundStyle(OneraColors.textSecondary)
+                .foregroundStyle(theme.textSecondary)
             
             Spacer()
             
@@ -254,7 +255,7 @@ struct MessageInputView: View {
                 onStopRecording?()
             }
             .font(OneraTypography.caption.bold())
-            .foregroundStyle(OneraColors.textPrimary)
+            .foregroundStyle(theme.textPrimary)
         }
         .padding(.horizontal, OneraSpacing.lg)
         .padding(.vertical, OneraSpacing.compact)
@@ -299,7 +300,7 @@ struct MessageInputView: View {
         } label: {
             Image(systemName: isRecording ? "stop.fill" : "mic.fill")
                 .font(OneraTypography.iconLarge)
-                .foregroundStyle(isRecording ? OneraColors.recording : OneraColors.textPrimary)
+                .foregroundStyle(isRecording ? theme.error : theme.textPrimary)
                 .frame(width: 44, height: 44)
                 .glassCircle()
         }
@@ -311,6 +312,7 @@ struct MessageInputView: View {
 // MARK: - Attachment Preview Item
 
 private struct AttachmentPreviewItem: View {
+    @Environment(\.theme) private var theme
     let attachment: Attachment
     let onRemove: () -> Void
     
@@ -346,25 +348,25 @@ private struct AttachmentPreviewItem: View {
     
     private var placeholder: some View {
         Rectangle()
-            .fill(OneraColors.Gray.gray4)
+            .fill(theme.secondaryBackground)
             .overlay {
                 Image(systemName: "photo")
-                    .foregroundStyle(OneraColors.textSecondary)
+                    .foregroundStyle(theme.textSecondary)
             }
     }
     
     private var filePreview: some View {
         Rectangle()
-            .fill(OneraColors.Gray.gray5)
+            .fill(theme.tertiaryBackground)
             .overlay {
                 VStack(spacing: OneraSpacing.xxs) {
                     Image(systemName: "doc.fill")
                         .font(OneraTypography.title3)
-                        .foregroundStyle(OneraColors.textSecondary)
+                        .foregroundStyle(theme.textSecondary)
                     Text(attachment.fileName ?? "File")
                         .font(OneraTypography.caption2)
                         .lineLimit(1)
-                        .foregroundStyle(OneraColors.textSecondary)
+                        .foregroundStyle(theme.textSecondary)
                 }
             }
     }

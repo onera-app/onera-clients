@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SidebarDrawerView: View {
     
+    @Environment(\.theme) private var theme
     @Binding var isOpen: Bool
     @Binding var selectedChatId: String?
     
@@ -42,7 +43,7 @@ struct SidebarDrawerView: View {
     
     var body: some View {
         drawerContent
-            .background(OneraColors.background)
+            .background(theme.background)
     }
     
     // MARK: - Drawer Content
@@ -79,11 +80,11 @@ struct SidebarDrawerView: View {
             HStack(spacing: OneraSpacing.compact) {
                 Image(systemName: "magnifyingglass")
                     .font(OneraTypography.iconLabel)
-                    .foregroundStyle(OneraColors.textSecondary)
+                    .foregroundStyle(theme.textSecondary)
                 
-                TextField("", text: $searchText, prompt: Text("Search").foregroundStyle(OneraColors.textSecondary))
+                TextField("", text: $searchText, prompt: Text("Search").foregroundStyle(theme.textSecondary))
                     .font(OneraTypography.body)
-                    .foregroundStyle(OneraColors.textPrimary)
+                    .foregroundStyle(theme.textPrimary)
                     .accessibilityIdentifier("searchField")
                 
                 if !searchText.isEmpty {
@@ -91,7 +92,7 @@ struct SidebarDrawerView: View {
                         searchText = ""
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(OneraColors.textSecondary)
+                            .foregroundStyle(theme.textSecondary)
                     }
                 }
             }
@@ -106,7 +107,7 @@ struct SidebarDrawerView: View {
             } label: {
                 Image(systemName: "square.and.pencil")
                     .font(OneraTypography.iconLarge)
-                    .foregroundStyle(OneraColors.textPrimary)
+                    .foregroundStyle(theme.textPrimary)
                     .frame(width: 42, height: 42)
                     .glassCircle()
             }
@@ -121,6 +122,7 @@ struct SidebarDrawerView: View {
         VStack(spacing: OneraSpacing.xxs) {
             // Notes
             NavigationItemRow(
+                theme: theme,
                 icon: "note.text",
                 title: "Notes",
                 isSelected: false,
@@ -140,7 +142,7 @@ struct SidebarDrawerView: View {
                     HStack(spacing: OneraSpacing.iconTextGap) {
                         Image(systemName: "folder")
                             .font(.system(size: 16))
-                            .foregroundStyle(OneraColors.textSecondary)
+                            .foregroundStyle(theme.textSecondary)
                         
                         Text("Folders")
                             .font(OneraTypography.body)
@@ -149,7 +151,7 @@ struct SidebarDrawerView: View {
                         
                         Image(systemName: "chevron.right")
                             .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(OneraColors.textSecondary)
+                            .foregroundStyle(theme.textSecondary)
                             .rotationEffect(.degrees(showingFolders ? 90 : 0))
                     }
                     .padding(.horizontal, OneraSpacing.md)
@@ -157,12 +159,12 @@ struct SidebarDrawerView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(
                         RoundedRectangle(cornerRadius: OneraRadius.medium)
-                            .fill(showingFolders ? OneraColors.secondaryBackground.opacity(0.5) : Color.clear)
+                            .fill(showingFolders ? theme.secondaryBackground.opacity(0.5) : Color.clear)
                     )
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(OneraColors.textPrimary)
+                .foregroundStyle(theme.textPrimary)
                 .accessibilityIdentifier("foldersSection")
                 
                 // Expanded folder tree
@@ -234,7 +236,7 @@ struct SidebarDrawerView: View {
         Text(title)
             .font(OneraTypography.caption)
             .fontWeight(.semibold)
-            .foregroundStyle(OneraColors.textSecondary)
+            .foregroundStyle(theme.textSecondary)
             .textCase(.uppercase)
             .padding(.horizontal, OneraSpacing.xl)
             .padding(.top, OneraSpacing.xl)
@@ -246,7 +248,7 @@ struct SidebarDrawerView: View {
             ProgressView()
             Text("Loading chats...")
                 .font(OneraTypography.subheadline)
-                .foregroundStyle(OneraColors.textSecondary)
+                .foregroundStyle(theme.textSecondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, OneraSpacing.max)
@@ -256,15 +258,15 @@ struct SidebarDrawerView: View {
         VStack(spacing: OneraSpacing.md) {
             Image(systemName: "exclamationmark.triangle")
                 .font(OneraTypography.title)
-                .foregroundStyle(OneraColors.warning)
+                .foregroundStyle(theme.warning)
             
             Text("Failed to load chats")
                 .font(OneraTypography.subheadline)
-                .foregroundStyle(OneraColors.textSecondary)
+                .foregroundStyle(theme.textSecondary)
             
             Text(error.localizedDescription)
                 .font(OneraTypography.caption)
-                .foregroundStyle(OneraColors.textTertiary)
+                .foregroundStyle(theme.textTertiary)
                 .multilineTextAlignment(.center)
             
             Button {
@@ -284,15 +286,15 @@ struct SidebarDrawerView: View {
         VStack(spacing: OneraSpacing.md) {
             Image(systemName: "bubble.left.and.bubble.right")
                 .font(OneraTypography.title)
-                .foregroundStyle(OneraColors.textSecondary)
+                .foregroundStyle(theme.textSecondary)
             
             Text("No chats yet")
                 .font(OneraTypography.subheadline)
-                .foregroundStyle(OneraColors.textSecondary)
+                .foregroundStyle(theme.textSecondary)
             
             Text("Start a new conversation")
                 .font(OneraTypography.caption)
-                .foregroundStyle(OneraColors.textTertiary)
+                .foregroundStyle(theme.textTertiary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, OneraSpacing.max)
@@ -310,19 +312,19 @@ struct SidebarDrawerView: View {
                 } else {
                     Image(systemName: "person.circle.fill")
                         .font(.system(size: 28))
-                        .foregroundStyle(OneraColors.textSecondary)
+                        .foregroundStyle(theme.textSecondary)
                 }
                 
                 // Show only first name
                 Text(user?.firstName ?? "Sign In")
                     .font(OneraTypography.subheadline)
                     .fontWeight(.medium)
-                    .foregroundStyle(OneraColors.textPrimary)
+                    .foregroundStyle(theme.textPrimary)
                 
                 // Settings indicator
                 Image(systemName: "chevron.right")
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(OneraColors.textTertiary)
+                    .foregroundStyle(theme.textTertiary)
             }
             .padding(.horizontal, OneraSpacing.comfortable)
             .padding(.vertical, OneraSpacing.compact)
@@ -341,14 +343,14 @@ struct SidebarDrawerView: View {
                 AsyncImage(url: imageURL) { image in
                     image.resizable().scaledToFill()
                 } placeholder: {
-                    OneraColors.Gray.gray3
+                    theme.secondaryBackground
                 }
             } else {
-                OneraColors.Gray.gray3
+                theme.secondaryBackground
                 Text(user.initials)
                     .font(OneraTypography.caption)
                     .fontWeight(.bold)
-                    .foregroundStyle(OneraColors.background)
+                    .foregroundStyle(theme.background)
             }
         }
         .frame(width: 32, height: 32)
@@ -359,6 +361,7 @@ struct SidebarDrawerView: View {
 // MARK: - Navigation Item Row
 
 private struct NavigationItemRow: View {
+    let theme: ThemeColors
     let icon: String
     let title: String
     let isSelected: Bool
@@ -370,7 +373,7 @@ private struct NavigationItemRow: View {
             HStack(spacing: OneraSpacing.iconTextGap) {
                 Image(systemName: icon)
                     .font(.system(size: 16))
-                    .foregroundStyle(isSelected ? OneraColors.textPrimary : OneraColors.textSecondary)
+                    .foregroundStyle(isSelected ? theme.textPrimary : theme.textSecondary)
                 
                 Text(title)
                     .font(OneraTypography.body)
@@ -383,12 +386,12 @@ private struct NavigationItemRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: OneraRadius.medium)
-                    .fill(isSelected ? OneraColors.secondaryBackground : Color.clear)
+                    .fill(isSelected ? theme.secondaryBackground : Color.clear)
             )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .foregroundStyle(OneraColors.textPrimary)
+        .foregroundStyle(theme.textPrimary)
         .accessibilityIdentifier(accessibilityId ?? title.lowercased())
     }
 }
@@ -396,6 +399,7 @@ private struct NavigationItemRow: View {
 // MARK: - Chat History Row
 
 private struct ChatHistoryRow: View {
+    @Environment(\.theme) private var theme
     let chat: ChatSummary
     let isSelected: Bool
     let onSelect: () -> Void
@@ -409,7 +413,7 @@ private struct ChatHistoryRow: View {
                 Text(chat.title)
                     .font(OneraTypography.body)
                     .lineLimit(1)
-                    .foregroundStyle(OneraColors.textPrimary)
+                    .foregroundStyle(theme.textPrimary)
                 
                 Spacer()
             }
@@ -418,7 +422,7 @@ private struct ChatHistoryRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: OneraRadius.medium)
-                    .fill(isSelected ? OneraColors.secondaryBackground : Color.clear)
+                    .fill(isSelected ? theme.secondaryBackground : Color.clear)
             )
             .contentShape(Rectangle())
         }

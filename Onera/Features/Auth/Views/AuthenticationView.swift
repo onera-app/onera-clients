@@ -12,6 +12,7 @@ import AuthenticationServices
 struct AuthenticationView: View {
     
     @Bindable var viewModel: AuthViewModel
+    @Environment(\.theme) private var theme
     
     // Animation states
     @State private var titleText = ""
@@ -26,7 +27,7 @@ struct AuthenticationView: View {
     var body: some View {
         ZStack {
             // Background
-            OneraColors.background
+            theme.background
                 .ignoresSafeArea()
             
             VStack {
@@ -103,12 +104,12 @@ struct AuthenticationView: View {
         HStack(spacing: OneraSpacing.sm) {
             Text(titleText)
                 .font(OneraTypography.displayLarge)
-                .foregroundStyle(OneraColors.textPrimary)
+                .foregroundStyle(theme.textPrimary)
             
             // Animated circular icon
             if showCircle {
                 Circle()
-                    .fill(OneraColors.textPrimary)
+                    .fill(theme.textPrimary)
                     .frame(width: 24, height: 24)
                     .scaleEffect(circleScale)
             }
@@ -146,14 +147,14 @@ struct AuthenticationView: View {
                         Text("Continue with Google")
                             .font(OneraTypography.button)
                     }
-                    .foregroundStyle(OneraColors.textPrimary)
+                    .foregroundStyle(theme.textPrimary)
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
-                    .background(OneraColors.secondaryBackground)
+                    .background(theme.secondaryBackground)
                     .clipShape(RoundedRectangle(cornerRadius: OneraRadius.pill))
                     .overlay(
                         RoundedRectangle(cornerRadius: OneraRadius.pill)
-                            .stroke(OneraColors.textPrimary.opacity(0.15), lineWidth: 1)
+                            .stroke(theme.textPrimary.opacity(0.15), lineWidth: 1)
                     )
                 }
                 .disabled(viewModel.isLoading)
@@ -166,23 +167,23 @@ struct AuthenticationView: View {
             // Terms text
             Text("By continuing, you agree to our Terms of Use and Privacy Policy")
                 .font(OneraTypography.caption)
-                .foregroundStyle(OneraColors.textSecondary)
+                .foregroundStyle(theme.textSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, OneraSpacing.xxxl)
                 .padding(.bottom, 34)
         }
         .background(
             RoundedRectangle(cornerRadius: OneraRadius.sheet)
-                .fill(OneraColors.secondaryBackground)
+                .fill(theme.secondaryBackground)
                 .ignoresSafeArea(edges: .bottom)
         )
         .overlay {
             if viewModel.isLoading {
                 RoundedRectangle(cornerRadius: OneraRadius.sheet)
-                    .fill(OneraColors.textPrimary.opacity(0.3))
+                    .fill(theme.textPrimary.opacity(0.3))
                     .ignoresSafeArea(edges: .bottom)
                 ProgressView()
-                    .tint(OneraColors.textPrimary)
+                    .tint(theme.textPrimary)
             }
         }
     }

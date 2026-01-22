@@ -9,6 +9,7 @@ import SwiftUI
 
 struct CustomNavigationBar: View {
     
+    @Environment(\.theme) private var theme
     @Bindable var modelSelector: ModelSelectorViewModel
     let onMenuTap: () -> Void
     let onNewConversation: () -> Void
@@ -23,7 +24,7 @@ struct CustomNavigationBar: View {
             } label: {
                 Image(systemName: "line.3.horizontal")
                     .font(OneraTypography.iconLabel)
-                    .foregroundStyle(OneraColors.textPrimary)
+                    .foregroundStyle(theme.textPrimary)
                     .frame(width: 40, height: 40)
                     .glassCircle()
             }
@@ -43,7 +44,7 @@ struct CustomNavigationBar: View {
             } label: {
                 Image(systemName: "square.and.pencil")
                     .font(OneraTypography.iconLabel)
-                    .foregroundStyle(OneraColors.textPrimary)
+                    .foregroundStyle(theme.textPrimary)
                     .frame(width: 40, height: 40)
                     .glassCircle()
             }
@@ -53,7 +54,7 @@ struct CustomNavigationBar: View {
         .padding(.top, OneraSpacing.sm)
         .padding(.bottom, OneraSpacing.xxs)
         .frame(height: 56)
-        .background(Color.clear)
+        .background(theme.background)
     }
     
     // MARK: - Native Model Selector
@@ -92,12 +93,12 @@ struct CustomNavigationBar: View {
                 
                 Text(modelSelector.selectedModel?.displayName ?? "Select Model")
                     .font(OneraTypography.navTitle)
-                    .foregroundStyle(OneraColors.textPrimary)
+                    .foregroundStyle(theme.textPrimary)
                     .lineLimit(1)
                 
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(OneraColors.textSecondary)
+                    .foregroundStyle(theme.textSecondary)
             }
             .padding(.horizontal, OneraSpacing.comfortable)
             .padding(.vertical, OneraSpacing.sm)

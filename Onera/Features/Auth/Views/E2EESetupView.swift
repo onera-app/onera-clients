@@ -9,6 +9,7 @@ import SwiftUI
 
 struct E2EESetupView: View {
     
+    @Environment(\.theme) private var theme
     @Bindable var viewModel: E2EESetupViewModel
     @FocusState private var passwordFieldFocused: Bool
     
@@ -108,7 +109,7 @@ struct E2EESetupView: View {
                 
                 Text("Generating secure keys for your account")
                     .font(OneraTypography.subheadline)
-                    .foregroundStyle(OneraColors.textSecondary)
+                    .foregroundStyle(theme.textSecondary)
             }
             
             Spacer()
@@ -122,14 +123,14 @@ struct E2EESetupView: View {
                 VStack(spacing: OneraSpacing.md) {
                     Image(systemName: "key.fill")
                         .font(.system(size: 48))
-                        .foregroundStyle(OneraColors.warning)
+                        .foregroundStyle(theme.warning)
                     
                     Text("Save Your Recovery Phrase")
                         .font(OneraTypography.title2.bold())
                     
                     Text("This is the only way to recover your encrypted data if you lose access to your devices.")
                         .font(OneraTypography.subheadline)
-                        .foregroundStyle(OneraColors.textSecondary)
+                        .foregroundStyle(theme.textSecondary)
                         .multilineTextAlignment(.center)
                 }
                 .padding(.top)
@@ -174,14 +175,14 @@ struct E2EESetupView: View {
             
             Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 64))
-                .foregroundStyle(OneraColors.success)
+                .foregroundStyle(theme.success)
             
             Text("Recovery Phrase Saved")
                 .font(OneraTypography.title2.bold())
             
             Text("Great! Your recovery phrase has been saved.")
                 .font(OneraTypography.subheadline)
-                .foregroundStyle(OneraColors.textSecondary)
+                .foregroundStyle(theme.textSecondary)
             
             Spacer()
             
@@ -194,7 +195,7 @@ struct E2EESetupView: View {
                     .padding(.vertical, OneraSpacing.xxs)
             }
             .buttonStyle(.borderedProminent)
-            .tint(OneraColors.Gray.gray)
+            .tint(theme.textSecondary)
             .foregroundStyle(.white)
             .controlSize(.large)
         }
@@ -210,14 +211,14 @@ struct E2EESetupView: View {
                 VStack(spacing: OneraSpacing.md) {
                     Image(systemName: "lock.shield.fill")
                         .font(.system(size: 48))
-                        .foregroundStyle(OneraColors.tint)
+                        .foregroundStyle(theme.accent)
                     
                     Text("Set Up Quick Unlock")
                         .font(OneraTypography.title2.bold())
                     
                     Text("Choose how you want to unlock your encrypted data. Your recovery phrase always works as a backup.")
                         .font(OneraTypography.subheadline)
-                        .foregroundStyle(OneraColors.textSecondary)
+                        .foregroundStyle(theme.textSecondary)
                         .multilineTextAlignment(.center)
                 }
                 .padding(.top)
@@ -262,7 +263,7 @@ struct E2EESetupView: View {
                 
                 Text("You can always set this up later in Settings")
                     .font(OneraTypography.caption)
-                    .foregroundStyle(OneraColors.textSecondary)
+                    .foregroundStyle(theme.textSecondary)
             }
             .padding()
         }
@@ -294,14 +295,14 @@ struct E2EESetupView: View {
                 VStack(spacing: OneraSpacing.lg) {
                     Image(systemName: "person.badge.key.fill")
                         .font(.system(size: 64))
-                        .foregroundStyle(OneraColors.tint)
+                        .foregroundStyle(theme.accent)
                     
                     Text("Add a Passkey")
                         .font(OneraTypography.title2.bold())
                     
                     Text("Passkeys are the easiest and most secure way to unlock your data. Your passkey stays on your device and uses Face ID or Touch ID.")
                         .font(OneraTypography.subheadline)
-                        .foregroundStyle(OneraColors.textSecondary)
+                        .foregroundStyle(theme.textSecondary)
                         .multilineTextAlignment(.center)
                 }
                 
@@ -348,7 +349,7 @@ struct E2EESetupView: View {
                     .padding(.vertical, OneraSpacing.xxs)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(OneraColors.info)
+                .tint(theme.info)
                 .controlSize(.large)
                 .disabled(viewModel.isSettingUpPasskey)
                 
@@ -366,7 +367,7 @@ struct E2EESetupView: View {
                 
                 Text("You can always add more unlock methods in Settings")
                     .font(OneraTypography.caption)
-                    .foregroundStyle(OneraColors.textSecondary)
+                    .foregroundStyle(theme.textSecondary)
             }
             .padding()
         }
@@ -376,7 +377,7 @@ struct E2EESetupView: View {
         HStack(spacing: OneraSpacing.md) {
             Image(systemName: icon)
                 .font(OneraTypography.title3)
-                .foregroundStyle(OneraColors.tint)
+                .foregroundStyle(theme.accent)
                 .frame(width: 28)
             
             Text(text)
@@ -396,7 +397,7 @@ struct E2EESetupView: View {
                 Image(systemName: icon)
                     .font(OneraTypography.title2)
                     .frame(width: 40, height: 40)
-                    .background(OneraColors.tint.opacity(0.1))
+                    .background(theme.accent.opacity(0.1))
                     .clipShape(RoundedRectangle(cornerRadius: OneraRadius.mediumSmall))
                 
                 VStack(alignment: .leading, spacing: OneraSpacing.xxs) {
@@ -410,20 +411,20 @@ struct E2EESetupView: View {
                                 .fontWeight(.semibold)
                                 .padding(.horizontal, OneraSpacing.sm)
                                 .padding(.vertical, 3)
-                                .background(OneraColors.success)
+                                .background(theme.success)
                                 .foregroundStyle(.white)
                                 .clipShape(Capsule())
                         }
                     }
                     Text(description)
                         .font(OneraTypography.caption)
-                        .foregroundStyle(OneraColors.textSecondary)
+                        .foregroundStyle(theme.textSecondary)
                 }
                 
                 Spacer()
                 
                 Image(systemName: "chevron.right")
-                    .foregroundStyle(OneraColors.textSecondary)
+                    .foregroundStyle(theme.textSecondary)
             }
             .padding()
             .background(.regularMaterial)
@@ -452,14 +453,14 @@ struct E2EESetupView: View {
                 VStack(spacing: OneraSpacing.md) {
                     Image(systemName: "key.fill")
                         .font(.system(size: 48))
-                        .foregroundStyle(OneraColors.tint)
+                        .foregroundStyle(theme.accent)
                     
                     Text("Set Encryption Password")
                         .font(OneraTypography.title2.bold())
                     
                     Text("This password will unlock your encrypted data. Choose something strong and memorable.")
                         .font(OneraTypography.subheadline)
-                        .foregroundStyle(OneraColors.textSecondary)
+                        .foregroundStyle(theme.textSecondary)
                         .multilineTextAlignment(.center)
                 }
                 
@@ -468,7 +469,7 @@ struct E2EESetupView: View {
                     VStack(alignment: .leading, spacing: OneraSpacing.sm) {
                         Text("Password")
                             .font(OneraTypography.subheadline)
-                            .foregroundStyle(OneraColors.textSecondary)
+                            .foregroundStyle(theme.textSecondary)
                         
                         HStack {
                             if viewModel.showPassword {
@@ -481,7 +482,7 @@ struct E2EESetupView: View {
                                 viewModel.togglePasswordVisibility()
                             } label: {
                                 Image(systemName: viewModel.showPassword ? "eye.slash" : "eye")
-                                    .foregroundStyle(OneraColors.textSecondary)
+                                    .foregroundStyle(theme.textSecondary)
                             }
                         }
                         .padding()
@@ -492,14 +493,14 @@ struct E2EESetupView: View {
                         if !viewModel.passwordLengthValid {
                             Text("Password must be at least 8 characters")
                                 .font(OneraTypography.caption)
-                                .foregroundStyle(OneraColors.destructive)
+                                .foregroundStyle(theme.error)
                         }
                     }
                     
                     VStack(alignment: .leading, spacing: OneraSpacing.sm) {
                         Text("Confirm Password")
                             .font(OneraTypography.subheadline)
-                            .foregroundStyle(OneraColors.textSecondary)
+                            .foregroundStyle(theme.textSecondary)
                         
                         if viewModel.showPassword {
                             TextField("Confirm your password", text: $viewModel.confirmPassword)
@@ -516,14 +517,14 @@ struct E2EESetupView: View {
                         if !viewModel.passwordsMatch {
                             Text("Passwords do not match")
                                 .font(OneraTypography.caption)
-                                .foregroundStyle(OneraColors.destructive)
+                                .foregroundStyle(theme.error)
                         }
                     }
                 }
                 
                 Text("This is separate from your account password. Use at least 8 characters.")
                     .font(OneraTypography.caption)
-                    .foregroundStyle(OneraColors.textSecondary)
+                    .foregroundStyle(theme.textSecondary)
                 
                 Button {
                     Task { await viewModel.setupPassword() }
@@ -541,7 +542,7 @@ struct E2EESetupView: View {
                     .padding(.vertical, OneraSpacing.xxs)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(OneraColors.Gray.gray)
+                .tint(theme.textSecondary)
                 .foregroundStyle(.white)
                 .controlSize(.large)
                 .disabled(!viewModel.canSetupPassword)
@@ -563,7 +564,7 @@ struct E2EESetupView: View {
                 Task { await viewModel.retry() }
             }
             .buttonStyle(.borderedProminent)
-            .tint(OneraColors.Gray.gray)
+            .tint(theme.textSecondary)
             .foregroundStyle(.white)
         }
     }
@@ -583,6 +584,7 @@ struct E2EESetupView: View {
 // MARK: - Recovery Phrase Grid
 
 struct RecoveryPhraseGrid: View {
+    @Environment(\.theme) private var theme
     let phrase: String
     
     private var words: [String] {
@@ -598,7 +600,7 @@ struct RecoveryPhraseGrid: View {
                 HStack {
                     Text("\(index + 1).")
                         .font(OneraTypography.monoDigit)
-                        .foregroundStyle(OneraColors.textSecondary)
+                        .foregroundStyle(theme.textSecondary)
                         .frame(width: 24, alignment: .trailing)
                     
                     Text(word)
@@ -608,7 +610,7 @@ struct RecoveryPhraseGrid: View {
                 }
                 .padding(.horizontal, OneraSpacing.sm)
                 .padding(.vertical, OneraSpacing.xs)
-                .background(OneraColors.background)
+                .background(theme.background)
                 .clipShape(RoundedRectangle(cornerRadius: OneraRadius.small))
             }
         }
@@ -618,19 +620,20 @@ struct RecoveryPhraseGrid: View {
 // MARK: - Warning Banner
 
 struct WarningBanner: View {
+    @Environment(\.theme) private var theme
     let text: String
     
     var body: some View {
         HStack(alignment: .top, spacing: OneraSpacing.md) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(OneraColors.warning)
+                .foregroundStyle(theme.warning)
             
             Text(text)
                 .font(OneraTypography.caption)
-                .foregroundStyle(OneraColors.textSecondary)
+                .foregroundStyle(theme.textSecondary)
         }
         .padding()
-        .background(OneraColors.warning.opacity(0.1))
+        .background(theme.warning.opacity(0.1))
         .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
     }
 }

@@ -10,8 +10,12 @@ import SwiftUI
 struct SettingsView: View {
     
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.theme) private var theme
     @Bindable var viewModel: SettingsViewModel
     @AppStorage("colorScheme") private var selectedColorScheme = 0
+    
+    /// Theme manager for switching themes
+    private var themeManager: ThemeManager { ThemeManager.shared }
     
     private var preferredScheme: ColorScheme? {
         switch selectedColorScheme {
@@ -41,9 +45,9 @@ struct SettingsView: View {
                     } label: {
                         Image(systemName: "xmark")
                             .font(OneraTypography.iconLabel)
-                            .foregroundStyle(OneraColors.textPrimary)
+                            .foregroundStyle(theme.textPrimary)
                             .frame(width: 30, height: 30)
-                            .background(OneraColors.secondaryBackground)
+                            .background(theme.secondaryBackground)
                             .clipShape(Circle())
                     }
                 }
@@ -85,10 +89,10 @@ struct SettingsView: View {
                             AsyncImage(url: imageURL) { image in
                                 image.resizable().scaledToFill()
                             } placeholder: {
-                                OneraColors.Gray.gray4
+                                theme.secondaryBackground
                             }
                         } else {
-                            OneraColors.Gray.gray4
+                            theme.secondaryBackground
                             Text(user.initials)
                                 .font(OneraTypography.displayLarge)
                                 .foregroundStyle(.white)
@@ -104,7 +108,7 @@ struct SettingsView: View {
                     // Username/Email
                     Text(user.email)
                         .font(OneraTypography.subheadline)
-                        .foregroundStyle(OneraColors.textSecondary)
+                        .foregroundStyle(theme.textSecondary)
                     
                     // Edit Profile Button
                     Button {
@@ -114,7 +118,7 @@ struct SettingsView: View {
                             .font(OneraTypography.subheadline)
                             .padding(.horizontal, OneraSpacing.xl)
                             .padding(.vertical, OneraSpacing.sm)
-                            .background(OneraColors.secondaryBackground)
+                            .background(theme.secondaryBackground)
                             .clipShape(RoundedRectangle(cornerRadius: OneraRadius.bubble))
                     }
                     .buttonStyle(.plain)
@@ -122,7 +126,7 @@ struct SettingsView: View {
                     // No user state
                     Image(systemName: "person.circle.fill")
                         .font(.system(size: 80))
-                        .foregroundStyle(OneraColors.textSecondary)
+                        .foregroundStyle(theme.textSecondary)
                     
                     Text("Not signed in")
                         .font(OneraTypography.title2.bold())
@@ -143,7 +147,7 @@ struct SettingsView: View {
                     Label("Email", systemImage: "envelope")
                     Spacer()
                     Text(user.email)
-                        .foregroundStyle(OneraColors.textSecondary)
+                        .foregroundStyle(theme.textSecondary)
                 }
             }
         }
@@ -157,7 +161,7 @@ struct SettingsView: View {
                 Label("End-to-End Encryption", systemImage: "lock.shield.fill")
                 Spacer()
                 Text(viewModel.isSessionUnlocked ? "Active" : "Locked")
-                    .foregroundStyle(viewModel.isSessionUnlocked ? OneraColors.success : OneraColors.warning)
+                    .foregroundStyle(viewModel.isSessionUnlocked ? theme.success : theme.warning)
             }
             
             Button {
@@ -168,7 +172,7 @@ struct SettingsView: View {
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(OneraTypography.caption)
-                        .foregroundStyle(OneraColors.textSecondary)
+                        .foregroundStyle(theme.textSecondary)
                 }
             }
             .disabled(!viewModel.isSessionUnlocked)
@@ -183,7 +187,7 @@ struct SettingsView: View {
                         Spacer()
                         Image(systemName: "chevron.right")
                             .font(OneraTypography.caption)
-                            .foregroundStyle(OneraColors.textSecondary)
+                            .foregroundStyle(theme.textSecondary)
                     }
                 }
             }
@@ -206,6 +210,31 @@ struct SettingsView: View {
     
     private var appSection: some View {
         Section("App") {
+            // Theme selection
+            Picker(selection: Binding(
+                get: { themeManager.currentTheme },
+                set: { themeManager.currentTheme = $0 }
+            )) {
+                ForEach(AppTheme.allCases) { appTheme in
+                    HStack {
+                        Text(appTheme.displayName)
+                        if appTheme == .claude {
+                            Text("New")
+                                .font(OneraTypography.caption2)
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color(red: 0.851, green: 0.467, blue: 0.341)) // Claude Coral #D97757
+                                .clipShape(Capsule())
+                        }
+                    }
+                    .tag(appTheme)
+                }
+            } label: {
+                Label("Theme", systemImage: "paintbrush")
+            }
+            .accessibilityIdentifier("themePicker")
+            
             Picker(selection: $selectedColorScheme) {
                 Text("System").tag(0)
                 Text("Light").tag(1)
@@ -221,7 +250,7 @@ struct SettingsView: View {
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(OneraTypography.caption)
-                        .foregroundStyle(OneraColors.textSecondary)
+                        .foregroundStyle(theme.textSecondary)
                 }
             }
             
@@ -231,7 +260,7 @@ struct SettingsView: View {
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(OneraTypography.caption)
-                        .foregroundStyle(OneraColors.textSecondary)
+                        .foregroundStyle(theme.textSecondary)
                 }
             }
         }
@@ -255,7 +284,7 @@ struct SettingsView: View {
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(OneraTypography.caption)
-                        .foregroundStyle(OneraColors.textSecondary)
+                        .foregroundStyle(theme.textSecondary)
                 }
             }
             
@@ -263,7 +292,7 @@ struct SettingsView: View {
                 Label("Version", systemImage: "info.circle")
                 Spacer()
                 Text(Bundle.main.fullVersionString)
-                    .foregroundStyle(OneraColors.textSecondary)
+                    .foregroundStyle(theme.textSecondary)
             }
         }
     }
@@ -290,6 +319,7 @@ struct SettingsView: View {
 struct RecoveryPhraseDisplayView: View {
     
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.theme) private var theme
     @Bindable var viewModel: SettingsViewModel
     let onDismiss: () -> Void
     
@@ -343,7 +373,7 @@ struct RecoveryPhraseDisplayView: View {
                 
                 Text("Keep this phrase secure. Never share it with anyone.")
                     .font(OneraTypography.caption)
-                    .foregroundStyle(OneraColors.textSecondary)
+                    .foregroundStyle(theme.textSecondary)
             }
             .padding()
         }
@@ -361,6 +391,8 @@ struct RecoveryPhraseDisplayView: View {
 // MARK: - Device Management
 
 struct DeviceManagementView: View {
+    @Environment(\.theme) private var theme
+    
     var body: some View {
         List {
             Section("Current Device") {
@@ -373,14 +405,14 @@ struct DeviceManagementView: View {
                             .font(OneraTypography.headline)
                         Text("This device")
                             .font(OneraTypography.caption)
-                            .foregroundStyle(OneraColors.textSecondary)
+                            .foregroundStyle(theme.textSecondary)
                     }
                 }
             }
             
             Section("Other Devices") {
                 Text("No other devices")
-                    .foregroundStyle(OneraColors.textSecondary)
+                    .foregroundStyle(theme.textSecondary)
             }
         }
         .navigationTitle("Devices")

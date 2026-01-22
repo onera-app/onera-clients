@@ -10,6 +10,7 @@ import SwiftUI
 struct ChatView: View {
     
     @Bindable var viewModel: ChatViewModel
+    @Environment(\.theme) private var theme
     @FocusState private var isInputFocused: Bool
     @State private var showingError = false
     @State private var showingModelDropdown = false
@@ -33,7 +34,7 @@ struct ChatView: View {
                 ZStack(alignment: .bottom) {
                     ZStack {
                         // Background - does NOT intercept taps so buttons work
-                        Color(.systemBackground)
+                        theme.background
                             .ignoresSafeArea()
                             .allowsHitTesting(false)
                         
