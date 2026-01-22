@@ -3,6 +3,7 @@
 //  Onera
 //
 //  Folder domain models for organizing chats and notes
+//  Note: Folder names are encrypted client-side using E2EE
 //
 
 import Foundation
@@ -11,7 +12,7 @@ import Foundation
 
 struct Folder: Identifiable, Equatable, Sendable {
     let id: String
-    var name: String
+    var name: String  // Decrypted name for display
     var parentId: String?
     let createdAt: Date
     var updatedAt: Date
@@ -34,6 +35,14 @@ struct Folder: Identifiable, Equatable, Sendable {
     var isRoot: Bool {
         parentId == nil
     }
+}
+
+// MARK: - Encrypted Folder Name Data
+
+/// Encrypted folder name data for API requests
+struct EncryptedFolderName: Codable, Sendable {
+    let encryptedName: String
+    let nameNonce: String
 }
 
 // MARK: - Folder Tree (for hierarchical display)

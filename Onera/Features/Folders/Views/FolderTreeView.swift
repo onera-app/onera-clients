@@ -354,7 +354,9 @@ private struct FolderNodeView: View {
     FolderTreeView(
         viewModel: FolderViewModel(
             folderRepository: MockFolderRepository(),
-            authService: MockAuthService()
+            authService: MockAuthService(),
+            cryptoService: CryptoService(),
+            secureSession: MockSecureSession()
         ),
         selectedFolderId: nil,
         onSelectFolder: { _ in }

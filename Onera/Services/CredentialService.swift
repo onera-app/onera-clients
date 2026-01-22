@@ -3,6 +3,7 @@
 //  Onera
 //
 //  Credential management service for E2EE API credentials
+//  Note: Credential names and providers are encrypted client-side using E2EE
 //
 
 import Foundation
@@ -22,6 +23,7 @@ final class CredentialService: CredentialServiceProtocol {
     private let networkService: NetworkServiceProtocol
     private let secureSession: SecureSessionProtocol
     private let cryptoService: CryptoServiceProtocol
+    private let extendedCryptoService: ExtendedCryptoServiceProtocol?
     
     // MARK: - Initialization
     
@@ -33,6 +35,7 @@ final class CredentialService: CredentialServiceProtocol {
         self.networkService = networkService
         self.secureSession = secureSession
         self.cryptoService = cryptoService
+        self.extendedCryptoService = cryptoService as? ExtendedCryptoServiceProtocol
     }
     
     // MARK: - Public Methods
@@ -87,13 +90,13 @@ final class CredentialService: CredentialServiceProtocol {
         _ encrypted: EncryptedCredential,
         masterKey: Data
     ) throws -> DecryptedCredential? {
-        // Decode base64 ciphertext and nonce
+        // Decode base64 ciphertext and nonce for API key data
         guard let ciphertextData = Data(base64Encoded: encrypted.encryptedData),
               let nonceData = Data(base64Encoded: encrypted.iv) else {
             return nil
         }
         
-        // Decrypt the credential data
+        // Decrypt the credential data (API key, base URL, etc.)
         let plaintext: Data
         do {
             plaintext = try cryptoService.decrypt(
@@ -116,30 +119,74 @@ final class CredentialService: CredentialServiceProtocol {
             return nil
         }
         
+        // Decrypt credential name
+        let name = decryptCredentialName(
+            encryptedName: encrypted.encryptedName,
+            nameNonce: encrypted.nameNonce,
+            masterKey: masterKey
+        )
+        
+        // Decrypt credential provider
+        let providerString = decryptCredentialProvider(
+            encryptedProvider: encrypted.encryptedProvider,
+            providerNonce: encrypted.providerNonce,
+            masterKey: masterKey
+        )
+        
         // Parse provider
-        guard let provider = LLMProvider(rawValue: encrypted.provider) else {
-            print("Unknown provider: \(encrypted.provider)")
-            // Default to custom for unknown providers
-            return DecryptedCredential(
-                id: encrypted.id,
-                provider: .custom,
-                name: encrypted.name,
-                apiKey: credentialData.apiKey,
-                baseUrl: credentialData.baseUrl,
-                orgId: credentialData.orgId,
-                config: credentialData.config
-            )
-        }
+        let provider = LLMProvider(rawValue: providerString) ?? .custom
         
         return DecryptedCredential(
             id: encrypted.id,
             provider: provider,
-            name: encrypted.name,
+            name: name,
             apiKey: credentialData.apiKey,
             baseUrl: credentialData.baseUrl,
             orgId: credentialData.orgId,
             config: credentialData.config
         )
+    }
+    
+    // MARK: - Credential Name/Provider Decryption
+    
+    /// Decrypts a credential name using the master key
+    private func decryptCredentialName(
+        encryptedName: String?,
+        nameNonce: String?,
+        masterKey: Data
+    ) -> String {
+        guard let encryptedName = encryptedName,
+              let nameNonce = nameNonce,
+              let extendedCrypto = extendedCryptoService else {
+            return "Encrypted Credential"
+        }
+        
+        do {
+            return try extendedCrypto.decryptString(ciphertext: encryptedName, nonce: nameNonce, key: masterKey)
+        } catch {
+            print("[CredentialService] Failed to decrypt credential name: \(error)")
+            return "Encrypted Credential"
+        }
+    }
+    
+    /// Decrypts a credential provider using the master key
+    private func decryptCredentialProvider(
+        encryptedProvider: String?,
+        providerNonce: String?,
+        masterKey: Data
+    ) -> String {
+        guard let encryptedProvider = encryptedProvider,
+              let providerNonce = providerNonce,
+              let extendedCrypto = extendedCryptoService else {
+            return "custom"
+        }
+        
+        do {
+            return try extendedCrypto.decryptString(ciphertext: encryptedProvider, nonce: providerNonce, key: masterKey)
+        } catch {
+            print("[CredentialService] Failed to decrypt credential provider: \(error)")
+            return "custom"
+        }
     }
 }
 

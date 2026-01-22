@@ -139,6 +139,7 @@ struct MainView: View {
                     credentialService: dependencies.credentialService,
                     networkService: dependencies.networkService,
                     cryptoService: dependencies.cryptoService,
+                    extendedCryptoService: dependencies.extendedCryptoService,
                     onSignOut: onSignOut
                 )
             )
@@ -314,7 +315,9 @@ struct MainView: View {
         
         folderViewModel = FolderViewModel(
             folderRepository: dependencies.folderRepository,
-            authService: dependencies.authService
+            authService: dependencies.authService,
+            cryptoService: dependencies.extendedCryptoService,
+            secureSession: dependencies.secureSession
         )
         
         notesViewModel = NotesViewModel(

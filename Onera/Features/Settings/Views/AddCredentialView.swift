@@ -217,6 +217,7 @@ struct AddCredentialView: View {
             credentialService: MockCredentialService(),
             networkService: MockNetworkService(),
             cryptoService: CryptoService(),
+            extendedCryptoService: CryptoService(),
             secureSession: MockSecureSession(),
             authService: MockAuthService()
         )

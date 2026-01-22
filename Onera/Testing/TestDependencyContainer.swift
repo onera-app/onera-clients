@@ -77,6 +77,7 @@ final class TestDependencyContainer: DependencyContaining, @unchecked Sendable {
     
     let mockAuthService = MockAuthService()
     let mockCryptoService = MockCryptoService()
+    let realCryptoService = CryptoService()  // For extended crypto operations
     let mockKeychainService = MockKeychainService()
     let mockNetworkService = MockNetworkService()
     let mockE2EEService = MockE2EEService()
@@ -96,6 +97,7 @@ final class TestDependencyContainer: DependencyContaining, @unchecked Sendable {
     
     var authService: AuthServiceProtocol { mockAuthService }
     var cryptoService: CryptoServiceProtocol { mockCryptoService }
+    var extendedCryptoService: ExtendedCryptoServiceProtocol { realCryptoService }
     var keychainService: KeychainServiceProtocol { mockKeychainService }
     var networkService: NetworkServiceProtocol { mockNetworkService }
     var e2eeService: E2EEServiceProtocol { mockE2EEService }

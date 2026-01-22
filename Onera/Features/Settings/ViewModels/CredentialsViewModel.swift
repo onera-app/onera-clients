@@ -3,6 +3,7 @@
 //  Onera
 //
 //  ViewModel for managing API credentials
+//  Note: Credential names and providers are encrypted client-side using E2EE
 //
 
 import Foundation
@@ -36,6 +37,7 @@ final class CredentialsViewModel {
     private let credentialService: CredentialServiceProtocol
     private let networkService: NetworkServiceProtocol
     private let cryptoService: CryptoServiceProtocol
+    private let extendedCryptoService: ExtendedCryptoServiceProtocol
     private let secureSession: SecureSessionProtocol
     private let authService: AuthServiceProtocol
     
@@ -45,12 +47,14 @@ final class CredentialsViewModel {
         credentialService: CredentialServiceProtocol,
         networkService: NetworkServiceProtocol,
         cryptoService: CryptoServiceProtocol,
+        extendedCryptoService: ExtendedCryptoServiceProtocol,
         secureSession: SecureSessionProtocol,
         authService: AuthServiceProtocol
     ) {
         self.credentialService = credentialService
         self.networkService = networkService
         self.cryptoService = cryptoService
+        self.extendedCryptoService = extendedCryptoService
         self.secureSession = secureSession
         self.authService = authService
     }
@@ -111,14 +115,22 @@ final class CredentialsViewModel {
                 credentialData["org_id"] = orgId
             }
             
-            // Encrypt the credential data
+            // Encrypt the credential data (API key, etc.)
             let jsonData = try JSONSerialization.data(withJSONObject: credentialData)
             let (encryptedData, nonce) = try cryptoService.encrypt(plaintext: jsonData, key: masterKey)
             
-            // Send to server
+            // Encrypt the credential name
+            let (encryptedNameCiphertext, nameNonce) = try extendedCryptoService.encryptString(credentialName, key: masterKey)
+            
+            // Encrypt the provider
+            let (encryptedProviderCiphertext, providerNonce) = try extendedCryptoService.encryptString(selectedProvider.rawValue, key: masterKey)
+            
+            // Send to server with encrypted fields
             let request = CreateCredentialRequest(
-                provider: selectedProvider.rawValue,
-                name: credentialName,
+                encryptedName: encryptedNameCiphertext,
+                nameNonce: nameNonce,
+                encryptedProvider: encryptedProviderCiphertext,
+                providerNonce: providerNonce,
                 encryptedData: encryptedData.base64EncodedString(),
                 iv: nonce.base64EncodedString()
             )
@@ -231,8 +243,15 @@ enum CredentialSaveError: LocalizedError {
 // MARK: - API Request/Response Models
 
 private struct CreateCredentialRequest: Codable {
-    let provider: String
-    let name: String
+    // Encrypted name (XSalsa20-Poly1305 with master key)
+    let encryptedName: String
+    let nameNonce: String
+    
+    // Encrypted provider (XSalsa20-Poly1305 with master key)
+    let encryptedProvider: String
+    let providerNonce: String
+    
+    // Encrypted API key data
     let encryptedData: String
     let iv: String
 }

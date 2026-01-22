@@ -38,6 +38,7 @@ struct DeviceInfo: Sendable {
     let deviceName: String
     let platform: String
     let fingerprint: String
+    let userAgent: String
     
     static func current() throws -> DeviceInfo {
         let deviceId = try KeychainService().getOrCreateDeviceId()
@@ -56,13 +57,24 @@ struct DeviceInfo: Sendable {
         }
         let fingerprint = fingerprintComponents.joined(separator: "|")
         
+        // User agent format: "Onera iOS/version (device model; iOS version)"
+        let userAgent = "Onera iOS/\(Bundle.main.appVersion) (\(device.model); iOS \(device.systemVersion))"
+        
         return DeviceInfo(
             deviceId: deviceId,
             deviceName: name,
             platform: platform,
-            fingerprint: fingerprint
+            fingerprint: fingerprint,
+            userAgent: userAgent
         )
     }
+}
+
+// MARK: - Encrypted Device Name
+
+struct EncryptedDeviceName: Codable, Sendable {
+    let encryptedDeviceName: String
+    let deviceNameNonce: String
 }
 
 // MARK: - Password Encrypted Master Key

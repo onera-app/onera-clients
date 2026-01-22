@@ -446,6 +446,7 @@ struct AppearanceSettingsView: View {
             credentialService: MockCredentialService(),
             networkService: MockNetworkService(),
             cryptoService: CryptoService(),
+            extendedCryptoService: CryptoService(),
             onSignOut: {}
         )
     )

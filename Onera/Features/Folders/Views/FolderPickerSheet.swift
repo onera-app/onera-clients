@@ -243,7 +243,9 @@ private struct FolderPickerNodeView: View {
     FolderPickerSheet(
         viewModel: FolderViewModel(
             folderRepository: MockFolderRepository(),
-            authService: MockAuthService()
+            authService: MockAuthService(),
+            cryptoService: CryptoService(),
+            secureSession: MockSecureSession()
         ),
         selectedFolderId: .constant(nil)
     )

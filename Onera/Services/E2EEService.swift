@@ -55,15 +55,26 @@ final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
     // MARK: - New User Setup
     
     func setupNewUser(token: String) async throws -> String {
-        // 1. Get device info and register
+        // 1. Get device info
         let deviceInfo = try DeviceInfo.current()
         
+        // 2. Generate cryptographic material first (we need master key to encrypt device name)
+        var masterKey = try cryptoService.generateMasterKey()
+        let keyPair = try cryptoService.generateX25519KeyPair()
+        let mnemonic = try cryptoService.generateMnemonic()
+        var recoveryKey = try cryptoService.deriveRecoveryKey(fromMnemonic: mnemonic)
+        
+        // 3. Encrypt device name with master key
+        let encryptedDeviceName = try encryptDeviceName(deviceInfo.deviceName, masterKey: masterKey)
+        
+        // 4. Register device with encrypted name
         let deviceResponse: DeviceRegisterResponse = try await networkService.call(
             procedure: APIEndpoint.Devices.register,
             input: DeviceRegisterRequest(
                 deviceId: deviceInfo.deviceId,
-                deviceName: deviceInfo.deviceName,
-                platform: deviceInfo.platform
+                encryptedDeviceName: encryptedDeviceName.encryptedDeviceName,
+                deviceNameNonce: encryptedDeviceName.deviceNameNonce,
+                userAgent: deviceInfo.userAgent
             ),
             token: token
         )
@@ -72,16 +83,10 @@ final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
             throw E2EEError.deviceRegistrationFailed
         }
         
-        // 2. Generate cryptographic material
-        var masterKey = try cryptoService.generateMasterKey()
-        let keyPair = try cryptoService.generateX25519KeyPair()
-        let mnemonic = try cryptoService.generateMnemonic()
-        var recoveryKey = try cryptoService.deriveRecoveryKey(fromMnemonic: mnemonic)
-        
-        // 3. Split master key into shares
+        // 5. Split master key into shares
         let shares = try cryptoService.splitMasterKey(masterKey)
         
-        // 4. Encrypt device share for keychain
+        // 6. Encrypt device share for keychain
         let deviceShareKey = try cryptoService.deriveDeviceShareKey(
             deviceId: deviceInfo.deviceId,
             fingerprint: deviceInfo.fingerprint,
@@ -93,7 +98,7 @@ final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
             key: deviceShareKey
         )
         
-        // 5. Encrypt other shares for server
+        // 7. Encrypt other shares for server
         let (encryptedRecoveryShare, recoveryShareNonce) = try cryptoService.encrypt(
             plaintext: shares.recoveryShare,
             key: recoveryKey
@@ -114,13 +119,13 @@ final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
             key: masterKey
         )
         
-        // 6. Save device share to keychain
+        // 8. Save device share to keychain
         try keychainService.saveDeviceShare(
             encryptedShare: encryptedDeviceShare,
             nonce: deviceShareNonce
         )
         
-        // 7. Save shares to server
+        // 9. Save shares to server
         let createRequest = KeySharesCreateRequest(
             authShare: shares.authShare.base64EncodedString(),
             encryptedRecoveryShare: encryptedRecoveryShare.base64EncodedString(),
@@ -140,7 +145,7 @@ final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
             token: token
         )
         
-        // 8. Unlock secure session
+        // 10. Unlock secure session
         await MainActor.run {
             secureSession.unlock(
                 masterKey: masterKey,
@@ -150,7 +155,7 @@ final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
             )
         }
         
-        // 9. Cleanup sensitive data
+        // 11. Cleanup sensitive data
         var deviceShare = shares.deviceShare
         var authShare = shares.authShare
         var recoveryShare = shares.recoveryShare
@@ -501,13 +506,17 @@ final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
     private func setupNewDeviceShare(masterKey: Data, token: String) async throws {
         let deviceInfo = try DeviceInfo.current()
         
-        // Register device
+        // Encrypt device name with master key
+        let encryptedDeviceName = try encryptDeviceName(deviceInfo.deviceName, masterKey: masterKey)
+        
+        // Register device with encrypted name
         let deviceResponse: DeviceRegisterResponse = try await networkService.call(
             procedure: APIEndpoint.Devices.register,
             input: DeviceRegisterRequest(
                 deviceId: deviceInfo.deviceId,
-                deviceName: deviceInfo.deviceName,
-                platform: deviceInfo.platform
+                encryptedDeviceName: encryptedDeviceName.encryptedDeviceName,
+                deviceNameNonce: encryptedDeviceName.deviceNameNonce,
+                userAgent: deviceInfo.userAgent
             ),
             token: token
         )
@@ -535,6 +544,38 @@ final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
         try keychainService.saveDeviceShare(encryptedShare: encryptedDeviceShare, nonce: nonce)
         
         // Note: Full implementation would also update server with new auth share
+    }
+    
+    // MARK: - Device Name Encryption
+    
+    /// Encrypts a device name using the master key
+    private func encryptDeviceName(_ name: String, masterKey: Data) throws -> EncryptedDeviceName {
+        // Cast to ExtendedCryptoServiceProtocol to access string encryption
+        guard let extendedCrypto = cryptoService as? ExtendedCryptoServiceProtocol else {
+            throw CryptoError.encryptionFailed
+        }
+        
+        let (ciphertext, nonce) = try extendedCrypto.encryptString(name, key: masterKey)
+        return EncryptedDeviceName(
+            encryptedDeviceName: ciphertext,
+            deviceNameNonce: nonce
+        )
+    }
+    
+    /// Decrypts a device name using the master key
+    func decryptDeviceName(_ encryptedName: String?, nonce: String?, masterKey: Data) -> String {
+        guard let encryptedName = encryptedName,
+              let nonce = nonce,
+              let extendedCrypto = cryptoService as? ExtendedCryptoServiceProtocol else {
+            return "Unknown Device"
+        }
+        
+        do {
+            return try extendedCrypto.decryptString(ciphertext: encryptedName, nonce: nonce, key: masterKey)
+        } catch {
+            print("[E2EEService] Failed to decrypt device name: \(error)")
+            return "Encrypted Device"
+        }
     }
 }
 
@@ -576,8 +617,9 @@ struct KeySharesCreateResponse: Codable {
 
 struct DeviceRegisterRequest: Codable {
     let deviceId: String
-    let deviceName: String
-    let platform: String
+    let encryptedDeviceName: String?
+    let deviceNameNonce: String?
+    let userAgent: String?
 }
 
 struct DeviceRegisterResponse: Codable {

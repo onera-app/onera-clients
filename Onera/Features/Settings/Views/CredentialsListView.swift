@@ -196,6 +196,7 @@ private struct CredentialRowView: View {
                 credentialService: MockCredentialService(),
                 networkService: MockNetworkService(),
                 cryptoService: CryptoService(),
+                extendedCryptoService: CryptoService(),
                 secureSession: MockSecureSession(),
                 authService: MockAuthService()
             )

@@ -30,14 +30,7 @@ enum Configuration {
     // MARK: - API Configuration
     
     static var apiBaseURL: URL {
-        switch AppEnvironment.current {
-        case .development:
-            return URL(string: "http://localhost:3000")!
-        case .staging:
-            return URL(string: "https://api-stage.onera.app")!
-        case .production:
-            return URL(string: "https://api.onera.app")!
-        }
+        return URL(string: "https://api.onera.chat")!
     }
     
     static let trpcPath = "/trpc"
@@ -74,7 +67,7 @@ enum Configuration {
     // MARK: - Keychain Configuration
     
     enum Keychain: Sendable {
-        nonisolated static let serviceName = "com.onera.keychain"
+        nonisolated static let serviceName = "chat.onera.keychain"
         
         enum Keys: Sendable {
             nonisolated static let deviceId = "deviceId"
@@ -89,14 +82,7 @@ enum Configuration {
     
     enum WebAuthn {
         static var rpID: String {
-            switch AppEnvironment.current {
-            case .development:
-                return "localhost"
-            case .staging:
-                return "staging.onera.app"
-            case .production:
-                return "onera.app"
-            }
+            return "onera.chat"
         }
         
         static var rpName: String {

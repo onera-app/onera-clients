@@ -76,12 +76,35 @@ enum LLMProvider: String, Codable, CaseIterable, Sendable {
 struct EncryptedCredential: Codable, Sendable {
     let id: String
     let userId: String
-    let provider: String
-    let name: String
+    
+    // Encrypted name (XSalsa20-Poly1305 with master key)
+    let encryptedName: String?
+    let nameNonce: String?
+    
+    // Encrypted provider (XSalsa20-Poly1305 with master key)
+    let encryptedProvider: String?
+    let providerNonce: String?
+    
+    // Encrypted API key data
     let encryptedData: String  // Base64 encrypted JSON
     let iv: String             // Base64 nonce
+    
     let createdAt: Int64
     let updatedAt: Int64
+}
+
+// MARK: - Encrypted Credential Name Data
+
+struct EncryptedCredentialName: Codable, Sendable {
+    let encryptedName: String
+    let nameNonce: String
+}
+
+// MARK: - Encrypted Credential Provider Data
+
+struct EncryptedCredentialProvider: Codable, Sendable {
+    let encryptedProvider: String
+    let providerNonce: String
 }
 
 // MARK: - Decrypted Credential Data (from encrypted JSON)

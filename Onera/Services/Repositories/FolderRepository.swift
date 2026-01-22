@@ -3,7 +3,7 @@
 //  Onera
 //
 //  Folder data repository implementation
-//  Note: Folders are NOT encrypted - they are plain text for organization
+//  Note: Folder names are encrypted client-side using E2EE
 //
 
 import Foundation
@@ -11,11 +11,32 @@ import Foundation
 // MARK: - Protocol
 
 protocol FolderRepositoryProtocol: Sendable {
-    func fetchFolders(token: String) async throws -> [Folder]
-    func fetchFolder(id: String, token: String) async throws -> Folder
-    func createFolder(name: String, parentId: String?, token: String) async throws -> Folder
-    func updateFolder(id: String, name: String?, parentId: String?, token: String) async throws -> Folder
+    /// Fetches all folders (returns encrypted data to be decrypted by caller)
+    func fetchFolders(token: String) async throws -> [EncryptedFolderResponse]
+    
+    /// Fetches a single folder (returns encrypted data to be decrypted by caller)
+    func fetchFolder(id: String, token: String) async throws -> EncryptedFolderResponse
+    
+    /// Creates a folder with encrypted name
+    func createFolder(encryptedName: String, nameNonce: String, parentId: String?, token: String) async throws -> EncryptedFolderResponse
+    
+    /// Updates a folder with encrypted name
+    func updateFolder(id: String, encryptedName: String?, nameNonce: String?, parentId: String?, token: String) async throws -> EncryptedFolderResponse
+    
+    /// Deletes a folder
     func deleteFolder(id: String, token: String) async throws
+}
+
+// MARK: - Encrypted Folder Response (from server)
+
+struct EncryptedFolderResponse: Codable, Sendable {
+    let id: String
+    let userId: String
+    let encryptedName: String?
+    let nameNonce: String?
+    let parentId: String?
+    let createdAt: Date
+    let updatedAt: Date
 }
 
 // MARK: - Implementation
@@ -51,45 +72,46 @@ final class FolderRepository: FolderRepositoryProtocol, @unchecked Sendable {
     
     // MARK: - Folders List
     
-    func fetchFolders(token: String) async throws -> [Folder] {
-        let response: [FolderResponse] = try await networkService.call(
+    func fetchFolders(token: String) async throws -> [EncryptedFolderResponse] {
+        return try await networkService.call(
             procedure: APIEndpoint.Folders.list,
             token: token
         )
-        
-        return response.map { $0.toFolder() }
     }
     
     // MARK: - Single Folder
     
-    func fetchFolder(id: String, token: String) async throws -> Folder {
-        let response: FolderResponse = try await networkService.query(
+    func fetchFolder(id: String, token: String) async throws -> EncryptedFolderResponse {
+        return try await networkService.query(
             procedure: APIEndpoint.Folders.get,
             input: FolderGetRequest(folderId: id),
             token: token
         )
-        
-        return response.toFolder()
     }
     
-    func createFolder(name: String, parentId: String?, token: String) async throws -> Folder {
-        let response: FolderResponse = try await networkService.call(
+    func createFolder(encryptedName: String, nameNonce: String, parentId: String?, token: String) async throws -> EncryptedFolderResponse {
+        return try await networkService.call(
             procedure: APIEndpoint.Folders.create,
-            input: FolderCreateRequest(name: name, parentId: parentId),
+            input: FolderCreateRequest(
+                encryptedName: encryptedName,
+                nameNonce: nameNonce,
+                parentId: parentId
+            ),
             token: token
         )
-        
-        return response.toFolder()
     }
     
-    func updateFolder(id: String, name: String?, parentId: String?, token: String) async throws -> Folder {
-        let response: FolderResponse = try await networkService.call(
+    func updateFolder(id: String, encryptedName: String?, nameNonce: String?, parentId: String?, token: String) async throws -> EncryptedFolderResponse {
+        return try await networkService.call(
             procedure: APIEndpoint.Folders.update,
-            input: FolderUpdateRequest(folderId: id, name: name, parentId: parentId),
+            input: FolderUpdateRequest(
+                folderId: id,
+                encryptedName: encryptedName,
+                nameNonce: nameNonce,
+                parentId: parentId
+            ),
             token: token
         )
-        
-        return response.toFolder()
     }
     
     func deleteFolder(id: String, token: String) async throws {
@@ -107,33 +129,16 @@ private struct FolderGetRequest: Codable {
     let folderId: String
 }
 
-private struct FolderResponse: Codable {
-    let id: String
-    let userId: String
-    let name: String
-    let parentId: String?
-    let createdAt: Date
-    let updatedAt: Date
-    
-    func toFolder() -> Folder {
-        Folder(
-            id: id,
-            name: name,
-            parentId: parentId,
-            createdAt: createdAt,
-            updatedAt: updatedAt
-        )
-    }
-}
-
 private struct FolderCreateRequest: Codable {
-    let name: String
+    let encryptedName: String
+    let nameNonce: String
     let parentId: String?
 }
 
 private struct FolderUpdateRequest: Codable {
     let folderId: String
-    let name: String?
+    let encryptedName: String?
+    let nameNonce: String?
     let parentId: String?
 }
 
@@ -151,40 +156,84 @@ private struct FolderDeleteResponse: Codable {
 final class MockFolderRepository: FolderRepositoryProtocol, @unchecked Sendable {
     
     var shouldFail = false
-    var mockFolders: [Folder] = Folder.mockFolders
+    var mockEncryptedFolders: [EncryptedFolderResponse] = EncryptedFolderResponse.mockFolders
     
-    func fetchFolders(token: String) async throws -> [Folder] {
+    func fetchFolders(token: String) async throws -> [EncryptedFolderResponse] {
         if shouldFail { throw FolderError.folderNotFound }
-        return mockFolders
+        return mockEncryptedFolders
     }
     
-    func fetchFolder(id: String, token: String) async throws -> Folder {
+    func fetchFolder(id: String, token: String) async throws -> EncryptedFolderResponse {
         if shouldFail { throw FolderError.folderNotFound }
-        return mockFolders.first { $0.id == id } ?? .mock()
+        return mockEncryptedFolders.first { $0.id == id } ?? .mock()
     }
     
-    func createFolder(name: String, parentId: String?, token: String) async throws -> Folder {
+    func createFolder(encryptedName: String, nameNonce: String, parentId: String?, token: String) async throws -> EncryptedFolderResponse {
         if shouldFail { throw FolderError.createFailed }
-        let folder = Folder(name: name, parentId: parentId)
-        mockFolders.append(folder)
+        let folder = EncryptedFolderResponse(
+            id: UUID().uuidString,
+            userId: "mock-user",
+            encryptedName: encryptedName,
+            nameNonce: nameNonce,
+            parentId: parentId,
+            createdAt: Date(),
+            updatedAt: Date()
+        )
+        mockEncryptedFolders.append(folder)
         return folder
     }
     
-    func updateFolder(id: String, name: String?, parentId: String?, token: String) async throws -> Folder {
+    func updateFolder(id: String, encryptedName: String?, nameNonce: String?, parentId: String?, token: String) async throws -> EncryptedFolderResponse {
         if shouldFail { throw FolderError.updateFailed }
-        guard let index = mockFolders.firstIndex(where: { $0.id == id }) else {
+        guard let index = mockEncryptedFolders.firstIndex(where: { $0.id == id }) else {
             throw FolderError.folderNotFound
         }
-        var folder = mockFolders[index]
-        if let name = name { folder.name = name }
-        if let parentId = parentId { folder.parentId = parentId }
-        mockFolders[index] = folder
+        let existing = mockEncryptedFolders[index]
+        let folder = EncryptedFolderResponse(
+            id: existing.id,
+            userId: existing.userId,
+            encryptedName: encryptedName ?? existing.encryptedName,
+            nameNonce: nameNonce ?? existing.nameNonce,
+            parentId: parentId ?? existing.parentId,
+            createdAt: existing.createdAt,
+            updatedAt: Date()
+        )
+        mockEncryptedFolders[index] = folder
         return folder
     }
     
     func deleteFolder(id: String, token: String) async throws {
         if shouldFail { throw FolderError.deleteFailed }
-        mockFolders.removeAll { $0.id == id }
+        mockEncryptedFolders.removeAll { $0.id == id }
+    }
+}
+
+extension EncryptedFolderResponse {
+    static func mock(
+        id: String = UUID().uuidString,
+        encryptedName: String = "mock-encrypted-name",
+        nameNonce: String = "mock-nonce",
+        parentId: String? = nil
+    ) -> EncryptedFolderResponse {
+        EncryptedFolderResponse(
+            id: id,
+            userId: "mock-user",
+            encryptedName: encryptedName,
+            nameNonce: nameNonce,
+            parentId: parentId,
+            createdAt: Date(),
+            updatedAt: Date()
+        )
+    }
+    
+    static var mockFolders: [EncryptedFolderResponse] {
+        let workId = UUID().uuidString
+        return [
+            EncryptedFolderResponse.mock(id: workId, encryptedName: "encrypted-work"),
+            EncryptedFolderResponse.mock(encryptedName: "encrypted-personal"),
+            EncryptedFolderResponse.mock(encryptedName: "encrypted-projects", parentId: workId),
+            EncryptedFolderResponse.mock(encryptedName: "encrypted-archived")
+        ]
     }
 }
 #endif

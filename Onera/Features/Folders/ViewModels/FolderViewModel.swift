@@ -2,7 +2,7 @@
 //  FolderViewModel.swift
 //  Onera
 //
-//  ViewModel for managing folders
+//  ViewModel for managing folders with E2EE encryption
 //
 
 import Foundation
@@ -38,15 +38,21 @@ final class FolderViewModel {
     
     private let folderRepository: FolderRepositoryProtocol
     private let authService: AuthServiceProtocol
+    private let cryptoService: ExtendedCryptoServiceProtocol
+    private let secureSession: SecureSessionProtocol
     
     // MARK: - Initialization
     
     init(
         folderRepository: FolderRepositoryProtocol,
-        authService: AuthServiceProtocol
+        authService: AuthServiceProtocol,
+        cryptoService: ExtendedCryptoServiceProtocol,
+        secureSession: SecureSessionProtocol
     ) {
         self.folderRepository = folderRepository
         self.authService = authService
+        self.cryptoService = cryptoService
+        self.secureSession = secureSession
     }
     
     // MARK: - Actions
@@ -57,7 +63,8 @@ final class FolderViewModel {
         
         do {
             let token = try await authService.getToken()
-            folders = try await folderRepository.fetchFolders(token: token)
+            let encryptedFolders = try await folderRepository.fetchFolders(token: token)
+            folders = decryptFolders(encryptedFolders)
             folderTree = FolderTree.buildTree(from: folders)
         } catch {
             self.error = error
@@ -73,16 +80,24 @@ final class FolderViewModel {
     // MARK: - CRUD Operations
     
     func createFolder() async {
-        guard !newFolderName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        let trimmedName = newFolderName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else { return }
         
         do {
             let token = try await authService.getToken()
-            let folder = try await folderRepository.createFolder(
-                name: newFolderName.trimmingCharacters(in: .whitespacesAndNewlines),
+            
+            // Encrypt folder name
+            let encrypted = try encryptFolderName(trimmedName)
+            
+            let response = try await folderRepository.createFolder(
+                encryptedName: encrypted.encryptedName,
+                nameNonce: encrypted.nameNonce,
                 parentId: newFolderParentId,
                 token: token
             )
             
+            // Decrypt and add to list
+            let folder = decryptFolder(response)
             folders.append(folder)
             folderTree = FolderTree.buildTree(from: folders)
             
@@ -118,21 +133,33 @@ final class FolderViewModel {
     }
     
     func saveEdit() async {
-        guard let folderId = editingFolderId,
-              !editingName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        guard let folderId = editingFolderId else {
+            cancelEdit()
+            return
+        }
+        
+        let trimmedName = editingName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else {
             cancelEdit()
             return
         }
         
         do {
             let token = try await authService.getToken()
-            let updated = try await folderRepository.updateFolder(
+            
+            // Encrypt the new name
+            let encrypted = try encryptFolderName(trimmedName)
+            
+            let response = try await folderRepository.updateFolder(
                 id: folderId,
-                name: editingName.trimmingCharacters(in: .whitespacesAndNewlines),
+                encryptedName: encrypted.encryptedName,
+                nameNonce: encrypted.nameNonce,
                 parentId: nil,
                 token: token
             )
             
+            // Decrypt and update list
+            let updated = decryptFolder(response)
             if let index = folders.firstIndex(where: { $0.id == folderId }) {
                 folders[index] = updated
                 folderTree = FolderTree.buildTree(from: folders)
@@ -198,5 +225,50 @@ final class FolderViewModel {
     
     func clearError() {
         error = nil
+    }
+    
+    // MARK: - Encryption/Decryption
+    
+    /// Encrypts a folder name using the master key
+    private func encryptFolderName(_ name: String) throws -> EncryptedFolderName {
+        guard let masterKey = secureSession.masterKey else {
+            throw E2EEError.sessionLocked
+        }
+        
+        let (ciphertext, nonce) = try cryptoService.encryptString(name, key: masterKey)
+        return EncryptedFolderName(encryptedName: ciphertext, nameNonce: nonce)
+    }
+    
+    /// Decrypts a folder name using the master key
+    private func decryptFolderName(encryptedName: String?, nameNonce: String?) -> String {
+        guard let encryptedName = encryptedName,
+              let nameNonce = nameNonce,
+              let masterKey = secureSession.masterKey else {
+            return "Encrypted Folder"
+        }
+        
+        do {
+            return try cryptoService.decryptString(ciphertext: encryptedName, nonce: nameNonce, key: masterKey)
+        } catch {
+            print("[FolderViewModel] Failed to decrypt folder name: \(error)")
+            return "Encrypted Folder"
+        }
+    }
+    
+    /// Converts an encrypted folder response to a decrypted Folder model
+    private func decryptFolder(_ response: EncryptedFolderResponse) -> Folder {
+        let name = decryptFolderName(encryptedName: response.encryptedName, nameNonce: response.nameNonce)
+        return Folder(
+            id: response.id,
+            name: name,
+            parentId: response.parentId,
+            createdAt: response.createdAt,
+            updatedAt: response.updatedAt
+        )
+    }
+    
+    /// Decrypts a list of encrypted folder responses
+    private func decryptFolders(_ responses: [EncryptedFolderResponse]) -> [Folder] {
+        responses.map { decryptFolder($0) }
     }
 }

@@ -43,6 +43,7 @@ final class SettingsViewModel {
         credentialService: CredentialServiceProtocol,
         networkService: NetworkServiceProtocol,
         cryptoService: CryptoServiceProtocol,
+        extendedCryptoService: ExtendedCryptoServiceProtocol,
         onSignOut: @escaping () async -> Void
     ) {
         self.authService = authService
@@ -54,6 +55,7 @@ final class SettingsViewModel {
             credentialService: credentialService,
             networkService: networkService,
             cryptoService: cryptoService,
+            extendedCryptoService: extendedCryptoService,
             secureSession: secureSession,
             authService: authService
         )

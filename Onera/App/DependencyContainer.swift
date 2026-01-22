@@ -12,6 +12,7 @@ import Foundation
 protocol DependencyContaining: Sendable {
     var authService: AuthServiceProtocol { get }
     var cryptoService: CryptoServiceProtocol { get }
+    var extendedCryptoService: ExtendedCryptoServiceProtocol { get }
     var keychainService: KeychainServiceProtocol { get }
     var networkService: NetworkServiceProtocol { get }
     var e2eeService: E2EEServiceProtocol { get }
@@ -39,7 +40,8 @@ final class DependencyContainer: DependencyContaining, @unchecked Sendable {
     // MARK: - Services (Lazy Initialization)
     
     private lazy var _keychainService: KeychainServiceProtocol = KeychainService()
-    private lazy var _cryptoService: CryptoServiceProtocol = CryptoService()
+    private lazy var _cryptoServiceInstance: CryptoService = CryptoService()
+    private lazy var _cryptoService: CryptoServiceProtocol = _cryptoServiceInstance
     private lazy var _networkService: NetworkServiceProtocol = NetworkService()
     private lazy var _secureSession: SecureSessionProtocol = SecureSession(
         cryptoService: _cryptoService,
@@ -87,6 +89,7 @@ final class DependencyContainer: DependencyContaining, @unchecked Sendable {
     
     var authService: AuthServiceProtocol { _authService }
     var cryptoService: CryptoServiceProtocol { _cryptoService }
+    var extendedCryptoService: ExtendedCryptoServiceProtocol { _cryptoServiceInstance }
     var keychainService: KeychainServiceProtocol { _keychainService }
     var networkService: NetworkServiceProtocol { _networkService }
     var e2eeService: E2EEServiceProtocol { _e2eeService }
@@ -131,6 +134,7 @@ final class MockDependencyContainer: DependencyContaining, @unchecked Sendable {
     
     var authService: AuthServiceProtocol
     var cryptoService: CryptoServiceProtocol
+    var extendedCryptoService: ExtendedCryptoServiceProtocol
     var keychainService: KeychainServiceProtocol
     var networkService: NetworkServiceProtocol
     var e2eeService: E2EEServiceProtocol
@@ -164,12 +168,15 @@ final class MockDependencyContainer: DependencyContaining, @unchecked Sendable {
         speechRecognitionService: SpeechRecognitionServiceProtocol? = nil,
         fileProcessingService: FileProcessingServiceProtocol? = nil
     ) {
+        // Use the real CryptoService for extended operations (encryption/decryption)
+        let realCrypto = CryptoService()
         let crypto = cryptoService ?? MockCryptoService()
         let keychain = keychainService ?? MockKeychainService()
         let network = networkService ?? MockNetworkService()
         let session = secureSession ?? MockSecureSession()
         
         self.cryptoService = crypto
+        self.extendedCryptoService = realCrypto
         self.keychainService = keychain
         self.networkService = network
         self.secureSession = session
