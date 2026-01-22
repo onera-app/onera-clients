@@ -26,7 +26,7 @@ struct AuthenticationView: View {
     var body: some View {
         ZStack {
             // Background
-            Color(.systemBackground)
+            OneraColors.background
                 .ignoresSafeArea()
             
             VStack {
@@ -84,7 +84,7 @@ struct AuthenticationView: View {
         }
         
         // Show circle with bounce
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
+        withAnimation(OneraAnimation.springBouncy) {
             showCircle = true
             circleScale = 1.0
         }
@@ -92,7 +92,7 @@ struct AuthenticationView: View {
         // Small delay then show drawer
         try? await Task.sleep(for: .milliseconds(400))
         
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+        withAnimation(OneraAnimation.springSmooth) {
             showDrawer = true
         }
     }
@@ -100,26 +100,26 @@ struct AuthenticationView: View {
     // MARK: - Subviews
     
     private var headerView: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: OneraSpacing.sm) {
             Text(titleText)
-                .font(.system(size: 32, weight: .semibold))
-                .foregroundStyle(.primary)
+                .font(OneraTypography.displayLarge)
+                .foregroundStyle(OneraColors.textPrimary)
             
             // Animated circular icon
             if showCircle {
                 Circle()
-                    .fill(Color.primary)
+                    .fill(OneraColors.textPrimary)
                     .frame(width: 24, height: 24)
                     .scaleEffect(circleScale)
             }
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, OneraSpacing.xxl)
     }
     
     private var bottomDrawer: some View {
         VStack(spacing: 0) {
             // Drawer content
-            VStack(spacing: 12) {
+            VStack(spacing: OneraSpacing.md) {
                 // Continue with Apple - Native Button
                 SignInWithAppleButton(.continue) { request in
                     viewModel.configureAppleRequest(request)
@@ -130,7 +130,7 @@ struct AuthenticationView: View {
                 }
                 .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
                 .frame(height: 56)
-                .clipShape(RoundedRectangle(cornerRadius: 28))
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.pill))
                 .disabled(viewModel.isLoading)
                 .accessibilityIdentifier("signInWithApple")
                 
@@ -138,51 +138,51 @@ struct AuthenticationView: View {
                 Button {
                     Task { await viewModel.signInWithGoogle() }
                 } label: {
-                    HStack(spacing: 12) {
+                    HStack(spacing: OneraSpacing.md) {
                         Image("google")
                             .resizable()
                             .scaledToFit()
                             .frame(width: 18, height: 18)
                         Text("Continue with Google")
-                            .font(.system(size: 17, weight: .medium))
+                            .font(OneraTypography.button)
                     }
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(OneraColors.textPrimary)
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
-                    .background(Color(.secondarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 28))
+                    .background(OneraColors.secondaryBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.pill))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 28)
-                            .stroke(Color.primary.opacity(0.15), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: OneraRadius.pill)
+                            .stroke(OneraColors.textPrimary.opacity(0.15), lineWidth: 1)
                     )
                 }
                 .disabled(viewModel.isLoading)
                 .accessibilityIdentifier("signInWithGoogle")
             }
-            .padding(.horizontal, 24)
-            .padding(.top, 24)
-            .padding(.bottom, 16)
+            .padding(.horizontal, OneraSpacing.xxl)
+            .padding(.top, OneraSpacing.xxl)
+            .padding(.bottom, OneraSpacing.lg)
             
             // Terms text
             Text("By continuing, you agree to our Terms of Use and Privacy Policy")
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
+                .font(OneraTypography.caption)
+                .foregroundStyle(OneraColors.textSecondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+                .padding(.horizontal, OneraSpacing.xxxl)
                 .padding(.bottom, 34)
         }
         .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(Color(.secondarySystemBackground))
+            RoundedRectangle(cornerRadius: OneraRadius.sheet)
+                .fill(OneraColors.secondaryBackground)
                 .ignoresSafeArea(edges: .bottom)
         )
         .overlay {
             if viewModel.isLoading {
-                RoundedRectangle(cornerRadius: 24)
-                    .fill(Color.primary.opacity(0.3))
+                RoundedRectangle(cornerRadius: OneraRadius.sheet)
+                    .fill(OneraColors.textPrimary.opacity(0.3))
                     .ignoresSafeArea(edges: .bottom)
                 ProgressView()
-                    .tint(.primary)
+                    .tint(OneraColors.textPrimary)
             }
         }
     }

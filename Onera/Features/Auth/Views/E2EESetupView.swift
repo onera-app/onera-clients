@@ -96,19 +96,19 @@ struct E2EESetupView: View {
     // MARK: - Subviews
     
     private var loadingView: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: OneraSpacing.xxxl) {
             Spacer()
             
             ProgressView()
                 .scaleEffect(1.5)
             
-            VStack(spacing: 8) {
+            VStack(spacing: OneraSpacing.sm) {
                 Text("Setting up encryption...")
-                    .font(.headline)
+                    .font(OneraTypography.headline)
                 
                 Text("Generating secure keys for your account")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(OneraTypography.subheadline)
+                    .foregroundStyle(OneraColors.textSecondary)
             }
             
             Spacer()
@@ -117,19 +117,19 @@ struct E2EESetupView: View {
     
     private func recoveryPhraseView(phrase: String) -> some View {
         ScrollView {
-            VStack(spacing: 24) {
+            VStack(spacing: OneraSpacing.xxl) {
                 // Header
-                VStack(spacing: 12) {
+                VStack(spacing: OneraSpacing.md) {
                     Image(systemName: "key.fill")
                         .font(.system(size: 48))
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(OneraColors.warning)
                     
                     Text("Save Your Recovery Phrase")
-                        .font(.title2.bold())
+                        .font(OneraTypography.title2.bold())
                     
                     Text("This is the only way to recover your encrypted data if you lose access to your devices.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(OneraTypography.subheadline)
+                        .foregroundStyle(OneraColors.textSecondary)
                         .multilineTextAlignment(.center)
                 }
                 .padding(.top)
@@ -138,7 +138,7 @@ struct E2EESetupView: View {
                 RecoveryPhraseGrid(phrase: phrase)
                     .padding()
                     .background(.regularMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.large))
                 
                 // Copy button
                 Button {
@@ -157,31 +157,31 @@ struct E2EESetupView: View {
                 // Confirmation toggle
                 Toggle(isOn: $viewModel.hasSavedPhrase) {
                     Text("I have saved my recovery phrase securely")
-                        .font(.subheadline)
+                        .font(OneraTypography.subheadline)
                 }
                 .toggleStyle(.switch)
                 .padding()
                 .background(.regularMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
             }
             .padding()
         }
     }
     
     private var confirmPhraseView: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: OneraSpacing.xxl) {
             Spacer()
             
             Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 64))
-                .foregroundStyle(.green)
+                .foregroundStyle(OneraColors.success)
             
             Text("Recovery Phrase Saved")
-                .font(.title2.bold())
+                .font(OneraTypography.title2.bold())
             
             Text("Great! Your recovery phrase has been saved.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(OneraTypography.subheadline)
+                .foregroundStyle(OneraColors.textSecondary)
             
             Spacer()
             
@@ -191,10 +191,10 @@ struct E2EESetupView: View {
                 Text("Continue")
                     .fontWeight(.semibold)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 4)
+                    .padding(.vertical, OneraSpacing.xxs)
             }
             .buttonStyle(.borderedProminent)
-            .tint(Color(.systemGray))
+            .tint(OneraColors.Gray.gray)
             .foregroundStyle(.white)
             .controlSize(.large)
         }
@@ -205,25 +205,25 @@ struct E2EESetupView: View {
     
     private var unlockMethodOptionsView: some View {
         ScrollView {
-            VStack(spacing: 24) {
+            VStack(spacing: OneraSpacing.xxl) {
                 // Header
-                VStack(spacing: 12) {
+                VStack(spacing: OneraSpacing.md) {
                     Image(systemName: "lock.shield.fill")
                         .font(.system(size: 48))
-                        .foregroundStyle(.tint)
+                        .foregroundStyle(OneraColors.tint)
                     
                     Text("Set Up Quick Unlock")
-                        .font(.title2.bold())
+                        .font(OneraTypography.title2.bold())
                     
                     Text("Choose how you want to unlock your encrypted data. Your recovery phrase always works as a backup.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(OneraTypography.subheadline)
+                        .foregroundStyle(OneraColors.textSecondary)
                         .multilineTextAlignment(.center)
                 }
                 .padding(.top)
                 
                 // Options
-                VStack(spacing: 16) {
+                VStack(spacing: OneraSpacing.lg) {
                     // Passkey option (recommended, if supported)
                     if viewModel.passkeySupported {
                         optionButton(
@@ -247,7 +247,7 @@ struct E2EESetupView: View {
                 }
                 
                 Divider()
-                    .padding(.vertical, 8)
+                    .padding(.vertical, OneraSpacing.sm)
                 
                 Button {
                     viewModel.skipPasswordSetup()
@@ -261,8 +261,8 @@ struct E2EESetupView: View {
                 .buttonStyle(.bordered)
                 
                 Text("You can always set this up later in Settings")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(OneraTypography.caption)
+                    .foregroundStyle(OneraColors.textSecondary)
             }
             .padding()
         }
@@ -272,7 +272,7 @@ struct E2EESetupView: View {
     
     private var passkeySetupView: some View {
         ScrollView {
-            VStack(spacing: 24) {
+            VStack(spacing: OneraSpacing.xxl) {
                 // Only show back button if there are other options (passkey not supported or we came from options)
                 if !viewModel.passkeySupported {
                     Button {
@@ -283,7 +283,7 @@ struct E2EESetupView: View {
                             Text("Back to options")
                         }
                     }
-                    .font(.callout)
+                    .font(OneraTypography.callout)
                     .disabled(viewModel.isSettingUpPasskey)
                 }
                 
@@ -291,22 +291,22 @@ struct E2EESetupView: View {
                     .frame(height: viewModel.passkeySupported ? 40 : 20)
                 
                 // Header
-                VStack(spacing: 16) {
+                VStack(spacing: OneraSpacing.lg) {
                     Image(systemName: "person.badge.key.fill")
                         .font(.system(size: 64))
-                        .foregroundStyle(.tint)
+                        .foregroundStyle(OneraColors.tint)
                     
                     Text("Add a Passkey")
-                        .font(.title2.bold())
+                        .font(OneraTypography.title2.bold())
                     
                     Text("Passkeys are the easiest and most secure way to unlock your data. Your passkey stays on your device and uses Face ID or Touch ID.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(OneraTypography.subheadline)
+                        .foregroundStyle(OneraColors.textSecondary)
                         .multilineTextAlignment(.center)
                 }
                 
                 // Benefits
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: OneraSpacing.md) {
                     passkeyBenefitRow(
                         icon: "faceid",
                         text: "Unlock with Face ID or Touch ID"
@@ -322,10 +322,10 @@ struct E2EESetupView: View {
                 }
                 .padding()
                 .background(.regularMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
                 
                 Spacer()
-                    .frame(height: 20)
+                    .frame(height: OneraSpacing.xl)
                 
                 // Create passkey button
                 Button {
@@ -333,7 +333,7 @@ struct E2EESetupView: View {
                 } label: {
                     Group {
                         if viewModel.isSettingUpPasskey {
-                            HStack(spacing: 8) {
+                            HStack(spacing: OneraSpacing.sm) {
                                 ProgressView()
                                     .tint(.white)
                                 Text("Creating passkey...")
@@ -345,10 +345,10 @@ struct E2EESetupView: View {
                     }
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 4)
+                    .padding(.vertical, OneraSpacing.xxs)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.blue)
+                .tint(OneraColors.info)
                 .controlSize(.large)
                 .disabled(viewModel.isSettingUpPasskey)
                 
@@ -365,22 +365,22 @@ struct E2EESetupView: View {
                 }
                 
                 Text("You can always add more unlock methods in Settings")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(OneraTypography.caption)
+                    .foregroundStyle(OneraColors.textSecondary)
             }
             .padding()
         }
     }
     
     private func passkeyBenefitRow(icon: String, text: String) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: OneraSpacing.md) {
             Image(systemName: icon)
-                .font(.title3)
-                .foregroundStyle(.tint)
+                .font(OneraTypography.title3)
+                .foregroundStyle(OneraColors.tint)
                 .frame(width: 28)
             
             Text(text)
-                .font(.subheadline)
+                .font(OneraTypography.subheadline)
         }
     }
     
@@ -392,42 +392,42 @@ struct E2EESetupView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            HStack(spacing: 16) {
+            HStack(spacing: OneraSpacing.lg) {
                 Image(systemName: icon)
-                    .font(.title2)
+                    .font(OneraTypography.title2)
                     .frame(width: 40, height: 40)
-                    .background(.tint.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .background(OneraColors.tint.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.mediumSmall))
                 
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: OneraSpacing.xxs) {
+                    HStack(spacing: OneraSpacing.sm) {
                         Text(title)
-                            .font(.headline)
+                            .font(OneraTypography.headline)
                         
                         if let badge = badge {
                             Text(badge)
-                                .font(.caption2)
+                                .font(OneraTypography.caption2)
                                 .fontWeight(.semibold)
-                                .padding(.horizontal, 8)
+                                .padding(.horizontal, OneraSpacing.sm)
                                 .padding(.vertical, 3)
-                                .background(Color.green)
+                                .background(OneraColors.success)
                                 .foregroundStyle(.white)
                                 .clipShape(Capsule())
                         }
                     }
                     Text(description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(OneraTypography.caption)
+                        .foregroundStyle(OneraColors.textSecondary)
                 }
                 
                 Spacer()
                 
                 Image(systemName: "chevron.right")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(OneraColors.textSecondary)
             }
             .padding()
             .background(.regularMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
         }
         .buttonStyle(.plain)
     }
@@ -436,7 +436,7 @@ struct E2EESetupView: View {
     
     private var passwordSetupView: some View {
         ScrollView {
-            VStack(spacing: 24) {
+            VStack(spacing: OneraSpacing.xxl) {
                 // Back button
                 Button {
                     viewModel.backToOptions()
@@ -446,29 +446,29 @@ struct E2EESetupView: View {
                         Text("Back to options")
                     }
                 }
-                .font(.callout)
+                .font(OneraTypography.callout)
                 
                 // Header
-                VStack(spacing: 12) {
+                VStack(spacing: OneraSpacing.md) {
                     Image(systemName: "key.fill")
                         .font(.system(size: 48))
-                        .foregroundStyle(.tint)
+                        .foregroundStyle(OneraColors.tint)
                     
                     Text("Set Encryption Password")
-                        .font(.title2.bold())
+                        .font(OneraTypography.title2.bold())
                     
                     Text("This password will unlock your encrypted data. Choose something strong and memorable.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(OneraTypography.subheadline)
+                        .foregroundStyle(OneraColors.textSecondary)
                         .multilineTextAlignment(.center)
                 }
                 
                 // Password fields
-                VStack(alignment: .leading, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: OneraSpacing.lg) {
+                    VStack(alignment: .leading, spacing: OneraSpacing.sm) {
                         Text("Password")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(OneraTypography.subheadline)
+                            .foregroundStyle(OneraColors.textSecondary)
                         
                         HStack {
                             if viewModel.showPassword {
@@ -481,49 +481,49 @@ struct E2EESetupView: View {
                                 viewModel.togglePasswordVisibility()
                             } label: {
                                 Image(systemName: viewModel.showPassword ? "eye.slash" : "eye")
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(OneraColors.textSecondary)
                             }
                         }
                         .padding()
                         .background(.regularMaterial)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
                         .focused($passwordFieldFocused)
                         
                         if !viewModel.passwordLengthValid {
                             Text("Password must be at least 8 characters")
-                                .font(.caption)
-                                .foregroundStyle(.red)
+                                .font(OneraTypography.caption)
+                                .foregroundStyle(OneraColors.destructive)
                         }
                     }
                     
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: OneraSpacing.sm) {
                         Text("Confirm Password")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(OneraTypography.subheadline)
+                            .foregroundStyle(OneraColors.textSecondary)
                         
                         if viewModel.showPassword {
                             TextField("Confirm your password", text: $viewModel.confirmPassword)
                                 .padding()
                                 .background(.regularMaterial)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
                         } else {
                             SecureField("Confirm your password", text: $viewModel.confirmPassword)
                                 .padding()
                                 .background(.regularMaterial)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
                         }
                         
                         if !viewModel.passwordsMatch {
                             Text("Passwords do not match")
-                                .font(.caption)
-                                .foregroundStyle(.red)
+                                .font(OneraTypography.caption)
+                                .foregroundStyle(OneraColors.destructive)
                         }
                     }
                 }
                 
                 Text("This is separate from your account password. Use at least 8 characters.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(OneraTypography.caption)
+                    .foregroundStyle(OneraColors.textSecondary)
                 
                 Button {
                     Task { await viewModel.setupPassword() }
@@ -538,10 +538,10 @@ struct E2EESetupView: View {
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 4)
+                    .padding(.vertical, OneraSpacing.xxs)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(Color(.systemGray))
+                .tint(OneraColors.Gray.gray)
                 .foregroundStyle(.white)
                 .controlSize(.large)
                 .disabled(!viewModel.canSetupPassword)
@@ -563,7 +563,7 @@ struct E2EESetupView: View {
                 Task { await viewModel.retry() }
             }
             .buttonStyle(.borderedProminent)
-            .tint(Color(.systemGray))
+            .tint(OneraColors.Gray.gray)
             .foregroundStyle(.white)
         }
     }
@@ -592,24 +592,24 @@ struct RecoveryPhraseGrid: View {
     var body: some View {
         LazyVGrid(
             columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())],
-            spacing: 12
+            spacing: OneraSpacing.md
         ) {
             ForEach(Array(words.enumerated()), id: \.offset) { index, word in
                 HStack {
                     Text("\(index + 1).")
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
+                        .font(OneraTypography.monoDigit)
+                        .foregroundStyle(OneraColors.textSecondary)
                         .frame(width: 24, alignment: .trailing)
                     
                     Text(word)
-                        .font(.body.monospaced())
+                        .font(OneraTypography.body.monospaced())
                     
                     Spacer()
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
-                .background(.background)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .padding(.horizontal, OneraSpacing.sm)
+                .padding(.vertical, OneraSpacing.xs)
+                .background(OneraColors.background)
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.small))
             }
         }
     }
@@ -621,17 +621,17 @@ struct WarningBanner: View {
     let text: String
     
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: OneraSpacing.md) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.orange)
+                .foregroundStyle(OneraColors.warning)
             
             Text(text)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(OneraTypography.caption)
+                .foregroundStyle(OneraColors.textSecondary)
         }
         .padding()
-        .background(.orange.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .background(OneraColors.warning.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
     }
 }
 

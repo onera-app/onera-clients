@@ -42,7 +42,7 @@ struct SidebarDrawerView: View {
     
     var body: some View {
         drawerContent
-            .background(Color(.systemBackground))
+            .background(OneraColors.background)
     }
     
     // MARK: - Drawer Content
@@ -51,15 +51,15 @@ struct SidebarDrawerView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Search bar
             searchBar
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
-                .padding(.bottom, 12)
+                .padding(.horizontal, OneraSpacing.lg)
+                .padding(.top, OneraSpacing.lg)
+                .padding(.bottom, OneraSpacing.md)
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     // Navigation items
                     navigationItems
-                        .padding(.bottom, 24)
+                        .padding(.bottom, OneraSpacing.xxl)
                     
                     // Chat history
                     chatHistoryList
@@ -74,16 +74,16 @@ struct SidebarDrawerView: View {
     // MARK: - Search Bar
     
     private var searchBar: some View {
-        HStack(alignment: .center, spacing: 10) {
+        HStack(alignment: .center, spacing: OneraSpacing.compact) {
             // Search field pill with liquid glass effect
-            HStack(spacing: 10) {
+            HStack(spacing: OneraSpacing.compact) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .font(OneraTypography.iconLabel)
+                    .foregroundStyle(OneraColors.textSecondary)
                 
-                TextField("", text: $searchText, prompt: Text("Search").foregroundStyle(.secondary))
-                    .font(.body)
-                    .foregroundStyle(.primary)
+                TextField("", text: $searchText, prompt: Text("Search").foregroundStyle(OneraColors.textSecondary))
+                    .font(OneraTypography.body)
+                    .foregroundStyle(OneraColors.textPrimary)
                     .accessibilityIdentifier("searchField")
                 
                 if !searchText.isEmpty {
@@ -91,28 +91,13 @@ struct SidebarDrawerView: View {
                         searchText = ""
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(OneraColors.textSecondary)
                     }
                 }
             }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 14)
-            .background(
-                Capsule()
-                    .fill(.ultraThinMaterial)
-                    .shadow(color: .black.opacity(0.08), radius: 6, x: 0, y: 2)
-            )
-            .overlay(
-                Capsule()
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: [.white.opacity(0.35), .white.opacity(0.1)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ),
-                        lineWidth: 0.5
-                    )
-            )
+            .padding(.vertical, OneraSpacing.compact)
+            .padding(.horizontal, OneraSpacing.comfortable)
+            .glassEffect()
             
             // New chat button with liquid glass effect
             Button {
@@ -120,25 +105,10 @@ struct SidebarDrawerView: View {
                 withAnimation { isOpen = false }
             } label: {
                 Image(systemName: "square.and.pencil")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(.primary)
+                    .font(OneraTypography.iconLarge)
+                    .foregroundStyle(OneraColors.textPrimary)
                     .frame(width: 42, height: 42)
-                    .background(
-                        Circle()
-                            .fill(.ultraThinMaterial)
-                            .shadow(color: .black.opacity(0.08), radius: 6, x: 0, y: 2)
-                    )
-                    .overlay(
-                        Circle()
-                            .strokeBorder(
-                                LinearGradient(
-                                    colors: [.white.opacity(0.35), .white.opacity(0.1)],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                ),
-                                lineWidth: 0.5
-                            )
-                    )
+                    .glassCircle()
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("newChatButton")
@@ -148,7 +118,7 @@ struct SidebarDrawerView: View {
     // MARK: - Navigation Items
     
     private var navigationItems: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: OneraSpacing.xxs) {
             // Notes
             NavigationItemRow(
                 icon: "note.text",
@@ -163,36 +133,36 @@ struct SidebarDrawerView: View {
             VStack(spacing: 0) {
                 // Folders header row
                 Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    withAnimation(OneraAnimation.springQuick) {
                         showingFolders.toggle()
                     }
                 } label: {
-                    HStack(spacing: 12) {
+                    HStack(spacing: OneraSpacing.iconTextGap) {
                         Image(systemName: "folder")
                             .font(.system(size: 16))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(OneraColors.textSecondary)
                         
                         Text("Folders")
-                            .font(.body)
+                            .font(OneraTypography.body)
                         
                         Spacer()
                         
                         Image(systemName: "chevron.right")
                             .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(OneraColors.textSecondary)
                             .rotationEffect(.degrees(showingFolders ? 90 : 0))
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, OneraSpacing.md)
+                    .padding(.vertical, OneraSpacing.compact)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(showingFolders ? Color(.secondarySystemBackground).opacity(0.5) : Color.clear)
+                        RoundedRectangle(cornerRadius: OneraRadius.medium)
+                            .fill(showingFolders ? OneraColors.secondaryBackground.opacity(0.5) : Color.clear)
                     )
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(.primary)
+                .foregroundStyle(OneraColors.textPrimary)
                 .accessibilityIdentifier("foldersSection")
                 
                 // Expanded folder tree
@@ -207,8 +177,8 @@ struct SidebarDrawerView: View {
                             },
                             showAllOption: false
                         )
-                        .padding(.leading, 24)
-                        .padding(.top, 4)
+                        .padding(.leading, OneraSpacing.xxl)
+                        .padding(.top, OneraSpacing.xxs)
                         .transition(.asymmetric(
                             insertion: .opacity.combined(with: .move(edge: .top)),
                             removal: .opacity
@@ -217,7 +187,7 @@ struct SidebarDrawerView: View {
                 }
             }
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, OneraSpacing.sm)
     }
     
     // MARK: - Chat History
@@ -262,70 +232,70 @@ struct SidebarDrawerView: View {
     
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(.caption)
+            .font(OneraTypography.caption)
             .fontWeight(.semibold)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(OneraColors.textSecondary)
             .textCase(.uppercase)
-            .padding(.horizontal, 20)
-            .padding(.top, 20)
-            .padding(.bottom, 8)
+            .padding(.horizontal, OneraSpacing.xl)
+            .padding(.top, OneraSpacing.xl)
+            .padding(.bottom, OneraSpacing.sm)
     }
     
     private var loadingView: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: OneraSpacing.md) {
             ProgressView()
             Text("Loading chats...")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(OneraTypography.subheadline)
+                .foregroundStyle(OneraColors.textSecondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
+        .padding(.vertical, OneraSpacing.max)
     }
     
     private func errorView(_ error: Error) -> some View {
-        VStack(spacing: 12) {
+        VStack(spacing: OneraSpacing.md) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.title)
-                .foregroundStyle(.orange)
+                .font(OneraTypography.title)
+                .foregroundStyle(OneraColors.warning)
             
             Text("Failed to load chats")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(OneraTypography.subheadline)
+                .foregroundStyle(OneraColors.textSecondary)
             
             Text(error.localizedDescription)
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+                .font(OneraTypography.caption)
+                .foregroundStyle(OneraColors.textTertiary)
                 .multilineTextAlignment(.center)
             
             Button {
                 Task { await onRefresh() }
             } label: {
                 Text("Retry")
-                    .font(.subheadline.weight(.medium))
+                    .font(OneraTypography.subheadline.weight(.medium))
             }
             .buttonStyle(.bordered)
         }
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 40)
+        .padding(.horizontal, OneraSpacing.lg)
+        .padding(.vertical, OneraSpacing.max)
     }
     
     private var emptyStateView: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: OneraSpacing.md) {
             Image(systemName: "bubble.left.and.bubble.right")
-                .font(.title)
-                .foregroundStyle(.secondary)
+                .font(OneraTypography.title)
+                .foregroundStyle(OneraColors.textSecondary)
             
             Text("No chats yet")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(OneraTypography.subheadline)
+                .foregroundStyle(OneraColors.textSecondary)
             
             Text("Start a new conversation")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+                .font(OneraTypography.caption)
+                .foregroundStyle(OneraColors.textTertiary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
+        .padding(.vertical, OneraSpacing.max)
     }
     
     // MARK: - Footer
@@ -334,49 +304,34 @@ struct SidebarDrawerView: View {
         Button {
             onOpenSettings()
         } label: {
-            HStack(spacing: 10) {
+            HStack(spacing: OneraSpacing.compact) {
                 if let user = user {
                     userAvatar(user)
                 } else {
                     Image(systemName: "person.circle.fill")
                         .font(.system(size: 28))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(OneraColors.textSecondary)
                 }
                 
                 // Show only first name
                 Text(user?.firstName ?? "Sign In")
-                    .font(.subheadline)
+                    .font(OneraTypography.subheadline)
                     .fontWeight(.medium)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(OneraColors.textPrimary)
                 
                 // Settings indicator
                 Image(systemName: "chevron.right")
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(OneraColors.textTertiary)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(
-                Capsule()
-                    .fill(.ultraThinMaterial)
-                    .shadow(color: .black.opacity(0.08), radius: 6, x: 0, y: 2)
-            )
-            .overlay(
-                Capsule()
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: [.white.opacity(0.35), .white.opacity(0.1)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ),
-                        lineWidth: 0.5
-                    )
-            )
+            .padding(.horizontal, OneraSpacing.comfortable)
+            .padding(.vertical, OneraSpacing.compact)
+            .glassEffect()
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, OneraSpacing.lg)
+        .padding(.vertical, OneraSpacing.md)
         .accessibilityIdentifier("settingsButton")
     }
     
@@ -386,14 +341,14 @@ struct SidebarDrawerView: View {
                 AsyncImage(url: imageURL) { image in
                     image.resizable().scaledToFill()
                 } placeholder: {
-                    Color(.systemGray3)
+                    OneraColors.Gray.gray3
                 }
             } else {
-                Color(.systemGray3)
+                OneraColors.Gray.gray3
                 Text(user.initials)
-                    .font(.caption)
+                    .font(OneraTypography.caption)
                     .fontWeight(.bold)
-                    .foregroundStyle(Color(.systemBackground))
+                    .foregroundStyle(OneraColors.background)
             }
         }
         .frame(width: 32, height: 32)
@@ -412,28 +367,28 @@ private struct NavigationItemRow: View {
     
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
+            HStack(spacing: OneraSpacing.iconTextGap) {
                 Image(systemName: icon)
                     .font(.system(size: 16))
-                    .foregroundStyle(isSelected ? .primary : .secondary)
+                    .foregroundStyle(isSelected ? OneraColors.textPrimary : OneraColors.textSecondary)
                 
                 Text(title)
-                    .font(.body)
+                    .font(OneraTypography.body)
                     .fontWeight(isSelected ? .medium : .regular)
                 
                 Spacer()
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
+            .padding(.horizontal, OneraSpacing.md)
+            .padding(.vertical, OneraSpacing.compact)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? Color(.secondarySystemBackground) : Color.clear)
+                RoundedRectangle(cornerRadius: OneraRadius.medium)
+                    .fill(isSelected ? OneraColors.secondaryBackground : Color.clear)
             )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.primary)
+        .foregroundStyle(OneraColors.textPrimary)
         .accessibilityIdentifier(accessibilityId ?? title.lowercased())
     }
 }
@@ -450,25 +405,25 @@ private struct ChatHistoryRow: View {
     
     var body: some View {
         Button(action: onSelect) {
-            HStack(spacing: 12) {
+            HStack(spacing: OneraSpacing.iconTextGap) {
                 Text(chat.title)
-                    .font(.body)
+                    .font(OneraTypography.body)
                     .lineLimit(1)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(OneraColors.textPrimary)
                 
                 Spacer()
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
+            .padding(.horizontal, OneraSpacing.md)
+            .padding(.vertical, OneraSpacing.compact)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? Color(.secondarySystemBackground) : Color.clear)
+                RoundedRectangle(cornerRadius: OneraRadius.medium)
+                    .fill(isSelected ? OneraColors.secondaryBackground : Color.clear)
             )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, 8)
+        .padding(.horizontal, OneraSpacing.sm)
         .accessibilityIdentifier("chatRow_\(chat.id)")
         .contextMenu {
             Button(role: .destructive) {

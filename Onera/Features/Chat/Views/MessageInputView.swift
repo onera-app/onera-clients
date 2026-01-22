@@ -39,75 +39,60 @@ struct MessageInputView: View {
             // Recording indicator (floats above the main input)
             if isRecording {
                 recordingIndicator
-                    .padding(.bottom, 8)
+                    .padding(.bottom, OneraSpacing.sm)
             }
             
             // Attachment previews if any (floats above the main input)
             if !attachments.isEmpty {
                 attachmentPreviews
-                    .padding(.bottom, 8)
+                    .padding(.bottom, OneraSpacing.sm)
             }
             
             // Each element floats independently with glass effect
-            HStack(spacing: 8) {
+            HStack(spacing: OneraSpacing.sm) {
                 // Plus Button - floating glass pill
                 attachmentButton
                 
                 // Input Field - floating glass pill
-                HStack(spacing: 8) {
-                    TextField("", text: $text, prompt: Text("Ask anything").foregroundStyle(.secondary))
-                        .font(.body)
-                        .foregroundStyle(.primary)
-                        .tint(.primary)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
+                HStack(spacing: OneraSpacing.sm) {
+                    TextField("", text: $text, prompt: Text("Ask anything").foregroundStyle(OneraColors.textSecondary))
+                        .font(OneraTypography.body)
+                        .foregroundStyle(OneraColors.textPrimary)
+                        .tint(OneraColors.textPrimary)
+                        .padding(.horizontal, OneraSpacing.lg)
+                        .padding(.vertical, OneraSpacing.md)
                         .accessibilityIdentifier("messageInput")
                     
                     if text.isEmpty && !isRecording {
                         // Placeholder action icon
                         Image(systemName: "waveform")
-                            .font(.system(size: 18))
-                            .foregroundStyle(.secondary)
-                            .padding(.trailing, 12)
+                            .font(OneraTypography.iconLarge)
+                            .foregroundStyle(OneraColors.textSecondary)
+                            .padding(.trailing, OneraSpacing.md)
                     } else if !text.isEmpty {
                         // Send button when text present
                         Button(action: onSend) {
                             Image(systemName: "arrow.up")
                                 .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(.systemBackground))
+                                .foregroundStyle(OneraColors.background)
                                 .frame(width: 30, height: 30)
-                                .background(Color.primary)
+                                .background(OneraColors.textPrimary)
                                 .clipShape(Circle())
                         }
-                        .padding(.trailing, 6)
+                        .padding(.trailing, OneraSpacing.xs)
                         .disabled(!canSend || isSending)
                         .accessibilityIdentifier("sendButton")
                     }
                 }
-                .background(
-                    Capsule()
-                        .fill(.ultraThinMaterial)
-                        .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 2)
-                )
-                .overlay(
-                    Capsule()
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [.white.opacity(0.4), .white.opacity(0.1)],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            ),
-                            lineWidth: 0.5
-                        )
-                )
+                .glassEffect()
                 
                 // Mic Button - floating glass circle
                 if text.isEmpty || isRecording {
                     micButton
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.horizontal, OneraSpacing.lg)
+            .padding(.vertical, OneraSpacing.md)
         }
         .onChange(of: selectedPhotos) { _, newPhotos in
             Task {
@@ -128,26 +113,11 @@ struct MessageInputView: View {
             generator.impactOccurred()
             showingAttachmentOptions = true
         } label: {
-            ZStack {
-                Circle()
-                    .fill(.ultraThinMaterial)
-                    .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 2)
-                
-                Circle()
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: [.white.opacity(0.4), .white.opacity(0.1)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ),
-                        lineWidth: 0.5
-                    )
-                
-                Image(systemName: "plus")
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(.primary)
-            }
-            .frame(width: 44, height: 44)
+            Image(systemName: "plus")
+                .font(OneraTypography.iconXLarge)
+                .foregroundStyle(OneraColors.textPrimary)
+                .frame(width: 44, height: 44)
+                .glassCircle()
         }
         .confirmationDialog("Add Attachment", isPresented: $showingAttachmentOptions, titleVisibility: .visible) {
             Button("Take Photo") {
@@ -268,38 +238,38 @@ struct MessageInputView: View {
     // MARK: - Recording Indicator
     
     private var recordingIndicator: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: OneraSpacing.sm) {
             Circle()
-                .fill(.red)
+                .fill(OneraColors.recording)
                 .frame(width: 8, height: 8)
                 .modifier(PulsingModifier())
             
             Text("Recording...")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(OneraTypography.caption)
+                .foregroundStyle(OneraColors.textSecondary)
             
             Spacer()
             
             Button("Done") {
                 onStopRecording?()
             }
-            .font(.caption.bold())
-            .foregroundStyle(.primary)
+            .font(OneraTypography.caption.bold())
+            .foregroundStyle(OneraColors.textPrimary)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.horizontal, OneraSpacing.lg)
+        .padding(.vertical, OneraSpacing.compact)
         .background(
             Capsule()
                 .fill(.ultraThinMaterial)
         )
-        .padding(.horizontal, 12)
+        .padding(.horizontal, OneraSpacing.md)
     }
     
     // MARK: - Attachment Previews
     
     private var attachmentPreviews: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            HStack(spacing: OneraSpacing.sm) {
                 ForEach(attachments) { attachment in
                     AttachmentPreviewItem(attachment: attachment) {
                         // Remove attachment
@@ -307,14 +277,14 @@ struct MessageInputView: View {
                     }
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
+            .padding(.horizontal, OneraSpacing.lg)
+            .padding(.vertical, OneraSpacing.compact)
         }
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: OneraRadius.large, style: .continuous)
                 .fill(.ultraThinMaterial)
         )
-        .padding(.horizontal, 12)
+        .padding(.horizontal, OneraSpacing.md)
     }
     
     // MARK: - Mic Button
@@ -328,28 +298,13 @@ struct MessageInputView: View {
             }
         } label: {
             Image(systemName: isRecording ? "stop.fill" : "mic.fill")
-                .font(.system(size: 18, weight: .medium))
-                .foregroundStyle(isRecording ? .red : .primary)
+                .font(OneraTypography.iconLarge)
+                .foregroundStyle(isRecording ? OneraColors.recording : OneraColors.textPrimary)
                 .frame(width: 44, height: 44)
-                .background(
-                    Circle()
-                        .fill(.ultraThinMaterial)
-                        .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 2)
-                )
-                .overlay(
-                    Circle()
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [.white.opacity(0.4), .white.opacity(0.1)],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            ),
-                            lineWidth: 0.5
-                        )
-                )
+                .glassCircle()
         }
         .buttonStyle(.plain)
-        .animation(.easeInOut(duration: 0.2), value: isRecording)
+        .animation(OneraAnimation.fast, value: isRecording)
     }
 }
 
@@ -376,12 +331,12 @@ private struct AttachmentPreviewItem: View {
                 }
             }
             .frame(width: 60, height: 60)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
             
             // Remove button
             Button(action: onRemove) {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 18))
+                    .font(OneraTypography.iconLarge)
                     .foregroundStyle(.white)
                     .background(Circle().fill(.black.opacity(0.6)))
             }
@@ -391,25 +346,25 @@ private struct AttachmentPreviewItem: View {
     
     private var placeholder: some View {
         Rectangle()
-            .fill(Color(.systemGray4))
+            .fill(OneraColors.Gray.gray4)
             .overlay {
                 Image(systemName: "photo")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(OneraColors.textSecondary)
             }
     }
     
     private var filePreview: some View {
         Rectangle()
-            .fill(Color(.systemGray5))
+            .fill(OneraColors.Gray.gray5)
             .overlay {
-                VStack(spacing: 4) {
+                VStack(spacing: OneraSpacing.xxs) {
                     Image(systemName: "doc.fill")
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
+                        .font(OneraTypography.title3)
+                        .foregroundStyle(OneraColors.textSecondary)
                     Text(attachment.fileName ?? "File")
-                        .font(.caption2)
+                        .font(OneraTypography.caption2)
                         .lineLimit(1)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(OneraColors.textSecondary)
                 }
             }
     }
@@ -424,7 +379,7 @@ private struct PulsingModifier: ViewModifier {
         content
             .opacity(isPulsing ? 0.4 : 1.0)
             .onAppear {
-                withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                withAnimation(OneraAnimation.pulse) {
                     isPulsing = true
                 }
             }

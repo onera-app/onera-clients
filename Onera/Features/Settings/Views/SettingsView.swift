@@ -40,10 +40,10 @@ struct SettingsView: View {
                         dismiss()
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(.primary)
+                            .font(OneraTypography.iconLabel)
+                            .foregroundStyle(OneraColors.textPrimary)
                             .frame(width: 30, height: 30)
-                            .background(Color(.secondarySystemBackground))
+                            .background(OneraColors.secondaryBackground)
                             .clipShape(Circle())
                     }
                 }
@@ -77,7 +77,7 @@ struct SettingsView: View {
     
     private var profileHeaderSection: some View {
         Section {
-            VStack(spacing: 16) {
+            VStack(spacing: OneraSpacing.lg) {
                 // Large Avatar
                 if let user = viewModel.user {
                     ZStack {
@@ -85,12 +85,12 @@ struct SettingsView: View {
                             AsyncImage(url: imageURL) { image in
                                 image.resizable().scaledToFill()
                             } placeholder: {
-                                Color(.systemGray4)
+                                OneraColors.Gray.gray4
                             }
                         } else {
-                            Color(.systemGray4)
+                            OneraColors.Gray.gray4
                             Text(user.initials)
-                                .font(.system(size: 32, weight: .semibold))
+                                .font(OneraTypography.displayLarge)
                                 .foregroundStyle(.white)
                         }
                     }
@@ -99,37 +99,37 @@ struct SettingsView: View {
                     
                     // Display Name
                     Text(user.displayName)
-                        .font(.title2.bold())
+                        .font(OneraTypography.title2.bold())
                     
                     // Username/Email
                     Text(user.email)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(OneraTypography.subheadline)
+                        .foregroundStyle(OneraColors.textSecondary)
                     
                     // Edit Profile Button
                     Button {
                         // Edit profile action
                     } label: {
                         Text("Edit profile")
-                            .font(.subheadline)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 8)
-                            .background(Color(.secondarySystemBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 20))
+                            .font(OneraTypography.subheadline)
+                            .padding(.horizontal, OneraSpacing.xl)
+                            .padding(.vertical, OneraSpacing.sm)
+                            .background(OneraColors.secondaryBackground)
+                            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.bubble))
                     }
                     .buttonStyle(.plain)
                 } else {
                     // No user state
                     Image(systemName: "person.circle.fill")
                         .font(.system(size: 80))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(OneraColors.textSecondary)
                     
                     Text("Not signed in")
-                        .font(.title2.bold())
+                        .font(OneraTypography.title2.bold())
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
+            .padding(.vertical, OneraSpacing.lg)
         }
         .listRowBackground(Color.clear)
     }
@@ -143,7 +143,7 @@ struct SettingsView: View {
                     Label("Email", systemImage: "envelope")
                     Spacer()
                     Text(user.email)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(OneraColors.textSecondary)
                 }
             }
         }
@@ -157,7 +157,7 @@ struct SettingsView: View {
                 Label("End-to-End Encryption", systemImage: "lock.shield.fill")
                 Spacer()
                 Text(viewModel.isSessionUnlocked ? "Active" : "Locked")
-                    .foregroundStyle(viewModel.isSessionUnlocked ? .green : .orange)
+                    .foregroundStyle(viewModel.isSessionUnlocked ? OneraColors.success : OneraColors.warning)
             }
             
             Button {
@@ -167,8 +167,8 @@ struct SettingsView: View {
                     Label("View Recovery Phrase", systemImage: "key.fill")
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(OneraTypography.caption)
+                        .foregroundStyle(OneraColors.textSecondary)
                 }
             }
             .disabled(!viewModel.isSessionUnlocked)
@@ -182,8 +182,8 @@ struct SettingsView: View {
                         Label("Lock Session", systemImage: "lock.fill")
                         Spacer()
                         Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(OneraTypography.caption)
+                            .foregroundStyle(OneraColors.textSecondary)
                     }
                 }
             }
@@ -220,8 +220,8 @@ struct SettingsView: View {
                     Label("Privacy Policy", systemImage: "hand.raised")
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(OneraTypography.caption)
+                        .foregroundStyle(OneraColors.textSecondary)
                 }
             }
             
@@ -230,8 +230,8 @@ struct SettingsView: View {
                     Label("Terms of Service", systemImage: "doc.text")
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(OneraTypography.caption)
+                        .foregroundStyle(OneraColors.textSecondary)
                 }
             }
         }
@@ -254,8 +254,8 @@ struct SettingsView: View {
                     Label("Help Center", systemImage: "questionmark.circle")
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(OneraTypography.caption)
+                        .foregroundStyle(OneraColors.textSecondary)
                 }
             }
             
@@ -263,7 +263,7 @@ struct SettingsView: View {
                 Label("Version", systemImage: "info.circle")
                 Spacer()
                 Text(Bundle.main.fullVersionString)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(OneraColors.textSecondary)
             }
         }
     }
@@ -324,14 +324,14 @@ struct RecoveryPhraseDisplayView: View {
     
     private func phraseView(_ phrase: String) -> some View {
         ScrollView {
-            VStack(spacing: 24) {
+            VStack(spacing: OneraSpacing.xxl) {
                 Text("Your Recovery Phrase")
-                    .font(.title2.bold())
+                    .font(OneraTypography.title2.bold())
                 
                 RecoveryPhraseGrid(phrase: phrase)
                     .padding()
                     .background(.regularMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.large))
                 
                 Button {
                     UIPasteboard.general.string = phrase
@@ -342,8 +342,8 @@ struct RecoveryPhraseDisplayView: View {
                 .buttonStyle(.bordered)
                 
                 Text("Keep this phrase secure. Never share it with anyone.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(OneraTypography.caption)
+                    .foregroundStyle(OneraColors.textSecondary)
             }
             .padding()
         }
@@ -366,21 +366,21 @@ struct DeviceManagementView: View {
             Section("Current Device") {
                 HStack {
                     Image(systemName: "iphone")
-                        .font(.title2)
+                        .font(OneraTypography.title2)
                     
                     VStack(alignment: .leading) {
                         Text(UIDevice.current.name)
-                            .font(.headline)
+                            .font(OneraTypography.headline)
                         Text("This device")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(OneraTypography.caption)
+                            .foregroundStyle(OneraColors.textSecondary)
                     }
                 }
             }
             
             Section("Other Devices") {
                 Text("No other devices")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(OneraColors.textSecondary)
             }
         }
         .navigationTitle("Devices")

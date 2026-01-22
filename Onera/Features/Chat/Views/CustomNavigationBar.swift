@@ -22,28 +22,13 @@ struct CustomNavigationBar: View {
                 onMenuTap()
             } label: {
                 Image(systemName: "line.3.horizontal")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(.primary)
+                    .font(OneraTypography.iconLabel)
+                    .foregroundStyle(OneraColors.textPrimary)
                     .frame(width: 40, height: 40)
-                    .background(
-                        Circle()
-                            .fill(.ultraThinMaterial)
-                            .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 2)
-                    )
-                    .overlay(
-                        Circle()
-                            .strokeBorder(
-                                LinearGradient(
-                                    colors: [.white.opacity(0.4), .white.opacity(0.1)],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                ),
-                                lineWidth: 0.5
-                            )
-                    )
+                    .glassCircle()
             }
             .buttonStyle(.plain)
-            .padding(.leading, 16)
+            .padding(.leading, OneraSpacing.lg)
             
             Spacer()
             
@@ -57,31 +42,16 @@ struct CustomNavigationBar: View {
                 onNewConversation()
             } label: {
                 Image(systemName: "square.and.pencil")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(.primary)
+                    .font(OneraTypography.iconLabel)
+                    .foregroundStyle(OneraColors.textPrimary)
                     .frame(width: 40, height: 40)
-                    .background(
-                        Circle()
-                            .fill(.ultraThinMaterial)
-                            .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 2)
-                    )
-                    .overlay(
-                        Circle()
-                            .strokeBorder(
-                                LinearGradient(
-                                    colors: [.white.opacity(0.4), .white.opacity(0.1)],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                ),
-                                lineWidth: 0.5
-                            )
-                    )
+                    .glassCircle()
             }
             .buttonStyle(.plain)
-            .padding(.trailing, 16)
+            .padding(.trailing, OneraSpacing.lg)
         }
-        .padding(.top, 8)
-        .padding(.bottom, 4)
+        .padding(.top, OneraSpacing.sm)
+        .padding(.bottom, OneraSpacing.xxs)
         .frame(height: 56)
         .background(Color.clear)
     }
@@ -114,23 +84,23 @@ struct CustomNavigationBar: View {
                 }
             }
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: OneraSpacing.xs) {
                 if modelSelector.isLoading {
                     ProgressView()
                         .scaleEffect(0.7)
                 }
                 
                 Text(modelSelector.selectedModel?.displayName ?? "Select Model")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.primary)
+                    .font(OneraTypography.navTitle)
+                    .foregroundStyle(OneraColors.textPrimary)
                     .lineLimit(1)
                 
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(OneraColors.textSecondary)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
+            .padding(.horizontal, OneraSpacing.comfortable)
+            .padding(.vertical, OneraSpacing.sm)
         }
         .menuStyle(.borderlessButton)
         .background(.clear)

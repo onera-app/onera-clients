@@ -70,7 +70,7 @@ struct MessageBubbleView: View {
                 userMessageView
             } else {
                 // Assistant message - full width, no bubble (ChatGPT style)
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: OneraSpacing.sm) {
                     // Reasoning view (if available from SDK events or parsed from content)
                     if hasAnyReasoning {
                         ReasoningView(
@@ -105,7 +105,7 @@ struct MessageBubbleView: View {
     // MARK: - Branch Navigation View
     
     private func branchNavigationView(current: Int, total: Int) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: OneraSpacing.xxs) {
             // Previous button
             Button {
                 let generator = UIImpactFeedbackGenerator(style: .light)
@@ -124,8 +124,8 @@ struct MessageBubbleView: View {
             
             // Count display
             Text("\(current)/\(total)")
-                .font(.system(size: 12, weight: .medium, design: .monospaced))
-                .foregroundStyle(.secondary)
+                .font(OneraTypography.monoSmall.weight(.medium))
+                .foregroundStyle(OneraColors.textSecondary)
                 .accessibilityIdentifier("branchCount")
             
             // Next button
@@ -144,8 +144,8 @@ struct MessageBubbleView: View {
             .opacity(current < total ? 1 : 0.3)
             .accessibilityIdentifier("branchNext")
         }
-        .foregroundStyle(Color(.systemGray))
-        .padding(.leading, 8)
+        .foregroundStyle(OneraColors.Gray.gray)
+        .padding(.leading, OneraSpacing.sm)
     }
     
     // MARK: - Thinking Tag Parser
@@ -224,50 +224,50 @@ struct MessageBubbleView: View {
     private var userMessageView: some View {
         if isEditing {
             // Editing mode
-            VStack(alignment: .trailing, spacing: 8) {
+            VStack(alignment: .trailing, spacing: OneraSpacing.sm) {
                 HStack {
                     Spacer(minLength: 40)
                     
                     TextField("Edit message", text: $editText, axis: .vertical)
                         .textFieldStyle(.plain)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .background(Color(.systemGray5))
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                        .padding(.horizontal, OneraSpacing.lg)
+                        .padding(.vertical, OneraSpacing.md)
+                        .background(OneraColors.Gray.gray5)
+                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.bubble))
                         .focused($isEditFocused)
                 }
                 
-                HStack(spacing: 12) {
+                HStack(spacing: OneraSpacing.md) {
                     Button("Cancel") {
                         cancelEdit()
                     }
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(OneraColors.textSecondary)
                     
                     Button("Save") {
                         saveEdit(regenerate: false)
                     }
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(OneraColors.textPrimary)
                     
                     Button("Send") {
                         saveEdit(regenerate: true)
                     }
                     .fontWeight(.semibold)
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(OneraColors.info)
                 }
-                .font(.subheadline)
+                .font(OneraTypography.subheadline)
             }
         } else {
             // Normal display mode
             HStack(alignment: .top) {
                 Spacer(minLength: 60)
                 
-                VStack(alignment: .trailing, spacing: 4) {
+                VStack(alignment: .trailing, spacing: OneraSpacing.xxs) {
                     Text(message.content)
-                        .foregroundStyle(.primary)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .background(Color(.systemGray5))
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                        .foregroundStyle(OneraColors.textPrimary)
+                        .padding(.horizontal, OneraSpacing.lg)
+                        .padding(.vertical, OneraSpacing.md)
+                        .background(OneraColors.Gray.gray5)
+                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.bubble))
                         .textSelection(.enabled)
                         .contextMenu {
                             Button {
@@ -290,9 +290,9 @@ struct MessageBubbleView: View {
                     // Edited indicator
                     if message.edited == true {
                         Text("Edited")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .padding(.trailing, 8)
+                            .font(OneraTypography.caption2)
+                            .foregroundStyle(OneraColors.textSecondary)
+                            .padding(.trailing, OneraSpacing.sm)
                     }
                 }
             }
@@ -326,7 +326,7 @@ struct MessageBubbleView: View {
     // MARK: - Subviews
     
     private var assistantActionButtons: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: OneraSpacing.sm) {
             // Copy button with feedback
             copyButton
             
@@ -343,8 +343,8 @@ struct MessageBubbleView: View {
             Spacer()
         }
         .frame(minHeight: 44)
-        .padding(.top, 8)
-        .padding(.bottom, 4)
+        .padding(.top, OneraSpacing.sm)
+        .padding(.bottom, OneraSpacing.xxs)
         .contentShape(Rectangle())
         .zIndex(1)
     }
@@ -352,12 +352,12 @@ struct MessageBubbleView: View {
     private var copyButton: some View {
         Button(action: doCopy) {
             Image(systemName: showCopiedFeedback ? "checkmark" : "doc.on.doc")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(showCopiedFeedback ? .green : .secondary)
+                .font(OneraTypography.iconLabel)
+                .foregroundStyle(showCopiedFeedback ? OneraColors.success : OneraColors.textSecondary)
                 .frame(width: 36, height: 36)
-                .background(showCopiedFeedback ? Color.green.opacity(0.15) : Color(.systemGray6))
+                .background(showCopiedFeedback ? OneraColors.success.opacity(0.15) : OneraColors.Gray.gray6)
                 .clipShape(Circle())
-                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showCopiedFeedback)
+                .animation(OneraAnimation.springBouncy, value: showCopiedFeedback)
         }
         .buttonStyle(ActionButtonStyle())
         .contentShape(Circle())
@@ -373,13 +373,13 @@ struct MessageBubbleView: View {
         generator.notificationOccurred(.success)
         
         // Show visual feedback
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+        withAnimation(OneraAnimation.springBouncy) {
             showCopiedFeedback = true
         }
         
         // Auto-dismiss after 2 seconds
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            withAnimation(.easeInOut(duration: 0.3)) {
+            withAnimation(OneraAnimation.standard) {
                 showCopiedFeedback = false
             }
         }
@@ -388,13 +388,13 @@ struct MessageBubbleView: View {
     private var regenerateButton: some View {
         Button(action: doRegenerate) {
             Image(systemName: "arrow.clockwise")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(isRegenerating ? .blue : .secondary)
+                .font(OneraTypography.iconLabel)
+                .foregroundStyle(isRegenerating ? OneraColors.info : OneraColors.textSecondary)
                 .frame(width: 36, height: 36)
-                .background(isRegenerating ? Color.blue.opacity(0.15) : Color(.systemGray6))
+                .background(isRegenerating ? OneraColors.info.opacity(0.15) : OneraColors.Gray.gray6)
                 .clipShape(Circle())
                 .rotationEffect(.degrees(isRegenerating ? 360 : 0))
-                .animation(isRegenerating ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isRegenerating)
+                .animation(isRegenerating ? OneraAnimation.rotate : .default, value: isRegenerating)
         }
         .buttonStyle(.plain)
         .contentShape(Circle())
@@ -408,7 +408,7 @@ struct MessageBubbleView: View {
         generator.impactOccurred()
         
         // Show visual feedback
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+        withAnimation(OneraAnimation.springBouncy) {
             isRegenerating = true
         }
         
@@ -417,7 +417,7 @@ struct MessageBubbleView: View {
         
         // Reset after short delay
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            withAnimation(.easeInOut(duration: 0.3)) {
+            withAnimation(OneraAnimation.standard) {
                 isRegenerating = false
             }
         }
@@ -426,10 +426,10 @@ struct MessageBubbleView: View {
     private var speakButton: some View {
         Button(action: doSpeak) {
             Image(systemName: isSpeaking ? "stop.fill" : "speaker.wave.2")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(isSpeaking ? .red : .secondary)
+                .font(OneraTypography.iconLabel)
+                .foregroundStyle(isSpeaking ? OneraColors.destructive : OneraColors.textSecondary)
                 .frame(width: 36, height: 36)
-                .background(isSpeaking ? Color.red.opacity(0.15) : Color(.systemGray6))
+                .background(isSpeaking ? OneraColors.destructive.opacity(0.15) : OneraColors.Gray.gray6)
                 .clipShape(Circle())
         }
         .buttonStyle(.plain)
@@ -460,7 +460,7 @@ struct MarkdownContentView: View {
         if content.isEmpty && isStreaming {
             streamingPlaceholder
         } else {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: OneraSpacing.md) {
                 // Parse and render content blocks
                 ForEach(Array(parseContent().enumerated()), id: \.offset) { index, block in
                     switch block {
@@ -480,20 +480,20 @@ struct MarkdownContentView: View {
     }
     
     private var streamingPlaceholder: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: OneraSpacing.xxs) {
             ForEach(0..<3, id: \.self) { _ in
                 Circle()
-                    .fill(.secondary)
+                    .fill(OneraColors.textSecondary)
                     .frame(width: 6, height: 6)
                     .opacity(0.5)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, OneraSpacing.xxs)
     }
     
     private var streamingCursor: some View {
         Rectangle()
-            .fill(.primary)
+            .fill(OneraColors.textPrimary)
             .frame(width: 2, height: 16)
             .opacity(0.7)
             .modifier(BlinkingModifier())
@@ -572,8 +572,8 @@ struct CodeBlockView: View {
             // Header with language and copy button
             HStack {
                 Text(language ?? "code")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(OneraTypography.caption)
+                    .foregroundStyle(OneraColors.textSecondary)
                 
                 Spacer()
                 
@@ -581,44 +581,44 @@ struct CodeBlockView: View {
                 Button {
                     copyToClipboard()
                 } label: {
-                    HStack(spacing: 6) {
+                    HStack(spacing: OneraSpacing.xs) {
                         Image(systemName: copied ? "checkmark.circle.fill" : "doc.on.doc")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(OneraTypography.buttonSmall)
                         Text(copied ? "Copied!" : "Copy code")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(OneraTypography.buttonSmall)
                     }
-                    .foregroundStyle(copied ? .green : Color(.secondaryLabel))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(copied ? Color.green.opacity(0.2) : Color(.systemGray5))
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .foregroundStyle(copied ? OneraColors.success : OneraColors.textSecondary)
+                    .padding(.horizontal, OneraSpacing.md)
+                    .padding(.vertical, OneraSpacing.sm)
+                    .background(copied ? OneraColors.success.opacity(0.2) : OneraColors.Gray.gray5)
+                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.small))
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(Color(.tertiarySystemBackground))
+            .padding(.horizontal, OneraSpacing.md)
+            .padding(.vertical, OneraSpacing.sm)
+            .background(OneraColors.tertiaryBackground)
             
             // Code content with syntax highlighting
             ScrollView(.horizontal, showsIndicators: false) {
                 if let highlighted = highlightedCode {
                     Text(highlighted)
-                        .font(.system(.callout, design: .monospaced))
+                        .font(OneraTypography.mono)
                         .textSelection(.enabled)
-                        .padding(.vertical, 12)
-                        .padding(.horizontal, 14)
+                        .padding(.vertical, OneraSpacing.md)
+                        .padding(.horizontal, OneraSpacing.comfortable)
                 } else {
                     Text(code)
-                        .font(.system(.callout, design: .monospaced))
-                        .foregroundStyle(.primary)
+                        .font(OneraTypography.mono)
+                        .foregroundStyle(OneraColors.textPrimary)
                         .textSelection(.enabled)
-                        .padding(.vertical, 12)
-                        .padding(.horizontal, 14)
+                        .padding(.vertical, OneraSpacing.md)
+                        .padding(.horizontal, OneraSpacing.comfortable)
                 }
             }
-            .background(Color(.secondarySystemBackground))
+            .background(OneraColors.secondaryBackground)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard, style: .continuous))
         .task {
             await highlightCode()
         }
@@ -646,12 +646,12 @@ struct CodeBlockView: View {
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
         
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+        withAnimation(OneraAnimation.springBouncy) {
             copied = true
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-            withAnimation(.easeInOut(duration: 0.3)) {
+            withAnimation(OneraAnimation.standard) {
                 copied = false
             }
         }
@@ -703,7 +703,7 @@ struct ActionButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed ? 0.9 : 1.0)
             .opacity(configuration.isPressed ? 0.6 : 1.0)
             .brightness(configuration.isPressed ? -0.1 : 0)
-            .animation(.easeOut(duration: 0.1), value: configuration.isPressed)
+            .animation(OneraAnimation.quick, value: configuration.isPressed)
     }
 }
 
@@ -719,7 +719,7 @@ struct BlinkingModifier: ViewModifier {
         content
             .opacity(isVisible ? 1 : 0)
             .onAppear {
-                withAnimation(.easeInOut(duration: 0.5).repeatForever()) {
+                withAnimation(OneraAnimation.blink) {
                     isVisible.toggle()
                 }
             }
@@ -734,7 +734,7 @@ struct AttachmentsView: View {
     
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            HStack(spacing: OneraSpacing.sm) {
                 ForEach(attachments) { attachment in
                     AttachmentThumbnailView(attachment: attachment)
                 }
@@ -756,7 +756,7 @@ struct AttachmentThumbnailView: View {
                         .resizable()
                         .scaledToFill()
                         .frame(width: 120, height: 120)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
                 }
                 
             case .file:
@@ -767,7 +767,7 @@ struct AttachmentThumbnailView: View {
                 }
                 .padding()
                 .background(.regularMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
             }
         }
     }
@@ -791,24 +791,24 @@ struct ReasoningView: View {
                 showDrawer = true
             }
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: OneraSpacing.xs) {
                 // Brain icon with pulse animation when streaming
                 Image(systemName: "brain")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(isStreaming ? .purple : .secondary)
+                    .font(OneraTypography.buttonSmall)
+                    .foregroundStyle(isStreaming ? OneraColors.reasoning : OneraColors.textSecondary)
                     .symbolEffect(.pulse, options: .repeating, isActive: isStreaming)
                 
                 // Label - "Thinking" when streaming, duration when complete
                 if isStreaming {
                     Text("Thinking")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(OneraTypography.caption)
+                        .foregroundStyle(OneraColors.textSecondary)
                     
                     // Streaming dots indicator
                     HStack(spacing: 2) {
                         ForEach(0..<3, id: \.self) { index in
                             Circle()
-                                .fill(Color.purple)
+                                .fill(OneraColors.reasoning)
                                 .frame(width: 4, height: 4)
                                 .opacity(0.7)
                                 .modifier(PulsingDotModifier(delay: Double(index) * 0.15))
@@ -816,26 +816,26 @@ struct ReasoningView: View {
                     }
                 } else if duration > 0 {
                     Text(formatDurationShort(duration))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(OneraTypography.caption)
+                        .foregroundStyle(OneraColors.textSecondary)
                 } else {
                     Text("Reasoning")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(OneraTypography.caption)
+                        .foregroundStyle(OneraColors.textSecondary)
                 }
                 
                 // Chevron (pointing right to indicate tap to expand)
                 if !isStreaming {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(OneraColors.textSecondary)
                 }
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
+            .padding(.horizontal, OneraSpacing.compact)
+            .padding(.vertical, OneraSpacing.xs)
             .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(Color(.secondarySystemBackground))
+                RoundedRectangle(cornerRadius: OneraRadius.small)
+                    .fill(OneraColors.secondaryBackground)
             )
         }
         .buttonStyle(.plain)
@@ -912,10 +912,10 @@ struct ThinkingDrawerView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: OneraSpacing.lg) {
                     // Thinking steps as bullet points
                     ForEach(Array(thinkingSteps.enumerated()), id: \.offset) { index, step in
-                        HStack(alignment: .top, spacing: 12) {
+                        HStack(alignment: .top, spacing: OneraSpacing.md) {
                             // Yellow bullet point
                             Circle()
                                 .fill(Color.yellow)
@@ -923,14 +923,14 @@ struct ThinkingDrawerView: View {
                                 .padding(.top, 6)
                             
                             Text(step)
-                                .font(.body)
-                                .foregroundStyle(.primary)
+                                .font(OneraTypography.body)
+                                .foregroundStyle(OneraColors.textPrimary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 16)
+                .padding(.horizontal, OneraSpacing.xl)
+                .padding(.vertical, OneraSpacing.lg)
             }
             .navigationTitle(formatDurationTitle(duration))
             .navigationBarTitleDisplayMode(.inline)
@@ -941,7 +941,7 @@ struct ThinkingDrawerView: View {
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 24))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(OneraColors.textSecondary)
                     }
                 }
             }
