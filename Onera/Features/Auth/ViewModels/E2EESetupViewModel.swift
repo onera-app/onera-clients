@@ -15,13 +15,18 @@ final class E2EESetupViewModel {
     
     // MARK: - State
     
+    /// Setup flow order (mirrors web app):
+    /// 1. loading - Generate E2EE keys
+    /// 2. settingPasskey / settingPassword - Set up primary unlock method
+    /// 3. showingPhrase - Show recovery phrase as backup insurance
+    /// 4. confirmPhrase - Confirm recovery phrase is saved
     enum SetupState: Equatable {
         case loading
-        case showingPhrase(String)
-        case confirmPhrase
-        case unlockMethodOptions
-        case settingPasskey
-        case settingPassword
+        case unlockMethodOptions      // Choose passkey or password (if passkey not supported)
+        case settingPasskey           // Create passkey (recommended)
+        case settingPassword          // Set encryption password
+        case showingPhrase(String)    // Show recovery phrase as backup
+        case confirmPhrase            // Confirm phrase is saved
         case error(String)
     }
     
@@ -51,9 +56,13 @@ final class E2EESetupViewModel {
     // Stored recovery phrase
     private var savedMnemonic: String?
     
+    /// Can show "Done" button when viewing recovery phrase and user has confirmed saving
     var canComplete: Bool {
         if case .showingPhrase = state {
             return hasSavedPhrase
+        }
+        if case .confirmPhrase = state {
+            return true
         }
         return false
     }
@@ -113,7 +122,13 @@ final class E2EESetupViewModel {
             let token = try await authService.getToken()
             let mnemonic = try await e2eeService.setupNewUser(token: token)
             savedMnemonic = mnemonic
-            state = .showingPhrase(mnemonic)
+            
+            // Web app flow: Show passkey setup first (if supported), then recovery phrase
+            if passkeySupported {
+                state = .settingPasskey
+            } else {
+                state = .unlockMethodOptions
+            }
         } catch {
             state = .error(error.localizedDescription)
         }
@@ -123,13 +138,16 @@ final class E2EESetupViewModel {
         showConfirmation = true
     }
     
+    /// Called after user confirms they've saved the recovery phrase
+    /// (Recovery phrase is now shown AFTER passkey/password setup)
+    func proceedAfterRecoveryPhrase() {
+        // Complete the setup - user has saved their recovery phrase
+        completeSetup()
+    }
+    
+    /// Legacy method - redirects to new flow
     func proceedToUnlockMethod() {
-        // If passkey is supported, go directly to passkey setup
-        if passkeySupported {
-            state = .settingPasskey
-        } else {
-            state = .unlockMethodOptions
-        }
+        proceedAfterRecoveryPhrase()
     }
     
     // MARK: - Passkey Setup
@@ -150,7 +168,8 @@ final class E2EESetupViewModel {
                 name: getDeviceName(),
                 token: token
             )
-            completeSetup()
+            // After passkey setup, show recovery phrase as backup
+            showRecoveryPhrase()
         } catch let error as PasskeyError {
             if case .cancelled = error {
                 // User cancelled, don't show error
@@ -199,7 +218,8 @@ final class E2EESetupViewModel {
                 password: password,
                 token: token
             )
-            completeSetup()
+            // After password setup, show recovery phrase as backup
+            showRecoveryPhrase()
         } catch {
             passwordError = "Failed to set up password. Please try again."
         }
@@ -208,7 +228,18 @@ final class E2EESetupViewModel {
     }
     
     func skipPasswordSetup() {
-        completeSetup()
+        // If user skips unlock method, still show recovery phrase
+        showRecoveryPhrase()
+    }
+    
+    /// Shows the recovery phrase as backup insurance (after passkey/password setup)
+    private func showRecoveryPhrase() {
+        if let mnemonic = savedMnemonic {
+            state = .showingPhrase(mnemonic)
+        } else {
+            // Fallback: complete setup if no mnemonic (shouldn't happen)
+            completeSetup()
+        }
     }
     
     func completeSetup() {

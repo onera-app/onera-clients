@@ -2,7 +2,8 @@
 //  E2EEUnlockView.swift
 //  Onera
 //
-//  Enter recovery phrase, password, or use passkey to unlock E2EE
+//  Native iOS unlock view for E2EE
+//  Enter recovery phrase, password, or use passkey to unlock
 //
 
 import SwiftUI
@@ -47,30 +48,24 @@ struct E2EEUnlockView: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    headerView
-                    
-                    if isCheckingUnlockMethods || viewModel.isCheckingPasskey {
-                        loadingView
-                    } else if viewModel.isUnlockingWithPasskey {
-                        passkeyUnlockingView
-                    } else {
-                        switch currentMethod {
-                        case .options:
-                            unlockOptionsView
-                        case .passkey:
-                            passkeyUnlockView
-                        case .password:
-                            passwordUnlockView
-                        case .recovery:
-                            recoveryPhraseView
-                        }
+            Group {
+                if isCheckingUnlockMethods || viewModel.isCheckingPasskey {
+                    loadingView
+                } else if viewModel.isUnlockingWithPasskey {
+                    passkeyUnlockingView
+                } else {
+                    switch currentMethod {
+                    case .options:
+                        unlockOptionsView
+                    case .passkey:
+                        passkeyUnlockView
+                    case .password:
+                        passwordUnlockView
+                    case .recovery:
+                        recoveryPhraseView
                     }
                 }
-                .padding()
             }
-            .scrollDismissesKeyboard(.interactively)
             .navigationTitle("Unlock")
             .navigationBarTitleDisplayMode(.inline)
         }
@@ -99,7 +94,6 @@ struct E2EEUnlockView: View {
     private func checkUnlockMethods() async {
         isCheckingUnlockMethods = true
         
-        // Check password encryption
         do {
             let token = try await authService.getToken()
             hasPassword = try await e2eeService.hasPasswordEncryption(token: token)
@@ -109,247 +103,233 @@ struct E2EEUnlockView: View {
         
         isCheckingUnlockMethods = false
         
-        // Check and auto-unlock with passkey
         await viewModel.checkAndAutoUnlockWithPasskey()
     }
     
-    // MARK: - Subviews
-    
-    private var headerView: some View {
-        VStack(spacing: 12) {
-            Image(systemName: headerIcon)
-                .font(.system(size: 48))
-                .foregroundStyle(.tint)
-            
-            Text("Unlock Encryption")
-                .font(.title2.bold())
-            
-            Text(headerDescription)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .padding(.top)
-    }
-    
-    private var headerIcon: String {
-        switch currentMethod {
-        case .passkey:
-            return "person.badge.key.fill"
-        default:
-            return "lock.fill"
-        }
-    }
-    
-    private var headerDescription: String {
-        switch currentMethod {
-        case .options:
-            if viewModel.canUsePasskey {
-                return "Use Face ID, Touch ID, or another method to unlock."
-            } else if hasPassword {
-                return "Use your password or recovery phrase to unlock your encrypted data."
-            }
-            return "Enter your recovery phrase to unlock your encrypted data."
-        case .passkey:
-            return "Use Face ID or Touch ID to unlock your encrypted data."
-        case .password:
-            return "Enter your encryption password to unlock."
-        case .recovery:
-            return "Enter your 24-word recovery phrase."
-        }
-    }
+    // MARK: - Loading View
     
     private var loadingView: some View {
         VStack(spacing: 16) {
+            Spacer()
             ProgressView()
+                .scaleEffect(1.2)
             Text("Loading...")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+            Spacer()
         }
-        .padding(.vertical, 40)
     }
     
     private var passkeyUnlockingView: some View {
         VStack(spacing: 24) {
+            Spacer()
+            
             Image(systemName: "person.badge.key.fill")
                 .font(.system(size: 64))
-                .foregroundStyle(.tint)
+                .foregroundStyle(.blue)
             
             ProgressView()
             
             Text("Authenticating with passkey...")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+            
+            Spacer()
         }
-        .padding(.vertical, 40)
     }
     
-    // MARK: - Options View
+    // MARK: - Unlock Options View
     
     private var unlockOptionsView: some View {
-        VStack(spacing: 16) {
-            // Passkey option (if available)
-            if viewModel.canUsePasskey {
-                passkeyOptionButton
-            }
-            
-            // Password option (if available)
-            if hasPassword {
-                optionButton(
-                    icon: "key.fill",
-                    title: "Unlock with Password",
-                    description: "Use your encryption password"
-                ) {
-                    currentMethod = .password
+        List {
+            Section {
+                VStack(spacing: 16) {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 56))
+                        .foregroundStyle(.blue)
+                    
+                    Text("Unlock your encrypted data to continue.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                 }
+                .frame(maxWidth: .infinity)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 24, leading: 0, bottom: 16, trailing: 0))
             }
             
-            // Recovery phrase option
-            optionButton(
-                icon: "rectangle.grid.3x2",
-                title: "Use Recovery Phrase",
-                description: "Enter your 24-word phrase"
-            ) {
-                currentMethod = .recovery
-            }
-        }
-    }
-    
-    private var passkeyOptionButton: some View {
-        Button {
-            Task { await viewModel.unlockWithPasskey() }
-        } label: {
-            HStack(spacing: 16) {
-                Image(systemName: "person.badge.key.fill")
-                    .font(.title2)
-                    .frame(width: 40, height: 40)
-                    .background(.tint.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 8) {
-                        Text("Unlock with Passkey")
-                            .font(.headline)
-                        
-                        Text("Recommended")
-                            .font(.caption2)
-                            .fontWeight(.medium)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(.tint)
-                            .foregroundStyle(.white)
-                            .clipShape(Capsule())
+            Section {
+                if viewModel.canUsePasskey {
+                    Button {
+                        Task { await viewModel.unlockWithPasskey() }
+                    } label: {
+                        HStack {
+                            Image(systemName: "person.badge.key.fill")
+                                .font(.title2)
+                                .foregroundStyle(.blue)
+                                .frame(width: 32)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 6) {
+                                    Text("Passkey")
+                                        .font(.body.weight(.medium))
+                                        .foregroundStyle(Color(.label))
+                                    Text("Recommended")
+                                        .font(.caption2.weight(.medium))
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(.blue)
+                                        .foregroundStyle(.white)
+                                        .clipShape(Capsule())
+                                }
+                                Text("Use Face ID or Touch ID")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
                     }
-                    Text("Use Face ID or Touch ID")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    .disabled(viewModel.isUnlockingWithPasskey)
                 }
                 
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-            .background(.regularMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-        }
-        .buttonStyle(.plain)
-        .disabled(viewModel.isUnlockingWithPasskey)
-    }
-    
-    private func optionButton(
-        icon: String,
-        title: String,
-        description: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: 16) {
-                Image(systemName: icon)
-                    .font(.title2)
-                    .frame(width: 40, height: 40)
-                    .background(.tint.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.headline)
-                    Text(description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                if hasPassword {
+                    Button {
+                        currentMethod = .password
+                    } label: {
+                        HStack {
+                            Image(systemName: "key.fill")
+                                .font(.title2)
+                                .foregroundStyle(.orange)
+                                .frame(width: 32)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Password")
+                                    .font(.body.weight(.medium))
+                                    .foregroundStyle(Color(.label))
+                                Text("Use your encryption password")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
                 }
                 
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .foregroundStyle(.secondary)
+                Button {
+                    currentMethod = .recovery
+                } label: {
+                    HStack {
+                        Image(systemName: "rectangle.grid.3x2")
+                            .font(.title2)
+                            .foregroundStyle(.purple)
+                            .frame(width: 32)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Recovery Phrase")
+                                .font(.body.weight(.medium))
+                                .foregroundStyle(Color(.label))
+                            Text("Enter your 24-word phrase")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+            } header: {
+                Text("Unlock Method")
             }
-            .padding()
-            .background(.regularMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
         }
-        .buttonStyle(.plain)
     }
     
     // MARK: - Passkey Unlock View
     
     private var passkeyUnlockView: some View {
-        VStack(spacing: 24) {
-            backButton
-            
-            Spacer()
-                .frame(height: 20)
-            
-            Image(systemName: "person.badge.key.fill")
-                .font(.system(size: 64))
-                .foregroundStyle(.tint)
-            
-            Text("Unlock with your passkey using Face ID or Touch ID.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-            
-            Button {
-                Task { await viewModel.unlockWithPasskey() }
-            } label: {
-                Group {
-                    if viewModel.isUnlockingWithPasskey {
-                        HStack(spacing: 8) {
-                            ProgressView()
-                                .tint(.white)
-                            Text("Unlocking...")
-                        }
-                    } else {
-                        Text("Unlock with Passkey")
-                            .fontWeight(.semibold)
-                    }
+        List {
+            Section {
+                VStack(spacing: 20) {
+                    Image(systemName: "person.badge.key.fill")
+                        .font(.system(size: 64))
+                        .foregroundStyle(.blue)
+                    
+                    Text("Use Face ID or Touch ID to unlock your encrypted data.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 4)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 24, leading: 0, bottom: 16, trailing: 0))
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .disabled(viewModel.isUnlockingWithPasskey)
+            
+            Section {
+                Button {
+                    Task { await viewModel.unlockWithPasskey() }
+                } label: {
+                    HStack {
+                        Spacer()
+                        if viewModel.isUnlockingWithPasskey {
+                            ProgressView()
+                                .padding(.trailing, 8)
+                            Text("Unlocking...")
+                        } else {
+                            Text("Unlock with Passkey")
+                        }
+                        Spacer()
+                    }
+                }
+                .disabled(viewModel.isUnlockingWithPasskey)
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Back") {
+                    currentMethod = .options
+                }
+            }
         }
     }
     
     // MARK: - Password Unlock View
     
     private var passwordUnlockView: some View {
-        VStack(spacing: 20) {
-            backButton
+        List {
+            Section {
+                VStack(spacing: 16) {
+                    Image(systemName: "key.fill")
+                        .font(.system(size: 56))
+                        .foregroundStyle(.orange)
+                    
+                    Text("Enter your encryption password to unlock.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 24, leading: 0, bottom: 16, trailing: 0))
+            }
             
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Encryption Password")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                
+            Section {
                 HStack {
                     if passwordViewModel.showPassword {
-                        TextField("Enter your password", text: $passwordViewModel.password)
+                        TextField("Password", text: $passwordViewModel.password)
                     } else {
-                        SecureField("Enter your password", text: $passwordViewModel.password)
+                        SecureField("Password", text: $passwordViewModel.password)
                     }
                     
                     Button {
@@ -358,110 +338,129 @@ struct E2EEUnlockView: View {
                         Image(systemName: passwordViewModel.showPassword ? "eye.slash" : "eye")
                             .foregroundStyle(.secondary)
                     }
+                    .buttonStyle(.plain)
                 }
-                .padding()
-                .background(.regularMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
                 .focused($passwordFieldFocused)
+            } header: {
+                Text("Encryption Password")
             }
             
-            Button {
-                Task { await passwordViewModel.unlock() }
-            } label: {
-                Group {
-                    if passwordViewModel.isUnlocking {
-                        ProgressView()
-                            .tint(.white)
-                    } else {
-                        Text("Unlock")
-                            .fontWeight(.semibold)
+            Section {
+                Button {
+                    Task { await passwordViewModel.unlock() }
+                } label: {
+                    HStack {
+                        Spacer()
+                        if passwordViewModel.isUnlocking {
+                            ProgressView()
+                                .padding(.trailing, 8)
+                            Text("Unlocking...")
+                        } else {
+                            Text("Unlock")
+                        }
+                        Spacer()
                     }
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 4)
+                .disabled(!passwordViewModel.canUnlock)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(Color(.systemGray))
-            .foregroundStyle(.white)
-            .controlSize(.large)
-            .disabled(!passwordViewModel.canUnlock)
         }
         .onAppear {
             passwordFieldFocused = true
+        }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Back") {
+                    currentMethod = .options
+                    passwordViewModel.clearPassword()
+                }
+            }
         }
     }
     
     // MARK: - Recovery Phrase View
     
     private var recoveryPhraseView: some View {
-        VStack(spacing: 20) {
-            // Show back button if there are other unlock options
-            if hasPassword || viewModel.canUsePasskey {
-                backButton
+        List {
+            Section {
+                VStack(spacing: 16) {
+                    Image(systemName: "rectangle.grid.3x2")
+                        .font(.system(size: 56))
+                        .foregroundStyle(.purple)
+                    
+                    Text("Enter your 24-word recovery phrase.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 24, leading: 0, bottom: 16, trailing: 0))
             }
             
-            inputModeToggle
+            Section {
+                Button {
+                    viewModel.toggleInputMode()
+                } label: {
+                    Label(
+                        viewModel.showPasteField ? "Enter words individually" : "Paste full phrase",
+                        systemImage: viewModel.showPasteField ? "keyboard" : "doc.on.clipboard"
+                    )
+                }
+            }
             
             if viewModel.showPasteField {
-                pasteFieldView
-            } else {
-                wordGridView
-            }
-            
-            unlockButton
-        }
-    }
-    
-    private var backButton: some View {
-        Button {
-            currentMethod = .options
-            passwordViewModel.clearPassword()
-        } label: {
-            HStack {
-                Image(systemName: "chevron.left")
-                Text("Back to options")
-            }
-        }
-        .font(.callout)
-    }
-    
-    private var inputModeToggle: some View {
-        Button {
-            viewModel.toggleInputMode()
-        } label: {
-            Label(
-                viewModel.showPasteField ? "Enter words individually" : "Paste full phrase",
-                systemImage: viewModel.showPasteField ? "keyboard" : "doc.on.clipboard"
-            )
-        }
-        .font(.callout)
-    }
-    
-    private var pasteFieldView: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Paste your recovery phrase:")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            
-            TextEditor(text: $viewModel.pastedPhrase)
-                .font(.body.monospaced())
-                .frame(height: 120)
-                .padding(8)
-                .background(.regularMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .onChange(of: viewModel.pastedPhrase) { _, newValue in
-                    viewModel.parsePhrase(newValue)
+                Section {
+                    TextEditor(text: $viewModel.pastedPhrase)
+                        .font(.body.monospaced())
+                        .frame(minHeight: 100)
+                        .onChange(of: viewModel.pastedPhrase) { _, newValue in
+                            viewModel.parsePhrase(newValue)
+                        }
+                } header: {
+                    Text("Paste Recovery Phrase")
                 }
+            } else {
+                Section {
+                    LazyVGrid(
+                        columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())],
+                        spacing: 8
+                    ) {
+                        ForEach(0..<Configuration.Mnemonic.wordCount, id: \.self) { index in
+                            wordInputField(index: index)
+                        }
+                    }
+                    .listRowInsets(EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12))
+                } header: {
+                    Text("Recovery Words")
+                }
+            }
+            
+            Section {
+                Button {
+                    Task { await viewModel.unlock() }
+                } label: {
+                    HStack {
+                        Spacer()
+                        if viewModel.isUnlocking {
+                            ProgressView()
+                                .padding(.trailing, 8)
+                            Text("Unlocking...")
+                        } else {
+                            Text("Unlock")
+                        }
+                        Spacer()
+                    }
+                }
+                .disabled(!viewModel.canUnlock)
+            }
         }
-    }
-    
-    private var wordGridView: some View {
-        LazyVGrid(
-            columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())],
-            spacing: 12
-        ) {
-            ForEach(0..<Configuration.Mnemonic.wordCount, id: \.self) { index in
-                wordInputField(index: index)
+        .toolbar {
+            if hasPassword || viewModel.canUsePasskey {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Back") {
+                        currentMethod = .options
+                    }
+                }
             }
         }
     }
@@ -474,7 +473,7 @@ struct E2EEUnlockView: View {
                 .frame(width: 20, alignment: .trailing)
             
             TextField("", text: $viewModel.words[index])
-                .font(.body.monospaced())
+                .font(.footnote.monospaced())
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .focused($focusedWordIndex, equals: index)
@@ -489,32 +488,8 @@ struct E2EEUnlockView: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 8)
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-    }
-    
-    private var unlockButton: some View {
-        Button {
-            Task { await viewModel.unlock() }
-        } label: {
-            Group {
-                if viewModel.isUnlocking {
-                    ProgressView()
-                        .tint(.white)
-                } else {
-                    Text("Unlock")
-                        .fontWeight(.semibold)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 4)
-        }
-        .buttonStyle(.borderedProminent)
-        .tint(Color(.systemGray))
-        .foregroundStyle(.white)
-        .controlSize(.large)
-        .disabled(!viewModel.canUnlock)
-        .padding(.top)
+        .background(Color(.tertiarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 }
 

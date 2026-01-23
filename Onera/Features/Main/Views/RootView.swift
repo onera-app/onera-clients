@@ -26,6 +26,11 @@ struct RootView: View {
                     )
                 )
                 
+            case .authenticatedNeedsOnboarding:
+                OnboardingView(
+                    onComplete: { coordinator.handleOnboardingComplete() }
+                )
+                
             case .authenticatedNeedsE2EESetup:
                 E2EESetupView(
                     viewModel: E2EESetupViewModel(
@@ -45,6 +50,12 @@ struct RootView: View {
                     authService: dependencies.authService,
                     e2eeService: dependencies.e2eeService,
                     onComplete: { coordinator.handleE2EEUnlockComplete() }
+                )
+                
+            case .authenticatedNeedsAddApiKey:
+                AddApiKeyPromptView(
+                    onAddKey: { coordinator.handleAddApiKeyComplete() },
+                    onSkip: { coordinator.handleAddApiKeyComplete() }
                 )
                 
             case .authenticated:

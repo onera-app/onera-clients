@@ -13,8 +13,10 @@ import Observation
 enum AppState: Equatable {
     case launching
     case unauthenticated
-    case authenticatedNeedsE2EESetup
-    case authenticatedNeedsE2EEUnlock
+    case authenticatedNeedsOnboarding      // New user: show educational onboarding
+    case authenticatedNeedsE2EESetup       // After onboarding: set up E2EE keys
+    case authenticatedNeedsE2EEUnlock      // Returning user: unlock E2EE
+    case authenticatedNeedsAddApiKey       // After E2EE setup: prompt to add API key
     case authenticated
 }
 
@@ -63,7 +65,8 @@ final class AppCoordinator {
             let hasE2EEKeys = try await e2eeService.checkSetupStatus(token: token)
             
             guard hasE2EEKeys else {
-                transition(to: .authenticatedNeedsE2EESetup)
+                // New user - show educational onboarding first
+                transition(to: .authenticatedNeedsOnboarding)
                 return
             }
             
@@ -119,11 +122,24 @@ final class AppCoordinator {
         await determineInitialState()
     }
     
+    /// Called when user completes the educational onboarding flow
+    func handleOnboardingComplete() {
+        transition(to: .authenticatedNeedsE2EESetup)
+    }
+    
+    /// Called when user completes E2EE key setup (new user)
+    /// Proceeds to API key prompt
     func handleE2EESetupComplete() {
+        transition(to: .authenticatedNeedsAddApiKey)
+    }
+    
+    /// Called when returning user unlocks their E2EE
+    func handleE2EEUnlockComplete() {
         transition(to: .authenticated)
     }
     
-    func handleE2EEUnlockComplete() {
+    /// Called when user adds an API key or skips
+    func handleAddApiKeyComplete() {
         transition(to: .authenticated)
     }
     
