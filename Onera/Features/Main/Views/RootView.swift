@@ -6,11 +6,13 @@
 //
 
 import SwiftUI
+import Clerk
 
 struct RootView: View {
     
     @Bindable var coordinator: AppCoordinator
     @Environment(\.dependencies) private var dependencies
+    @Environment(\.clerk) private var clerk
     
     // State for AddCredentialView sheet from API key prompt
     @State private var selectedProvider: LLMProvider?
@@ -87,6 +89,20 @@ struct RootView: View {
             }
         }
         .task {
+            // Wait for Clerk to be loaded before determining state
+            // This prevents race conditions with OneraApp's clerk.load()
+            var attempts = 0
+            while !clerk.isLoaded && attempts < 20 {
+                try? await Task.sleep(for: .milliseconds(100))
+                attempts += 1
+            }
+            
+            if clerk.isLoaded {
+                print("[RootView] Clerk loaded, determining initial state")
+            } else {
+                print("[RootView] WARNING: Clerk not loaded after timeout, proceeding anyway")
+            }
+            
             await coordinator.determineInitialState()
         }
         .alert(

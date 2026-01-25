@@ -156,6 +156,14 @@ final class NetworkService: NetworkServiceProtocol, @unchecked Sendable {
     private func execute<Output: Decodable>(_ request: URLRequest) async throws -> Output {
         print("[NetworkService] Request: \(request.httpMethod ?? "?") \(request.url?.absoluteString ?? "?")")
         
+        // Debug: Log authorization header presence
+        if let authHeader = request.value(forHTTPHeaderField: "Authorization") {
+            let prefix = String(authHeader.prefix(50))
+            print("[NetworkService] Auth header: \(prefix)...")
+        } else {
+            print("[NetworkService] WARNING: No Authorization header!")
+        }
+        
         let (data, response) = try await session.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {

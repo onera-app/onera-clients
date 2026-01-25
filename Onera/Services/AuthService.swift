@@ -38,16 +38,27 @@ final class AuthService: AuthServiceProtocol {
     
     func getToken() async throws -> String {
         guard let session = Clerk.shared.session else {
+            print("[AuthService] No Clerk session found")
             throw AuthError.notAuthenticated
         }
+        
+        print("[AuthService] Session found, user ID: \(session.user?.id ?? "nil")")
         
         do {
             let token = try await session.getToken()
             guard let jwt = token?.jwt else {
+                print("[AuthService] Token object returned but JWT is nil")
                 throw AuthError.tokenRefreshFailed
             }
+            
+            // Debug: Print token prefix (first 50 chars) to verify format
+            let tokenPrefix = String(jwt.prefix(50))
+            print("[AuthService] Token obtained: \(tokenPrefix)...")
+            print("[AuthService] Token length: \(jwt.count)")
+            
             return jwt
         } catch {
+            print("[AuthService] getToken error: \(error)")
             throw AuthError.tokenRefreshFailed
         }
     }

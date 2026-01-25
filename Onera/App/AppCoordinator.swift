@@ -110,13 +110,27 @@ final class AppCoordinator {
     // MARK: - State Transitions
     
     func handleAuthenticationSuccess() async {
-        // Wait for Clerk session to be fully established
+        // Wait for Clerk session to be fully established AND able to issue tokens
         // This helps with OAuth redirects where the session may not be immediately available
-        for _ in 1...3 {
+        var tokenReady = false
+        
+        for attempt in 1...5 {
             if authService.isAuthenticated {
-                break
+                // Also verify we can actually get a token
+                do {
+                    _ = try await authService.getToken()
+                    tokenReady = true
+                    print("[AppCoordinator] Token ready after \(attempt) attempt(s)")
+                    break
+                } catch {
+                    print("[AppCoordinator] Token not ready yet (attempt \(attempt)): \(error)")
+                }
             }
             try? await Task.sleep(for: .milliseconds(500))
+        }
+        
+        if !tokenReady {
+            print("[AppCoordinator] WARNING: Could not obtain token after auth success")
         }
         
         await determineInitialState()
