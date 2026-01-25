@@ -15,6 +15,13 @@ struct AddCredentialView: View {
     @Environment(\.openURL) private var openURL
     @FocusState private var focusedField: Field?
     
+    /// Optional: Pre-select a provider (for use from onboarding)
+    var selectedProvider: LLMProvider?
+    /// Optional: Callback when credential is saved
+    var onSave: (() -> Void)?
+    /// Optional: Callback when cancelled
+    var onCancel: (() -> Void)?
+    
     private enum Field: Hashable {
         case name, apiKey, baseUrl, orgId
     }
@@ -167,7 +174,11 @@ struct AddCredentialView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         viewModel.resetForm()
-                        dismiss()
+                        if let onCancel = onCancel {
+                            onCancel()
+                        } else {
+                            dismiss()
+                        }
                     }
                 }
                 
@@ -175,7 +186,11 @@ struct AddCredentialView: View {
                     Button("Save") {
                         Task {
                             if await viewModel.saveCredential() {
-                                dismiss()
+                                if let onSave = onSave {
+                                    onSave()
+                                } else {
+                                    dismiss()
+                                }
                             }
                         }
                     }
@@ -204,6 +219,10 @@ struct AddCredentialView: View {
                 }
             }
             .onAppear {
+                // Set provider if passed in
+                if let provider = selectedProvider {
+                    viewModel.selectedProvider = provider
+                }
                 // Set default base URL for local providers
                 if viewModel.showBaseUrlField && viewModel.baseUrl.isEmpty {
                     viewModel.baseUrl = viewModel.selectedProvider.baseURL

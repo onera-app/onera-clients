@@ -23,6 +23,7 @@ struct MainView: View {
     @State private var chatViewModel: ChatViewModel?
     @State private var folderViewModel: FolderViewModel?
     @State private var notesViewModel: NotesViewModel?
+    @State private var settingsViewModel: SettingsViewModel?
     
     let onSignOut: () async -> Void
     
@@ -131,18 +132,9 @@ struct MainView: View {
             .accessibilityIdentifier("mainView")
         }
         .sheet(isPresented: $showSettings) {
-            SettingsView(
-                viewModel: SettingsViewModel(
-                    authService: dependencies.authService,
-                    e2eeService: dependencies.e2eeService,
-                    secureSession: dependencies.secureSession,
-                    credentialService: dependencies.credentialService,
-                    networkService: dependencies.networkService,
-                    cryptoService: dependencies.cryptoService,
-                    extendedCryptoService: dependencies.extendedCryptoService,
-                    onSignOut: onSignOut
-                )
-            )
+            if let viewModel = settingsViewModel {
+                SettingsView(viewModel: viewModel)
+            }
         }
         .sheet(isPresented: $showNotes) {
             if let notesVM = notesViewModel {
@@ -324,6 +316,17 @@ struct MainView: View {
             noteRepository: dependencies.noteRepository,
             authService: dependencies.authService
         )
+        
+        settingsViewModel = SettingsViewModel(
+            authService: dependencies.authService,
+            e2eeService: dependencies.e2eeService,
+            secureSession: dependencies.secureSession,
+            credentialService: dependencies.credentialService,
+            networkService: dependencies.networkService,
+            cryptoService: dependencies.cryptoService,
+            extendedCryptoService: dependencies.extendedCryptoService,
+            onSignOut: onSignOut
+        )
     }
     
     private func selectChat(_ id: String) {
@@ -342,6 +345,8 @@ struct MainView: View {
 }
 
 #Preview {
-    MainView(onSignOut: {})
-        .withDependencies(MockDependencyContainer())
+    MainView(
+        onSignOut: {}
+    )
+    .withDependencies(MockDependencyContainer())
 }

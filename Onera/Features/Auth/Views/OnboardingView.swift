@@ -52,6 +52,7 @@ struct OnboardingView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
+                .tint(.blue)
                 
                 if currentStep != .ready {
                     Button("Skip") {

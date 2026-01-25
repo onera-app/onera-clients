@@ -70,11 +70,11 @@ struct SettingsView: View {
             } message: {
                 Text("Are you sure you want to sign out? Make sure you have your recovery phrase saved.")
             }
+            .onAppear {
+                viewModel.loadSettings()
+            }
         }
         .preferredColorScheme(preferredScheme)
-        .onAppear {
-            viewModel.loadSettings()
-        }
     }
     
     // MARK: - Profile Header Section

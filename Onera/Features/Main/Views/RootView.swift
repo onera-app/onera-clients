@@ -12,7 +12,7 @@ struct RootView: View {
     @Bindable var coordinator: AppCoordinator
     @Environment(\.dependencies) private var dependencies
     
-    // State for add credential flow
+    // State for AddCredentialView sheet from API key prompt
     @State private var selectedProvider: LLMProvider?
     @State private var showAddCredential = false
     
@@ -57,7 +57,28 @@ struct RootView: View {
                 )
                 
             case .authenticatedNeedsAddApiKey:
-                addApiKeyView
+                AddApiKeyPromptView(
+                    onSelectProvider: { provider in
+                        selectedProvider = provider
+                        showAddCredential = true
+                    },
+                    onSkip: { coordinator.handleAddApiKeyComplete() }
+                )
+                .sheet(isPresented: $showAddCredential) {
+                    if let provider = selectedProvider {
+                        AddCredentialView(
+                            viewModel: makeCredentialsViewModel(),
+                            selectedProvider: provider,
+                            onSave: {
+                                showAddCredential = false
+                                coordinator.handleAddApiKeyComplete()
+                            },
+                            onCancel: {
+                                showAddCredential = false
+                            }
+                        )
+                    }
+                }
                 
             case .authenticated:
                 MainView(
@@ -85,39 +106,8 @@ struct RootView: View {
         }
     }
     
-    // MARK: - Add API Key View with Sheet
-    
-    @ViewBuilder
-    private var addApiKeyView: some View {
-        AddApiKeyPromptView(
-            onSelectProvider: { provider in
-                selectedProvider = provider
-                showAddCredential = true
-            },
-            onSkip: { coordinator.handleAddApiKeyComplete() }
-        )
-        .sheet(isPresented: $showAddCredential) {
-            if let provider = selectedProvider {
-                AddCredentialView(
-                    viewModel: makeCredentialsViewModel(provider: provider)
-                )
-                .onDisappear {
-                    // Check if credential was saved and proceed
-                    Task {
-                        let hasCredentials = await checkHasCredentials()
-                        if hasCredentials {
-                            coordinator.handleAddApiKeyComplete()
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    // MARK: - Helpers
-    
-    private func makeCredentialsViewModel(provider: LLMProvider) -> CredentialsViewModel {
-        let viewModel = CredentialsViewModel(
+    private func makeCredentialsViewModel() -> CredentialsViewModel {
+        CredentialsViewModel(
             credentialService: dependencies.credentialService,
             networkService: dependencies.networkService,
             cryptoService: dependencies.cryptoService,
@@ -125,19 +115,8 @@ struct RootView: View {
             secureSession: dependencies.secureSession,
             authService: dependencies.authService
         )
-        viewModel.selectedProvider = provider
-        return viewModel
     }
     
-    private func checkHasCredentials() async -> Bool {
-        do {
-            let token = try await dependencies.authService.getToken()
-            try await dependencies.credentialService.refreshCredentials(token: token)
-            return !dependencies.credentialService.credentials.isEmpty
-        } catch {
-            return false
-        }
-    }
 }
 
 // MARK: - Launch View
