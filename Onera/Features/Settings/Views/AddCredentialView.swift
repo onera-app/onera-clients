@@ -3,6 +3,7 @@
 //  Onera
 //
 //  Form to add a new API credential
+//  Native iOS design matching web app functionality
 //
 
 import SwiftUI
@@ -11,6 +12,7 @@ struct AddCredentialView: View {
     
     @Bindable var viewModel: CredentialsViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
     @FocusState private var focusedField: Field?
     
     private enum Field: Hashable {
@@ -19,16 +21,144 @@ struct AddCredentialView: View {
     
     var body: some View {
         NavigationStack {
-            Form {
-                providerSection
-                detailsSection
-                
-                if viewModel.showOrgIdField {
-                    organizationSection
+            List {
+                // Provider info header
+                Section {
+                    HStack(spacing: 16) {
+                        Image(systemName: iconForProvider(viewModel.selectedProvider))
+                            .font(.title)
+                            .foregroundStyle(colorForProvider(viewModel.selectedProvider))
+                            .frame(width: 44, height: 44)
+                            .background(colorForProvider(viewModel.selectedProvider).opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(viewModel.selectedProvider.displayName)
+                                .font(.headline)
+                            Text(descriptionForProvider(viewModel.selectedProvider))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        if let url = viewModel.selectedProvider.websiteURL {
+                            Button {
+                                openURL(url)
+                            } label: {
+                                Image(systemName: "arrow.up.right.square")
+                                    .foregroundStyle(.blue)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 16, leading: 0, bottom: 16, trailing: 0))
                 }
                 
+                // Connection name
+                Section {
+                    TextField(
+                        "Connection Name",
+                        text: $viewModel.credentialName,
+                        prompt: Text("My \(viewModel.selectedProvider.displayName) Key")
+                    )
+                    .textContentType(.name)
+                    .focused($focusedField, equals: .name)
+                } header: {
+                    HStack {
+                        Text("Name")
+                        Text("*").foregroundStyle(.red)
+                    }
+                }
+                
+                // API Key (for providers that need it)
+                if !viewModel.showBaseUrlField || viewModel.selectedProvider == .custom {
+                    Section {
+                        HStack {
+                            SecureField(
+                                "API Key",
+                                text: $viewModel.apiKey,
+                                prompt: Text(viewModel.selectedProvider.apiKeyPlaceholder.isEmpty ? "Enter API key" : viewModel.selectedProvider.apiKeyPlaceholder)
+                            )
+                            .textContentType(.password)
+                            .autocapitalization(.none)
+                            .autocorrectionDisabled()
+                            .focused($focusedField, equals: .apiKey)
+                        }
+                    } header: {
+                        HStack {
+                            Text("API Key")
+                            if !isLocalProvider {
+                                Text("*").foregroundStyle(.red)
+                            }
+                        }
+                    } footer: {
+                        if let url = viewModel.selectedProvider.websiteURL {
+                            Button {
+                                openURL(url)
+                            } label: {
+                                Label("Get your API key", systemImage: "arrow.up.right")
+                                    .font(.caption)
+                            }
+                        }
+                    }
+                }
+                
+                // Organization ID (OpenAI only)
+                if viewModel.showOrgIdField {
+                    Section {
+                        TextField(
+                            "Organization ID",
+                            text: $viewModel.orgId,
+                            prompt: Text("org-... (optional)")
+                        )
+                        .autocapitalization(.none)
+                        .autocorrectionDisabled()
+                        .focused($focusedField, equals: .orgId)
+                    } header: {
+                        Text("Organization")
+                    } footer: {
+                        Text("Optional. Only needed if you belong to multiple organizations.")
+                    }
+                }
+                
+                // Base URL (for local/custom providers)
                 if viewModel.showBaseUrlField {
-                    customUrlSection
+                    Section {
+                        TextField(
+                            "Base URL",
+                            text: $viewModel.baseUrl,
+                            prompt: Text(viewModel.selectedProvider.baseURL)
+                        )
+                        .keyboardType(.URL)
+                        .autocapitalization(.none)
+                        .autocorrectionDisabled()
+                        .focused($focusedField, equals: .baseUrl)
+                    } header: {
+                        HStack {
+                            Text("Server URL")
+                            Text("*").foregroundStyle(.red)
+                        }
+                    } footer: {
+                        if viewModel.selectedProvider == .ollama {
+                            Text("Default: http://localhost:11434")
+                        } else if viewModel.selectedProvider == .lmstudio {
+                            Text("Default: http://localhost:1234/v1")
+                        }
+                    }
+                }
+                
+                // Security note
+                Section {
+                    Label {
+                        Text("Your credentials are encrypted with your E2EE key and stored securely. They are never visible to the server.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } icon: {
+                        Image(systemName: "lock.shield.fill")
+                            .foregroundStyle(.green)
+                    }
                 }
             }
             .navigationTitle("Add Connection")
@@ -49,7 +179,7 @@ struct AddCredentialView: View {
                             }
                         }
                     }
-                    .disabled(!viewModel.canSave || viewModel.isSaving)
+                    .disabled(!canSave || viewModel.isSaving)
                 }
             }
             .disabled(viewModel.isSaving)
@@ -57,7 +187,10 @@ struct AddCredentialView: View {
                 if viewModel.isSaving {
                     Color.black.opacity(0.2)
                         .ignoresSafeArea()
-                    ProgressView()
+                    ProgressView("Saving...")
+                        .padding()
+                        .background(.regularMaterial)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
             }
             .alert("Error", isPresented: .init(
@@ -70,122 +203,50 @@ struct AddCredentialView: View {
                     Text(error.localizedDescription)
                 }
             }
-        }
-    }
-    
-    // MARK: - Provider Section
-    
-    private var providerSection: some View {
-        Section {
-            Picker("Provider", selection: $viewModel.selectedProvider) {
-                ForEach(viewModel.providerGroups, id: \.0) { group, providers in
-                    Section(header: Text(group)) {
-                        ForEach(providers, id: \.self) { provider in
-                            Label {
-                                Text(provider.displayName)
-                            } icon: {
-                                Image(systemName: iconForProvider(provider))
-                            }
-                            .tag(provider)
-                        }
-                    }
+            .onAppear {
+                // Set default base URL for local providers
+                if viewModel.showBaseUrlField && viewModel.baseUrl.isEmpty {
+                    viewModel.baseUrl = viewModel.selectedProvider.baseURL
                 }
             }
-            .pickerStyle(.navigationLink)
-        } header: {
-            Text("Provider")
-        } footer: {
-            Text(providerDescription)
         }
     }
     
-    // MARK: - Details Section
+    // MARK: - Computed Properties
     
-    private var detailsSection: some View {
-        Section {
-            TextField("Name", text: $viewModel.credentialName, prompt: Text("My \(viewModel.selectedProvider.displayName) Key"))
-                .textContentType(.name)
-                .focused($focusedField, equals: .name)
-            
-            SecureField("API Key", text: $viewModel.apiKey, prompt: Text("sk-..."))
-                .textContentType(.password)
-                .autocapitalization(.none)
-                .autocorrectionDisabled()
-                .focused($focusedField, equals: .apiKey)
-        } header: {
-            Text("Details")
-        } footer: {
-            Text("Your API key is encrypted locally before being stored.")
-        }
+    private var isLocalProvider: Bool {
+        viewModel.selectedProvider == .ollama || viewModel.selectedProvider == .lmstudio
     }
     
-    // MARK: - Organization Section (OpenAI)
-    
-    private var organizationSection: some View {
-        Section {
-            TextField("Organization ID", text: $viewModel.orgId, prompt: Text("org-... (optional)"))
-                .autocapitalization(.none)
-                .autocorrectionDisabled()
-                .focused($focusedField, equals: .orgId)
-        } header: {
-            Text("Organization")
-        } footer: {
-            Text("Optional. Required if you belong to multiple OpenAI organizations.")
+    private var canSave: Bool {
+        if viewModel.credentialName.isEmpty {
+            return false
         }
-    }
-    
-    // MARK: - Custom URL Section
-    
-    private var customUrlSection: some View {
-        Section {
-            TextField("Base URL", text: $viewModel.baseUrl, prompt: Text(viewModel.selectedProvider.baseURL))
-                .keyboardType(.URL)
-                .autocapitalization(.none)
-                .autocorrectionDisabled()
-                .focused($focusedField, equals: .baseUrl)
-        } header: {
-            Text("Server URL")
-        } footer: {
-            if viewModel.selectedProvider == .ollama {
-                Text("Default: http://localhost:11434")
-            } else if viewModel.selectedProvider == .lmstudio {
-                Text("Default: http://localhost:1234/v1")
-            } else {
-                Text("The base URL for API requests.")
-            }
+        
+        if isLocalProvider {
+            return !viewModel.baseUrl.isEmpty
         }
+        
+        return !viewModel.apiKey.isEmpty
     }
     
     // MARK: - Helpers
     
-    private var providerDescription: String {
-        switch viewModel.selectedProvider {
-        case .openai:
-            return "GPT-4, GPT-4o, o1, and more from OpenAI."
-        case .anthropic:
-            return "Claude models from Anthropic."
-        case .google:
-            return "Gemini models from Google."
-        case .xai:
-            return "Grok models from xAI."
-        case .groq:
-            return "Fast inference for open models."
-        case .mistral:
-            return "Mistral and Mixtral models."
-        case .deepseek:
-            return "DeepSeek models including DeepSeek-R1."
-        case .openrouter:
-            return "Access multiple providers through one API."
-        case .together:
-            return "Open source models from Together."
-        case .fireworks:
-            return "Fast inference from Fireworks AI."
-        case .ollama:
-            return "Run models locally with Ollama."
-        case .lmstudio:
-            return "Run models locally with LM Studio."
-        case .custom:
-            return "Any OpenAI-compatible API endpoint."
+    private func descriptionForProvider(_ provider: LLMProvider) -> String {
+        switch provider {
+        case .openai: return "GPT-4, GPT-4o, o1, and more"
+        case .anthropic: return "Claude 4, Claude 3.7 Sonnet"
+        case .google: return "Gemini 2.0, Gemini 1.5"
+        case .xai: return "Grok 2, Grok 3"
+        case .groq: return "Ultra-fast inference"
+        case .mistral: return "Mistral Large, Codestral"
+        case .deepseek: return "DeepSeek V3, DeepSeek-R1"
+        case .openrouter: return "200+ models from multiple providers"
+        case .together: return "Open source models"
+        case .fireworks: return "Fast inference"
+        case .ollama: return "Run models locally"
+        case .lmstudio: return "Local LM Studio server"
+        case .custom: return "OpenAI-compatible endpoint"
         }
     }
     
@@ -193,17 +254,35 @@ struct AddCredentialView: View {
         switch provider {
         case .openai: return "sparkles"
         case .anthropic: return "brain.head.profile"
-        case .google: return "g.circle"
-        case .xai: return "x.circle"
-        case .groq: return "bolt"
+        case .google: return "g.circle.fill"
+        case .xai: return "x.circle.fill"
+        case .groq: return "bolt.fill"
         case .mistral: return "wind"
         case .deepseek: return "magnifyingglass"
         case .openrouter: return "arrow.triangle.branch"
-        case .together: return "person.2"
-        case .fireworks: return "flame"
+        case .together: return "person.2.fill"
+        case .fireworks: return "flame.fill"
         case .ollama: return "desktopcomputer"
         case .lmstudio: return "server.rack"
-        case .custom: return "gearshape"
+        case .custom: return "gearshape.fill"
+        }
+    }
+    
+    private func colorForProvider(_ provider: LLMProvider) -> Color {
+        switch provider {
+        case .openai: return .green
+        case .anthropic: return .orange
+        case .google: return .blue
+        case .xai: return Color(.label)
+        case .groq: return .orange
+        case .mistral: return .blue
+        case .deepseek: return .purple
+        case .openrouter: return .pink
+        case .together: return .blue
+        case .fireworks: return .orange
+        case .ollama: return .green
+        case .lmstudio: return .purple
+        case .custom: return .gray
         }
     }
 }

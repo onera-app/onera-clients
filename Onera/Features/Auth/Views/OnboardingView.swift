@@ -2,7 +2,7 @@
 //  OnboardingView.swift
 //  Onera
 //
-//  Native iOS onboarding flow for new users
+//  Streamlined native iOS onboarding flow
 //
 
 import SwiftUI
@@ -11,52 +11,10 @@ import SwiftUI
 
 enum OnboardingStep: Int, CaseIterable, Identifiable {
     case welcome
-    case apiKeys
-    case encryption
-    case providers
-    case recovery
+    case security
+    case ready
     
     var id: Int { rawValue }
-    
-    var title: String {
-        switch self {
-        case .welcome: return "Welcome to Onera"
-        case .apiKeys: return "Your API Keys"
-        case .encryption: return "End-to-End Encrypted"
-        case .providers: return "Cloud or Local"
-        case .recovery: return "Recovery Key"
-        }
-    }
-    
-    var subtitle: String {
-        switch self {
-        case .welcome: return "Private AI chat, built differently"
-        case .apiKeys: return "You control which AI providers to use"
-        case .encryption: return "Your conversations stay private"
-        case .providers: return "Choose your privacy level"
-        case .recovery: return "The key to your encrypted data"
-        }
-    }
-    
-    var icon: String {
-        switch self {
-        case .welcome: return "sparkles"
-        case .apiKeys: return "key.fill"
-        case .encryption: return "lock.shield.fill"
-        case .providers: return "server.rack"
-        case .recovery: return "lock.doc.fill"
-        }
-    }
-    
-    var iconColor: Color {
-        switch self {
-        case .welcome: return .blue
-        case .apiKeys: return .orange
-        case .encryption: return .green
-        case .providers: return .purple
-        case .recovery: return .red
-        }
-    }
 }
 
 // MARK: - Onboarding View
@@ -69,7 +27,6 @@ struct OnboardingView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Native page control
             TabView(selection: $currentStep) {
                 ForEach(OnboardingStep.allCases) { step in
                     OnboardingPageView(step: step)
@@ -82,21 +39,21 @@ struct OnboardingView: View {
             // Bottom buttons
             VStack(spacing: 12) {
                 Button {
-                    if currentStep == .recovery {
+                    if currentStep == .ready {
                         onComplete()
                     } else {
                         withAnimation {
-                            currentStep = OnboardingStep(rawValue: currentStep.rawValue + 1) ?? .recovery
+                            currentStep = OnboardingStep(rawValue: currentStep.rawValue + 1) ?? .ready
                         }
                     }
                 } label: {
-                    Text(currentStep == .recovery ? "Get Started" : "Continue")
+                    Text(currentStep == .ready ? "Get Started" : "Continue")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 
-                if currentStep != .recovery {
+                if currentStep != .ready {
                     Button("Skip") {
                         onComplete()
                     }
@@ -121,42 +78,14 @@ private struct OnboardingPageView: View {
             VStack(spacing: 32) {
                 Spacer(minLength: 40)
                 
-                // Icon
-                Image(systemName: step.icon)
-                    .font(.system(size: 60))
-                    .foregroundStyle(step.iconColor)
-                    .frame(width: 100, height: 100)
-                    .background(step.iconColor.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                
-                // Title and subtitle
-                VStack(spacing: 12) {
-                    Text(step.title)
-                        .font(.title.bold())
-                        .multilineTextAlignment(.center)
-                    
-                    Text(step.subtitle)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
+                switch step {
+                case .welcome:
+                    WelcomeContent()
+                case .security:
+                    SecurityContent()
+                case .ready:
+                    ReadyContent()
                 }
-                
-                // Step-specific content
-                Group {
-                    switch step {
-                    case .welcome:
-                        WelcomeContent()
-                    case .apiKeys:
-                        ApiKeysContent()
-                    case .encryption:
-                        EncryptionContent()
-                    case .providers:
-                        ProvidersContent()
-                    case .recovery:
-                        RecoveryContent()
-                    }
-                }
-                .padding(.top, 8)
                 
                 Spacer(minLength: 100)
             }
@@ -170,54 +99,79 @@ private struct OnboardingPageView: View {
 
 private struct WelcomeContent: View {
     var body: some View {
-        VStack(spacing: 16) {
-            FeatureRow(icon: "key.fill", title: "Bring Your Own Keys", subtitle: "Use your own API keys")
-            FeatureRow(icon: "lock.shield.fill", title: "End-to-End Encrypted", subtitle: "We can't read your chats")
-            FeatureRow(icon: "desktopcomputer", title: "Local AI Support", subtitle: "Run models on your device")
+        VStack(spacing: 32) {
+            // Icon
+            Image(systemName: "sparkles")
+                .font(.system(size: 60))
+                .foregroundStyle(.blue)
+                .frame(width: 100, height: 100)
+                .background(Color.blue.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            
+            VStack(spacing: 12) {
+                Text("Welcome to Onera")
+                    .font(.title.bold())
+                
+                Text("Private AI chat, built differently")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+            }
+            
+            VStack(spacing: 16) {
+                FeatureRow(
+                    icon: "key.fill",
+                    iconColor: .orange,
+                    title: "Bring Your Own Keys",
+                    subtitle: "Use your own API keys from OpenAI, Anthropic, and more"
+                )
+                
+                FeatureRow(
+                    icon: "lock.shield.fill",
+                    iconColor: .green,
+                    title: "End-to-End Encrypted",
+                    subtitle: "Your chats and API keys are encrypted—we can't read them"
+                )
+                
+                FeatureRow(
+                    icon: "desktopcomputer",
+                    iconColor: .purple,
+                    title: "Local AI Support",
+                    subtitle: "Run models completely offline with Ollama"
+                )
+            }
         }
     }
 }
 
-// MARK: - API Keys Content
+// MARK: - Security Content
 
-private struct ApiKeysContent: View {
+private struct SecurityContent: View {
     var body: some View {
-        VStack(spacing: 16) {
-            InfoCard(
-                icon: "checkmark.circle.fill",
-                iconColor: .green,
-                title: "Your keys, your control",
-                description: "API keys are encrypted and stored on your device"
-            )
+        VStack(spacing: 32) {
+            // Icon
+            Image(systemName: "lock.shield.fill")
+                .font(.system(size: 60))
+                .foregroundStyle(.green)
+                .frame(width: 100, height: 100)
+                .background(Color.green.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             
-            InfoCard(
-                icon: "checkmark.circle.fill",
-                iconColor: .green,
-                title: "Pay providers directly",
-                description: "We never proxy your API requests"
-            )
+            VStack(spacing: 12) {
+                Text("Your Data, Your Control")
+                    .font(.title.bold())
+                
+                Text("Everything is encrypted before it leaves your device")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
             
-            InfoCard(
-                icon: "checkmark.circle.fill",
-                iconColor: .green,
-                title: "Multiple providers",
-                description: "OpenAI, Anthropic, and local Ollama"
-            )
-        }
-    }
-}
-
-// MARK: - Encryption Content
-
-private struct EncryptionContent: View {
-    var body: some View {
-        VStack(spacing: 20) {
-            // Visual flow
+            // Encryption visual
             HStack(spacing: 16) {
                 VStack(spacing: 4) {
                     Image(systemName: "doc.text")
                         .font(.title2)
-                    Text("Message")
+                    Text("Your Data")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -229,7 +183,7 @@ private struct EncryptionContent: View {
                     Image(systemName: "lock.fill")
                         .font(.title2)
                         .foregroundStyle(.green)
-                    Text("Encrypt")
+                    Text("Encrypted")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -250,51 +204,14 @@ private struct EncryptionContent: View {
             .background(Color(.secondarySystemGroupedBackground))
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             
-            // Standards
-            HStack(spacing: 12) {
-                StandardBadge(name: "AES-256", description: "Encryption")
-                StandardBadge(name: "Argon2id", description: "Key derivation")
-            }
-        }
-    }
-}
-
-// MARK: - Providers Content
-
-private struct ProvidersContent: View {
-    var body: some View {
-        VStack(spacing: 16) {
-            ProviderCard(
-                icon: "cloud.fill",
-                iconColor: .blue,
-                title: "Cloud Providers",
-                description: "GPT-4, Claude, and more via your API keys",
-                badge: "Popular"
-            )
-            
-            ProviderCard(
-                icon: "desktopcomputer",
-                iconColor: .green,
-                title: "Local with Ollama",
-                description: "Run AI completely offline on your device",
-                badge: "Most Private"
-            )
-        }
-    }
-}
-
-// MARK: - Recovery Content
-
-private struct RecoveryContent: View {
-    var body: some View {
-        VStack(spacing: 16) {
+            // Recovery key info
             VStack(alignment: .leading, spacing: 12) {
                 Label {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("It's your master key")
+                        Text("Recovery Phrase")
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(Color(.label))
-                        Text("This phrase decrypts all your data")
+                        Text("You'll get a 24-word phrase to backup your encryption key")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -307,41 +224,53 @@ private struct RecoveryContent: View {
                 
                 Label {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("We can't reset it")
+                        Text("We Can't Reset It")
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(Color(.label))
-                        Text("Only you have access to your data")
+                        Text("This is by design—only you have access to your data")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 } icon: {
-                    Image(systemName: "xmark.shield.fill")
+                    Image(systemName: "exclamationmark.shield.fill")
                         .foregroundStyle(.red)
-                }
-                
-                Divider()
-                
-                Label {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Store it safely")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color(.label))
-                        Text("Write it down or use a password manager")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                } icon: {
-                    Image(systemName: "lock.doc.fill")
-                        .foregroundStyle(.blue)
                 }
             }
             .padding()
             .background(Color(.secondarySystemGroupedBackground))
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+    }
+}
+
+// MARK: - Ready Content
+
+private struct ReadyContent: View {
+    var body: some View {
+        VStack(spacing: 32) {
+            // Icon
+            Image(systemName: "checkmark.seal.fill")
+                .font(.system(size: 60))
+                .foregroundStyle(.green)
+                .frame(width: 100, height: 100)
+                .background(Color.green.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             
-            Text("You'll receive your recovery phrase next.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+            VStack(spacing: 12) {
+                Text("You're All Set")
+                    .font(.title.bold())
+                
+                Text("After signing in, you'll set up encryption and add your API keys")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            
+            VStack(spacing: 16) {
+                StepRow(number: 1, title: "Sign In", subtitle: "Use Apple or Google")
+                StepRow(number: 2, title: "Set Up Encryption", subtitle: "Create passkey or password")
+                StepRow(number: 3, title: "Add API Key", subtitle: "Connect to an AI provider")
+            }
         }
     }
 }
@@ -350,6 +279,7 @@ private struct RecoveryContent: View {
 
 private struct FeatureRow: View {
     let icon: String
+    let iconColor: Color
     let title: String
     let subtitle: String
     
@@ -357,9 +287,9 @@ private struct FeatureRow: View {
         HStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.body)
-                .foregroundStyle(.blue)
-                .frame(width: 32, height: 32)
-                .background(Color.blue.opacity(0.1))
+                .foregroundStyle(iconColor)
+                .frame(width: 36, height: 36)
+                .background(iconColor.opacity(0.1))
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             
             VStack(alignment: .leading, spacing: 2) {
@@ -379,88 +309,25 @@ private struct FeatureRow: View {
     }
 }
 
-private struct InfoCard: View {
-    let icon: String
-    let iconColor: Color
+private struct StepRow: View {
+    let number: Int
     let title: String
-    let description: String
+    let subtitle: String
     
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: icon)
-                .foregroundStyle(iconColor)
+        HStack(spacing: 16) {
+            Text("\(number)")
+                .font(.headline)
+                .foregroundStyle(.white)
+                .frame(width: 32, height: 32)
+                .background(Color.blue)
+                .clipShape(Circle())
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color(.label))
-                Text(description)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            
-            Spacer()
-        }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-}
-
-private struct StandardBadge: View {
-    let name: String
-    let description: String
-    
-    var body: some View {
-        VStack(spacing: 4) {
-            Text(name)
-                .font(.caption.weight(.semibold).monospaced())
-                .foregroundStyle(Color(.label))
-            Text(description)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-    }
-}
-
-private struct ProviderCard: View {
-    let icon: String
-    let iconColor: Color
-    let title: String
-    let description: String
-    let badge: String?
-    
-    var body: some View {
-        HStack(spacing: 16) {
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundStyle(iconColor)
-                .frame(width: 44, height: 44)
-                .background(iconColor.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 8) {
-                    Text(title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color(.label))
-                    
-                    if let badge = badge {
-                        Text(badge)
-                            .font(.caption2.weight(.medium))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(iconColor.opacity(0.15))
-                            .foregroundStyle(iconColor)
-                            .clipShape(Capsule())
-                    }
-                }
-                
-                Text(description)
+                Text(subtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

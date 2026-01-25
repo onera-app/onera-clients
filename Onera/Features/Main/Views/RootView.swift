@@ -12,6 +12,10 @@ struct RootView: View {
     @Bindable var coordinator: AppCoordinator
     @Environment(\.dependencies) private var dependencies
     
+    // State for add credential flow
+    @State private var selectedProvider: LLMProvider?
+    @State private var showAddCredential = false
+    
     var body: some View {
         Group {
             switch coordinator.state {
@@ -53,10 +57,7 @@ struct RootView: View {
                 )
                 
             case .authenticatedNeedsAddApiKey:
-                AddApiKeyPromptView(
-                    onAddKey: { coordinator.handleAddApiKeyComplete() },
-                    onSkip: { coordinator.handleAddApiKeyComplete() }
-                )
+                addApiKeyView
                 
             case .authenticated:
                 MainView(
@@ -81,6 +82,60 @@ struct RootView: View {
             if let error = coordinator.error {
                 Text(error.localizedDescription)
             }
+        }
+    }
+    
+    // MARK: - Add API Key View with Sheet
+    
+    @ViewBuilder
+    private var addApiKeyView: some View {
+        AddApiKeyPromptView(
+            onSelectProvider: { provider in
+                selectedProvider = provider
+                showAddCredential = true
+            },
+            onSkip: { coordinator.handleAddApiKeyComplete() }
+        )
+        .sheet(isPresented: $showAddCredential) {
+            if let provider = selectedProvider {
+                AddCredentialView(
+                    viewModel: makeCredentialsViewModel(provider: provider)
+                )
+                .onDisappear {
+                    // Check if credential was saved and proceed
+                    Task {
+                        let hasCredentials = await checkHasCredentials()
+                        if hasCredentials {
+                            coordinator.handleAddApiKeyComplete()
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // MARK: - Helpers
+    
+    private func makeCredentialsViewModel(provider: LLMProvider) -> CredentialsViewModel {
+        let viewModel = CredentialsViewModel(
+            credentialService: dependencies.credentialService,
+            networkService: dependencies.networkService,
+            cryptoService: dependencies.cryptoService,
+            extendedCryptoService: dependencies.extendedCryptoService,
+            secureSession: dependencies.secureSession,
+            authService: dependencies.authService
+        )
+        viewModel.selectedProvider = provider
+        return viewModel
+    }
+    
+    private func checkHasCredentials() async -> Bool {
+        do {
+            let token = try await dependencies.authService.getToken()
+            try await dependencies.credentialService.refreshCredentials(token: token)
+            return !dependencies.credentialService.credentials.isEmpty
+        } catch {
+            return false
         }
     }
 }

@@ -2,7 +2,8 @@
 //  AddApiKeyPromptView.swift
 //  Onera
 //
-//  Native iOS view prompting user to add their first API key
+//  Provider selection grid for adding API credentials
+//  Matches web app's ConnectionsTab style
 //
 
 import SwiftUI
@@ -11,16 +12,16 @@ struct AddApiKeyPromptView: View {
     
     @Environment(\.openURL) private var openURL
     
-    let onAddKey: () -> Void
+    let onSelectProvider: (LLMProvider) -> Void
     let onSkip: () -> Void
     
     var body: some View {
         NavigationStack {
             List {
                 Section {
-                    VStack(spacing: 20) {
+                    VStack(spacing: 16) {
                         Image(systemName: "key.fill")
-                            .font(.system(size: 56))
+                            .font(.system(size: 48))
                             .foregroundStyle(.orange)
                         
                         VStack(spacing: 8) {
@@ -34,119 +35,232 @@ struct AddApiKeyPromptView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 24, leading: 0, bottom: 16, trailing: 0))
+                    .listRowInsets(EdgeInsets(top: 16, leading: 0, bottom: 16, trailing: 0))
                 }
                 
+                // Popular Providers
                 Section {
-                    // OpenAI
-                    ProviderRow(
-                        name: "OpenAI",
-                        description: "GPT-4, GPT-4o, and more",
+                    ProviderButton(
+                        provider: .openai,
+                        description: "GPT-4o, o1, o3",
                         icon: "sparkles",
                         iconColor: .green,
-                        url: "https://platform.openai.com/api-keys"
+                        onSelect: onSelectProvider
                     )
                     
-                    // Anthropic
-                    ProviderRow(
-                        name: "Anthropic",
-                        description: "Claude 3.5 Sonnet, Opus",
+                    ProviderButton(
+                        provider: .anthropic,
+                        description: "Claude 4, Claude 3.7",
                         icon: "brain.head.profile",
                         iconColor: .orange,
-                        url: "https://console.anthropic.com/settings/keys"
+                        onSelect: onSelectProvider
                     )
                     
-                    // Local
-                    HStack {
-                        Image(systemName: "desktopcomputer")
-                            .font(.title3)
-                            .foregroundStyle(.blue)
-                            .frame(width: 32)
-                        
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Local with Ollama")
-                                .font(.body.weight(.medium))
-                                .foregroundStyle(Color(.label))
-                            Text("No API key needed")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        
-                        Spacer()
-                        
-                        Text("Free")
-                            .font(.caption.weight(.medium))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(.green.opacity(0.15))
-                            .foregroundStyle(.green)
-                            .clipShape(Capsule())
-                    }
+                    ProviderButton(
+                        provider: .google,
+                        description: "Gemini 2.0, Gemini 1.5",
+                        icon: "g.circle.fill",
+                        iconColor: .blue,
+                        onSelect: onSelectProvider
+                    )
+                    
+                    ProviderButton(
+                        provider: .xai,
+                        description: "Grok 2, Grok 3",
+                        icon: "x.circle.fill",
+                        iconColor: Color(.label),
+                        onSelect: onSelectProvider
+                    )
                 } header: {
-                    Text("Supported Providers")
-                } footer: {
-                    Text("Your API keys are encrypted and stored only on your device. We never see them.")
+                    Text("Popular")
                 }
                 
+                // Open Source
                 Section {
-                    Button("Add API Key") {
-                        onAddKey()
-                    }
-                    .frame(maxWidth: .infinity, alignment: .center)
+                    ProviderButton(
+                        provider: .groq,
+                        description: "Ultra-fast Llama, Mixtral",
+                        icon: "bolt.fill",
+                        iconColor: .orange,
+                        onSelect: onSelectProvider
+                    )
+                    
+                    ProviderButton(
+                        provider: .mistral,
+                        description: "Mistral Large, Codestral",
+                        icon: "wind",
+                        iconColor: .blue,
+                        onSelect: onSelectProvider
+                    )
+                    
+                    ProviderButton(
+                        provider: .deepseek,
+                        description: "DeepSeek V3, DeepSeek-R1",
+                        icon: "magnifyingglass",
+                        iconColor: .purple,
+                        onSelect: onSelectProvider
+                    )
+                } header: {
+                    Text("Open Source")
                 }
                 
+                // Aggregators
+                Section {
+                    ProviderButton(
+                        provider: .openrouter,
+                        description: "200+ models, one API",
+                        icon: "arrow.triangle.branch",
+                        iconColor: .pink,
+                        onSelect: onSelectProvider
+                    )
+                    
+                    ProviderButton(
+                        provider: .together,
+                        description: "Llama, Qwen, and more",
+                        icon: "person.2.fill",
+                        iconColor: .blue,
+                        onSelect: onSelectProvider
+                    )
+                    
+                    ProviderButton(
+                        provider: .fireworks,
+                        description: "Fast inference",
+                        icon: "flame.fill",
+                        iconColor: .orange,
+                        onSelect: onSelectProvider
+                    )
+                } header: {
+                    Text("Aggregators")
+                }
+                
+                // Local
+                Section {
+                    ProviderButton(
+                        provider: .ollama,
+                        description: "Run models locally",
+                        icon: "desktopcomputer",
+                        iconColor: .green,
+                        badge: "No API Key",
+                        onSelect: onSelectProvider
+                    )
+                    
+                    ProviderButton(
+                        provider: .lmstudio,
+                        description: "Local LM Studio server",
+                        icon: "server.rack",
+                        iconColor: .purple,
+                        badge: "No API Key",
+                        onSelect: onSelectProvider
+                    )
+                } header: {
+                    Text("Local")
+                } footer: {
+                    Text("Run AI completely offline on your own hardware.")
+                }
+                
+                // Skip
                 Section {
                     Button("I'll do this later") {
                         onSkip()
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
                     .foregroundStyle(.secondary)
+                } footer: {
+                    Text("You can add API keys anytime in Settings.")
                 }
             }
-            .navigationTitle("Get Started")
+            .navigationTitle("Add Connection")
             .navigationBarTitleDisplayMode(.inline)
         }
     }
 }
 
-// MARK: - Provider Row
+// MARK: - Provider Button
 
-private struct ProviderRow: View {
-    @Environment(\.openURL) private var openURL
-    
-    let name: String
+private struct ProviderButton: View {
+    let provider: LLMProvider
     let description: String
     let icon: String
     let iconColor: Color
-    let url: String
+    var badge: String? = nil
+    let onSelect: (LLMProvider) -> Void
     
     var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundStyle(iconColor)
-                .frame(width: 32)
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text(name)
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(Color(.label))
-                Text(description)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            
-            Spacer()
-            
-            Button {
-                if let url = URL(string: url) {
-                    openURL(url)
+        Button {
+            onSelect(provider)
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.title3)
+                    .foregroundStyle(iconColor)
+                    .frame(width: 32)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 8) {
+                        Text(provider.displayName)
+                            .font(.body.weight(.medium))
+                            .foregroundStyle(Color(.label))
+                        
+                        if let badge = badge {
+                            Text(badge)
+                                .font(.caption2.weight(.medium))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(.green.opacity(0.15))
+                                .foregroundStyle(.green)
+                                .clipShape(Capsule())
+                        }
+                    }
+                    
+                    Text(description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-            } label: {
-                Image(systemName: "arrow.up.right.square")
-                    .foregroundStyle(.blue)
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
-            .buttonStyle(.plain)
+        }
+    }
+}
+
+// MARK: - LLMProvider Extension
+
+extension LLMProvider {
+    var apiKeyPlaceholder: String {
+        switch self {
+        case .openai: return "sk-..."
+        case .anthropic: return "sk-ant-..."
+        case .google: return "AI..."
+        case .xai: return "xai-..."
+        case .groq: return "gsk_..."
+        case .mistral: return ""
+        case .deepseek: return "sk-..."
+        case .openrouter: return "sk-or-..."
+        case .together: return ""
+        case .fireworks: return "fw_..."
+        case .ollama, .lmstudio, .custom: return ""
+        }
+    }
+    
+    var websiteURL: URL? {
+        switch self {
+        case .openai: return URL(string: "https://platform.openai.com/api-keys")
+        case .anthropic: return URL(string: "https://console.anthropic.com/settings/keys")
+        case .google: return URL(string: "https://aistudio.google.com/apikey")
+        case .xai: return URL(string: "https://console.x.ai")
+        case .groq: return URL(string: "https://console.groq.com/keys")
+        case .mistral: return URL(string: "https://console.mistral.ai/api-keys")
+        case .deepseek: return URL(string: "https://platform.deepseek.com/api_keys")
+        case .openrouter: return URL(string: "https://openrouter.ai/keys")
+        case .together: return URL(string: "https://api.together.xyz/settings/api-keys")
+        case .fireworks: return URL(string: "https://fireworks.ai/api-keys")
+        case .ollama: return URL(string: "https://ollama.ai")
+        case .lmstudio: return URL(string: "https://lmstudio.ai")
+        case .custom: return nil
         }
     }
 }
@@ -155,7 +269,7 @@ private struct ProviderRow: View {
 
 #Preview {
     AddApiKeyPromptView(
-        onAddKey: {},
+        onSelectProvider: { _ in },
         onSkip: {}
     )
 }
