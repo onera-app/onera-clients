@@ -84,3 +84,5 @@ fastlane/test_output
 # OS generated files
 *.swp
 *~
+*.xcuserstate
+xcuserdata/
