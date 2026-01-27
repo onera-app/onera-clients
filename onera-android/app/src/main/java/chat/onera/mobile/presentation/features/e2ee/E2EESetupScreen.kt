@@ -22,9 +22,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalClipboardManager
+import android.content.ClipData
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
+import kotlinx.coroutines.launch
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -563,7 +565,8 @@ private fun ShowRecoveryPhraseStep(
     onContinue: () -> Unit
 ) {
     val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val coroutineScope = rememberCoroutineScope()
     var showCopiedSnackbar by remember { mutableStateOf(false) }
     
     val phraseText = phrase.joinToString(" ")
@@ -607,7 +610,9 @@ private fun ShowRecoveryPhraseStep(
         ) {
             OutlinedButton(
                 onClick = {
-                    clipboardManager.setText(AnnotatedString(phraseText))
+                    coroutineScope.launch {
+                        clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("recovery_phrase", phraseText)))
+                    }
                     showCopiedSnackbar = true
                 },
                 modifier = Modifier.weight(1f)
@@ -642,7 +647,9 @@ private fun ShowRecoveryPhraseStep(
                         context.startActivity(Intent.createChooser(intent, "Save Recovery Phrase"))
                     } catch (e: Exception) {
                         // Fallback: just copy to clipboard
-                        clipboardManager.setText(AnnotatedString(phraseText))
+                        coroutineScope.launch {
+                            clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("recovery_phrase", phraseText)))
+                        }
                         showCopiedSnackbar = true
                     }
                 },
@@ -762,7 +769,8 @@ private fun VerifyRecoveryPhraseStep(
     onWordChanged: (Int, String) -> Unit,
     onSubmit: () -> Unit
 ) {
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val coroutineScope = rememberCoroutineScope()
     var showPasteOption by remember { mutableStateOf(false) }
     var pastedPhrase by remember { mutableStateOf("") }
     
@@ -830,13 +838,15 @@ private fun VerifyRecoveryPhraseStep(
                 trailingIcon = {
                     IconButton(
                         onClick = {
-                            clipboardManager.getText()?.let { text ->
-                                pastedPhrase = text.toString()
-                                // Parse and fill in the verification words
-                                val words = text.toString().trim().lowercase().split("\\s+".toRegex())
-                                verificationWords.forEach { indexed ->
-                                    if (indexed.index < words.size) {
-                                        onWordChanged(indexed.index, words[indexed.index])
+                            coroutineScope.launch {
+                                clipboard.getClipEntry()?.clipData?.getItemAt(0)?.text?.toString()?.let { text ->
+                                    pastedPhrase = text
+                                    // Parse and fill in the verification words
+                                    val words = text.trim().lowercase().split("\\s+".toRegex())
+                                    verificationWords.forEach { indexed ->
+                                        if (indexed.index < words.size) {
+                                            onWordChanged(indexed.index, words[indexed.index])
+                                        }
                                     }
                                 }
                             }

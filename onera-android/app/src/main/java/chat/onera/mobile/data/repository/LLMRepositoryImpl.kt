@@ -33,7 +33,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class LLMRepositoryImpl @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val llmClient: LLMClient,
     private val credentialRepositoryLazy: Lazy<CredentialRepository>
 ) : LLMRepository {

@@ -13,10 +13,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import android.content.ClipData
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.AnnotatedString
+import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.dp
 import chat.onera.mobile.presentation.components.MarkdownText
 
@@ -36,8 +38,9 @@ fun StreamingMessageBubble(
         ),
         label = "cursorAlpha"
     )
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
     val hapticFeedback = LocalHapticFeedback.current
+    val coroutineScope = rememberCoroutineScope()
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -53,7 +56,9 @@ fun StreamingMessageBubble(
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     onCopyCode = { code ->
-                        clipboardManager.setText(AnnotatedString(code))
+                        coroutineScope.launch {
+                            clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("code", code)))
+                        }
                         hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                     }
                 )

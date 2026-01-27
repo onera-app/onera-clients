@@ -19,11 +19,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import android.content.ClipData
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.AnnotatedString
+import kotlinx.coroutines.launch
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -155,8 +157,9 @@ private fun MessageBubble(
     onRegenerate: (() -> Unit)?
 ) {
     val isUser = message.role == MessageRole.USER
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
     val hapticFeedback = LocalHapticFeedback.current
+    val coroutineScope = rememberCoroutineScope()
     
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -193,7 +196,9 @@ private fun MessageBubble(
                     markdown = message.content,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     onCopyCode = { code ->
-                        clipboardManager.setText(AnnotatedString(code))
+                        coroutineScope.launch {
+                            clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("code", code)))
+                        }
                         hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                     }
                 )
@@ -240,8 +245,9 @@ private fun StreamingMessageBubble(
     content: String,
     onStop: () -> Unit
 ) {
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
     val hapticFeedback = LocalHapticFeedback.current
+    val coroutineScope = rememberCoroutineScope()
     
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -258,7 +264,9 @@ private fun StreamingMessageBubble(
                 markdown = content + "▊",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 onCopyCode = { code ->
-                    clipboardManager.setText(AnnotatedString(code))
+                    coroutineScope.launch {
+                        clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("code", code)))
+                    }
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                 }
             )

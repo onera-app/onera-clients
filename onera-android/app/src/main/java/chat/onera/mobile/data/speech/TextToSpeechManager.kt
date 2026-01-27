@@ -61,16 +61,12 @@ class TextToSpeechManager @Inject constructor(
                     _speakingStartTime.value = null
                 }
                 
+                @Deprecated("Deprecated in Java")
                 override fun onError(utteranceId: String?) {
                     _isSpeaking.value = false
                     _speakingMessageId.value = null
                     _speakingStartTime.value = null
                     _error.value = "Failed to speak text"
-                }
-                
-                @Deprecated("Deprecated in API level 21")
-                override fun onError(utteranceId: String?, errorCode: Int) {
-                    onError(utteranceId)
                 }
             })
         } else {

@@ -10,10 +10,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material.icons.outlined.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,12 +22,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
+import android.content.ClipData
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.AnnotatedString
+import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.dp
 import chat.onera.mobile.domain.model.Message
 import chat.onera.mobile.domain.model.MessageRole
@@ -323,7 +325,8 @@ private fun AssistantMessageBubble(
     var showReasoning by remember { mutableStateOf(false) }
     var copiedFeedback by remember { mutableStateOf(false) }
     val hapticFeedback = LocalHapticFeedback.current
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val coroutineScope = rememberCoroutineScope()
     
     LaunchedEffect(copiedFeedback) {
         if (copiedFeedback) {
@@ -365,7 +368,9 @@ private fun AssistantMessageBubble(
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurface,
             onCopyCode = { code ->
-                clipboardManager.setText(AnnotatedString(code))
+                coroutineScope.launch {
+                    clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("code", code)))
+                }
                 hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
             }
         )
@@ -439,7 +444,7 @@ private fun AssistantMessageBubble(
                 modifier = Modifier.size(32.dp)
             ) {
                 Icon(
-                    imageVector = if (isSpeaking) Icons.Outlined.VolumeUp else Icons.Outlined.VolumeUp,
+                    imageVector = Icons.AutoMirrored.Outlined.VolumeUp,
                     contentDescription = if (isSpeaking) "Stop Reading" else "Read Aloud",
                     modifier = Modifier.size(16.dp),
                     tint = if (isSpeaking) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant

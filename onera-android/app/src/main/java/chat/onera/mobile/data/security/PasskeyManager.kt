@@ -42,7 +42,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class PasskeyManager @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val trpcClient: TRPCClient,
     private val encryptionManager: EncryptionManager
 ) {

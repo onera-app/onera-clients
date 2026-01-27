@@ -40,7 +40,7 @@ enum class AppTheme(val displayName: String) {
  */
 @Singleton
 class ThemePreferences @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
     private object PreferencesKeys {
         val THEME_MODE = stringPreferencesKey("theme_mode")
