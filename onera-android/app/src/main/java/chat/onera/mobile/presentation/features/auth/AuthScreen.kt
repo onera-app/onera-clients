@@ -62,8 +62,12 @@ fun AuthScreen(
                 is AuthEffect.NavigateToMain -> onAuthSuccess()
                 is AuthEffect.NavigateToE2EESetup -> onNeedsE2EESetup()
                 is AuthEffect.NavigateToE2EEUnlock -> onNeedsE2EEUnlock()
-                is AuthEffect.ShowError -> { /* Show snackbar */ }
-                is AuthEffect.LaunchGoogleSignIn -> { /* Launch intent */ }
+                is AuthEffect.ShowError -> {
+                    // Error is displayed via state.error and Snackbar below
+                }
+                is AuthEffect.LaunchGoogleSignIn -> {
+                    // Google Sign In is handled by Clerk SDK internally
+                }
             }
         }
     }

@@ -1,5 +1,6 @@
 package chat.onera.mobile.presentation.features.settings
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -39,6 +41,7 @@ fun SettingsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var showSignOutDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     
     // Handle one-time effects
     LaunchedEffect(Unit) {
@@ -46,7 +49,9 @@ fun SettingsScreen(
             when (effect) {
                 is SettingsEffect.SignOutComplete -> onSignOut()
                 is SettingsEffect.SessionLocked -> onSignOut() // Navigate to auth/unlock
-                is SettingsEffect.ShowError -> { /* Handle error toast/snackbar */ }
+                is SettingsEffect.ShowError -> {
+                    Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -130,7 +135,9 @@ fun SettingsScreen(
                         icon = Icons.Outlined.Devices,
                         title = "Manage Devices",
                         subtitle = "${state.deviceCount} device(s) registered",
-                        onClick = { /* TODO */ }
+                        onClick = { 
+                            Toast.makeText(context, "Device management coming soon", Toast.LENGTH_SHORT).show()
+                        }
                     )
                     if (onAPICredentials != null) {
                         SettingsItem(
@@ -158,7 +165,9 @@ fun SettingsScreen(
                         icon = Icons.Outlined.Notifications,
                         title = "Notifications",
                         subtitle = "Manage notification settings",
-                        onClick = { /* TODO */ }
+                        onClick = { 
+                            Toast.makeText(context, "Notification settings coming soon", Toast.LENGTH_SHORT).show()
+                        }
                     )
                 }
             }
@@ -170,17 +179,25 @@ fun SettingsScreen(
                         icon = Icons.Outlined.Info,
                         title = "About Onera",
                         subtitle = "Version ${state.appVersion}",
-                        onClick = { }
+                        onClick = { 
+                            Toast.makeText(context, "Onera - Your private AI assistant", Toast.LENGTH_SHORT).show()
+                        }
                     )
                     SettingsItem(
                         icon = Icons.Outlined.Description,
                         title = "Privacy Policy",
-                        onClick = { }
+                        onClick = { 
+                            // TODO: Open privacy policy URL in browser
+                            Toast.makeText(context, "Privacy policy at onera.chat/privacy", Toast.LENGTH_SHORT).show()
+                        }
                     )
                     SettingsItem(
                         icon = Icons.Outlined.Gavel,
                         title = "Terms of Service",
-                        onClick = { }
+                        onClick = { 
+                            // TODO: Open terms URL in browser
+                            Toast.makeText(context, "Terms at onera.chat/terms", Toast.LENGTH_SHORT).show()
+                        }
                     )
                 }
             }

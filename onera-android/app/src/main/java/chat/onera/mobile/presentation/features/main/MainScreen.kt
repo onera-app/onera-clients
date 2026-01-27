@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -22,6 +23,10 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
 import chat.onera.mobile.presentation.features.chat.ChatContent
 import chat.onera.mobile.presentation.features.main.components.SidebarDrawerContent
 import kotlin.math.abs
@@ -51,14 +56,24 @@ fun MainScreen(
         }
     }
     
+    // Context for clipboard and toast
+    val context = LocalContext.current
+    
     // Handle one-time effects
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
                 is MainEffect.SignOutComplete -> onSignOut()
-                is MainEffect.ShowError -> { /* Handle error toast/snackbar */ }
-                is MainEffect.CopyToClipboard -> { /* Handle clipboard */ }
-                is MainEffect.ScrollToBottom -> { /* Handle scroll */ }
+                is MainEffect.ShowError -> {
+                    Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
+                }
+                is MainEffect.CopyToClipboard -> {
+                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    val clip = ClipData.newPlainText("Message", effect.content)
+                    clipboard.setPrimaryClip(clip)
+                    Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+                }
+                is MainEffect.ScrollToBottom -> { /* Handled by ChatContent's LaunchedEffect */ }
             }
         }
     }
