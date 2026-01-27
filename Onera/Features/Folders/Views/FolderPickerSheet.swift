@@ -239,6 +239,7 @@ private struct FolderPickerNodeView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     FolderPickerSheet(
         viewModel: FolderViewModel(
@@ -250,3 +251,4 @@ private struct FolderPickerNodeView: View {
         selectedFolderId: .constant(nil)
     )
 }
+#endif

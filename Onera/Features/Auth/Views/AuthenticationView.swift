@@ -195,6 +195,7 @@ struct AuthenticationView: View {
 
 // MARK: - Previews
 
+#if DEBUG
 #Preview {
     AuthenticationView(
         viewModel: AuthViewModel(
@@ -203,3 +204,4 @@ struct AuthenticationView: View {
         )
     )
 }
+#endif

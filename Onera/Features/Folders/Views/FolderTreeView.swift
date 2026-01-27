@@ -350,6 +350,7 @@ private struct FolderNodeView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     FolderTreeView(
         viewModel: FolderViewModel(
@@ -364,3 +365,4 @@ private struct FolderNodeView: View {
     .frame(width: 280)
     .padding()
 }
+#endif

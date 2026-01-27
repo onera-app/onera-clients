@@ -571,6 +571,7 @@ struct WarningBanner: View {
     }
 }
 
+#if DEBUG
 #Preview {
     E2EESetupView(
         viewModel: E2EESetupViewModel(
@@ -580,3 +581,4 @@ struct WarningBanner: View {
         )
     )
 }
+#endif

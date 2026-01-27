@@ -992,6 +992,7 @@ private struct PulsingDotModifier: ViewModifier {
     }
 }
 
+#if DEBUG
 #Preview {
     VStack(spacing: 16) {
         MessageBubbleView(
@@ -1008,3 +1009,4 @@ private struct PulsingDotModifier: ViewModifier {
     }
     .padding()
 }
+#endif

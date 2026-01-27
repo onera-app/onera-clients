@@ -344,9 +344,11 @@ struct MainView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     MainView(
         onSignOut: {}
     )
     .withDependencies(MockDependencyContainer())
 }
+#endif

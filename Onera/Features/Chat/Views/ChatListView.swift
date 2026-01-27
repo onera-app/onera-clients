@@ -86,6 +86,7 @@ struct ChatListRow: View {
     }
 }
 
+#if DEBUG
 #Preview {
     NavigationStack {
         ChatListView(
@@ -102,3 +103,4 @@ struct ChatListRow: View {
         )
     }
 }
+#endif

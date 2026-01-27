@@ -437,6 +437,7 @@ struct AppearanceSettingsView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     SettingsView(
         viewModel: SettingsViewModel(
@@ -451,3 +452,4 @@ struct AppearanceSettingsView: View {
         )
     )
 }
+#endif

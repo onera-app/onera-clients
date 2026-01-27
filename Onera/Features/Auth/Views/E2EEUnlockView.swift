@@ -493,6 +493,7 @@ struct E2EEUnlockView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     E2EEUnlockView(
         viewModel: E2EEUnlockViewModel(
@@ -505,3 +506,4 @@ struct E2EEUnlockView: View {
         onComplete: {}
     )
 }
+#endif

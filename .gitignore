@@ -1,0 +1,86 @@
+# Xcode
+## Build generated
+build/
+DerivedData/
+*.xcarchive
+
+## User-specific Xcode data
+*.xcuserstate
+*.xcuserdatad/
+!*.xcodeproj/project.xcworkspace/xcshareddata/
+xcuserdata/
+
+## Xcode schemes (if you want to share schemes, remove this)
+# *.xcscheme
+
+## Playground data
+timeline.xctimeline
+playground.xcworkspace
+
+## Swift Package Manager
+.swiftpm/
+.build/
+Package.resolved
+
+## CocoaPods
+Pods/
+*.xcworkspace
+!*.xcodeproj/project.xcworkspace
+
+## Carthage
+Carthage/Build/
+Carthage/Checkouts/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+## Icon cache
+Icon?
+
+## Thumbnails
+._*
+
+## Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# IDE
+## VS Code
+.vscode/
+
+## JetBrains IDEs
+.idea/
+
+# Environment and secrets
+.env
+.env.*
+*.pem
+*.p12
+*.key
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Code coverage
+*.gcno
+*.gcda
+*.profraw
+*.profdata
+
+# Playgrounds
+*.playground/
+
+# OS generated files
+*.swp
+*~
