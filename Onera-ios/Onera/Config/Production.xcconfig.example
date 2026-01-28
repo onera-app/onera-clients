@@ -4,14 +4,11 @@
 // SETUP INSTRUCTIONS:
 // 1. Copy this file: cp Production.xcconfig.example Production.xcconfig
 // 2. Fill in your production values below
-// 3. Add Config folder to your Xcode project (File > Add Files to "Onera")
-// 4. Go to Project Navigator > Click "Onera" project > Info tab
-// 5. Under "Configurations", expand Debug and Release
-// 6. For "Onera" target rows, select "Production" from the dropdown
+// 3. The xcconfig is already linked in the Xcode project
 
 // =====================================================
 // Environment Variables
-// These get substituted into Config.plist at build time
+// These get substituted into Info.plist at build time
 // =====================================================
 
 // API Configuration
@@ -29,4 +26,4 @@ WEBAUTHN_RP_NAME = Onera
 KEYCHAIN_SERVICE_NAME = chat.onera.keychain
 
 // Bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = chat.onera
+PRODUCT_BUNDLE_IDENTIFIER = prod.app.onera

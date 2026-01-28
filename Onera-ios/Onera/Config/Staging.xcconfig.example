@@ -4,18 +4,15 @@
 // SETUP INSTRUCTIONS:
 // 1. Copy this file: cp Staging.xcconfig.example Staging.xcconfig
 // 2. Fill in your staging values below
-// 3. Add Config folder to your Xcode project (File > Add Files to "Onera")
-// 4. Go to Project Navigator > Click "Onera" project > Info tab
-// 5. Under "Configurations", expand Debug and Release
-// 6. For "Onera Staging" target rows, select "Staging" from the dropdown
+// 3. The xcconfig is already linked in the Xcode project
 
 // =====================================================
 // Environment Variables
-// These get substituted into Config.plist at build time
+// These get substituted into Info.plist at build time
 // =====================================================
 
 // API Configuration
-API_BASE_URL = https:/$()/api-staging.onera.chat
+API_BASE_URL = https:/$()/api-stage.onera.chat
 TRPC_PATH = /trpc
 
 // Clerk Configuration
@@ -29,4 +26,4 @@ WEBAUTHN_RP_NAME = Onera Staging
 KEYCHAIN_SERVICE_NAME = chat.onera.staging.keychain
 
 // Bundle identifier (different from prod to allow both apps on same device)
-PRODUCT_BUNDLE_IDENTIFIER = chat.onera.staging
+PRODUCT_BUNDLE_IDENTIFIER = staging.app.onera

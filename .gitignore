@@ -67,8 +67,8 @@ Icon?
 *.key
 
 # Xcode configuration files with secrets (use .example files as templates)
-Onera-ios/Config/Production.xcconfig
-Onera-ios/Config/Staging.xcconfig
+Production.xcconfig
+Staging.xcconfig
 
 # Fastlane
 fastlane/report.xml

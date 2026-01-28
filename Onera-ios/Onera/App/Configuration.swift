@@ -8,7 +8,7 @@
 //  - Config/Production.xcconfig (for Production target)
 //  - Config/Staging.xcconfig (for Staging target)
 //
-//  Values are read from Config.plist which uses $(VARIABLE) substitution
+//  Values are read from Info.plist which uses $(VARIABLE) substitution
 //  from the xcconfig build settings at compile time.
 //
 
@@ -30,21 +30,11 @@ enum AppEnvironment: String {
     }
 }
 
-// MARK: - Config.plist Helper
+// MARK: - Info.plist Helper
 
-private enum ConfigPlist {
-    private static var config: [String: Any]? = {
-        guard let url = Bundle.main.url(forResource: "Config", withExtension: "plist"),
-              let data = try? Data(contentsOf: url),
-              let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any] else {
-            print("⚠️ Warning: Config.plist not found or invalid. Using default values.")
-            return nil
-        }
-        return plist
-    }()
-    
+private enum InfoPlist {
     static func string(forKey key: String) -> String? {
-        config?[key] as? String
+        Bundle.main.object(forInfoDictionaryKey: key) as? String
     }
     
     static func string(forKey key: String, default defaultValue: String) -> String {
@@ -59,21 +49,21 @@ enum Configuration {
     // MARK: - API Configuration
     
     static var apiBaseURL: URL {
-        let urlString = ConfigPlist.string(forKey: "API_BASE_URL", default: "https://api.onera.chat")
+        let urlString = InfoPlist.string(forKey: "API_BASE_URL", default: "https://api.onera.chat")
         guard let url = URL(string: urlString) else {
-            fatalError("Invalid API_BASE_URL in Config.plist: \(urlString)")
+            fatalError("Invalid API_BASE_URL in Info.plist: \(urlString)")
         }
         return url
     }
     
     static var trpcPath: String {
-        ConfigPlist.string(forKey: "TRPC_PATH", default: "/trpc")
+        InfoPlist.string(forKey: "TRPC_PATH", default: "/trpc")
     }
     
     // MARK: - Clerk Configuration
     
     static var clerkPublishableKey: String {
-        ConfigPlist.string(forKey: "CLERK_PUBLISHABLE_KEY", default: "REDACTED_CLERK_KEY")
+        InfoPlist.string(forKey: "CLERK_PUBLISHABLE_KEY", default: "REDACTED_CLERK_KEY")
     }
     
     // MARK: - Security Configuration
@@ -98,7 +88,7 @@ enum Configuration {
     
     enum Keychain: Sendable {
         nonisolated static var serviceName: String {
-            ConfigPlist.string(forKey: "KEYCHAIN_SERVICE_NAME", default: "chat.onera.keychain")
+            InfoPlist.string(forKey: "KEYCHAIN_SERVICE_NAME", default: "chat.onera.keychain")
         }
         
         enum Keys: Sendable {
@@ -114,11 +104,11 @@ enum Configuration {
     
     enum WebAuthn {
         static var rpID: String {
-            ConfigPlist.string(forKey: "WEBAUTHN_RP_ID", default: "onera.chat")
+            InfoPlist.string(forKey: "WEBAUTHN_RP_ID", default: "onera.chat")
         }
         
         static var rpName: String {
-            ConfigPlist.string(forKey: "WEBAUTHN_RP_NAME", default: "Onera")
+            InfoPlist.string(forKey: "WEBAUTHN_RP_NAME", default: "Onera")
         }
     }
     

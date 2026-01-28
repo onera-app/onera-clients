@@ -9,6 +9,7 @@
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>webcredentials:onera.chat</string>
+		<string>applinks:clerk.onera.chat</string>
 	</array>
 </dict>
 </plist>

@@ -26,37 +26,29 @@
 		B12477682F1DEE9300E6156D /* XAIProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B12477672F1DEE9300E6156D /* XAIProvider */; };
 		B124776D2F1DF52000E6156D /* Highlightr in Frameworks */ = {isa = PBXBuildFile; productRef = B124776C2F1DF52000E6156D /* Highlightr */; };
 		B12477702F1DF84E00E6156D /* Textual in Frameworks */ = {isa = PBXBuildFile; productRef = B124776F2F1DF84E00E6156D /* Textual */; };
-		B154EE112F29B5AD00C95C29 /* OpenAIProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B154EE072F29B5AD00C95C29 /* OpenAIProvider */; };
-		B154EE122F29B5AD00C95C29 /* GroqProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B154EE042F29B5AD00C95C29 /* GroqProvider */; };
-		B154EE132F29B5AD00C95C29 /* OpenAICompatibleProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B154EE062F29B5AD00C95C29 /* OpenAICompatibleProvider */; };
-		B154EE142F29B5AD00C95C29 /* GoogleVertexProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B154EE032F29B5AD00C95C29 /* GoogleVertexProvider */; };
-		B154EE152F29B5AD00C95C29 /* Highlightr in Frameworks */ = {isa = PBXBuildFile; productRef = B154EE0B2F29B5AD00C95C29 /* Highlightr */; };
-		B154EE162F29B5AD00C95C29 /* CohereProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B154EDFF2F29B5AD00C95C29 /* CohereProvider */; };
-		B154EE172F29B5AD00C95C29 /* Textual in Frameworks */ = {isa = PBXBuildFile; productRef = B154EE0D2F29B5AD00C95C29 /* Textual */; };
-		B154EE182F29B5AD00C95C29 /* SwiftAISDK in Frameworks */ = {isa = PBXBuildFile; productRef = B154EE092F29B5AD00C95C29 /* SwiftAISDK */; };
-		B154EE192F29B5AD00C95C29 /* AISDKProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B154EDF92F29B5AD00C95C29 /* AISDKProvider */; };
-		B154EE1A2F29B5AD00C95C29 /* AISDKZodAdapter in Frameworks */ = {isa = PBXBuildFile; productRef = B154EDFC2F29B5AD00C95C29 /* AISDKZodAdapter */; };
-		B154EE1B2F29B5AD00C95C29 /* XAIProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B154EE0A2F29B5AD00C95C29 /* XAIProvider */; };
-		B154EE1C2F29B5AD00C95C29 /* BIP39 in Frameworks */ = {isa = PBXBuildFile; productRef = B154EDF72F29B5AD00C95C29 /* BIP39 */; };
-		B154EE1D2F29B5AD00C95C29 /* GoogleProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B154EE022F29B5AD00C95C29 /* GoogleProvider */; };
-		B154EE1E2F29B5AD00C95C29 /* AzureProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B154EDFE2F29B5AD00C95C29 /* AzureProvider */; };
-		B154EE1F2F29B5AD00C95C29 /* HuggingFaceProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B154EE052F29B5AD00C95C29 /* HuggingFaceProvider */; };
-		B154EE202F29B5AD00C95C29 /* Clerk in Frameworks */ = {isa = PBXBuildFile; productRef = B154EDF22F29B5AD00C95C29 /* Clerk */; };
-		B154EE212F29B5AD00C95C29 /* Clibsodium in Frameworks */ = {isa = PBXBuildFile; productRef = B154EDF42F29B5AD00C95C29 /* Clibsodium */; };
-		B154EE222F29B5AD00C95C29 /* ElevenLabsProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B154EE012F29B5AD00C95C29 /* ElevenLabsProvider */; };
-		B154EE232F29B5AD00C95C29 /* Sodium in Frameworks */ = {isa = PBXBuildFile; productRef = B154EDF62F29B5AD00C95C29 /* Sodium */; };
-		B154EE242F29B5AD00C95C29 /* PerplexityProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B154EE082F29B5AD00C95C29 /* PerplexityProvider */; };
-		B154EE252F29B5AD00C95C29 /* DeepSeekProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B154EE002F29B5AD00C95C29 /* DeepSeekProvider */; };
-		B154EE262F29B5AD00C95C29 /* AnthropicProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B154EDFD2F29B5AD00C95C29 /* AnthropicProvider */; };
-		B154EE272F29B5AD00C95C29 /* AISDKProviderUtils in Frameworks */ = {isa = PBXBuildFile; productRef = B154EDFB2F29B5AD00C95C29 /* AISDKProviderUtils */; };
-		B15B79042F29BBF400638F04 /* Production.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = B15B78FF2F29BBF400638F04 /* Production.xcconfig */; };
-		B15B79052F29BBF400638F04 /* Staging.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = B15B79012F29BBF400638F04 /* Staging.xcconfig */; };
-		B15B79062F29BBF400638F04 /* Production.xcconfig.example in Resources */ = {isa = PBXBuildFile; fileRef = B15B79002F29BBF400638F04 /* Production.xcconfig.example */; };
-		B15B79072F29BBF400638F04 /* Staging.xcconfig.example in Resources */ = {isa = PBXBuildFile; fileRef = B15B79022F29BBF400638F04 /* Staging.xcconfig.example */; };
-		B15B79082F29BBF400638F04 /* Production.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = B15B78FF2F29BBF400638F04 /* Production.xcconfig */; };
-		B15B79092F29BBF400638F04 /* Staging.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = B15B79012F29BBF400638F04 /* Staging.xcconfig */; };
-		B15B790A2F29BBF400638F04 /* Production.xcconfig.example in Resources */ = {isa = PBXBuildFile; fileRef = B15B79002F29BBF400638F04 /* Production.xcconfig.example */; };
-		B15B790B2F29BBF400638F04 /* Staging.xcconfig.example in Resources */ = {isa = PBXBuildFile; fileRef = B15B79022F29BBF400638F04 /* Staging.xcconfig.example */; };
+		B15B79472F29BFB600638F04 /* OpenAIProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B15B793D2F29BFB600638F04 /* OpenAIProvider */; };
+		B15B79482F29BFB600638F04 /* GroqProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B15B793A2F29BFB600638F04 /* GroqProvider */; };
+		B15B79492F29BFB600638F04 /* OpenAICompatibleProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B15B793C2F29BFB600638F04 /* OpenAICompatibleProvider */; };
+		B15B794A2F29BFB600638F04 /* GoogleVertexProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B15B79392F29BFB600638F04 /* GoogleVertexProvider */; };
+		B15B794B2F29BFB600638F04 /* Highlightr in Frameworks */ = {isa = PBXBuildFile; productRef = B15B79412F29BFB600638F04 /* Highlightr */; };
+		B15B794C2F29BFB600638F04 /* CohereProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B15B79352F29BFB600638F04 /* CohereProvider */; };
+		B15B794D2F29BFB600638F04 /* Textual in Frameworks */ = {isa = PBXBuildFile; productRef = B15B79432F29BFB600638F04 /* Textual */; };
+		B15B794E2F29BFB600638F04 /* SwiftAISDK in Frameworks */ = {isa = PBXBuildFile; productRef = B15B793F2F29BFB600638F04 /* SwiftAISDK */; };
+		B15B794F2F29BFB600638F04 /* AISDKProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B15B792F2F29BFB600638F04 /* AISDKProvider */; };
+		B15B79502F29BFB600638F04 /* AISDKZodAdapter in Frameworks */ = {isa = PBXBuildFile; productRef = B15B79322F29BFB600638F04 /* AISDKZodAdapter */; };
+		B15B79512F29BFB600638F04 /* XAIProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B15B79402F29BFB600638F04 /* XAIProvider */; };
+		B15B79522F29BFB600638F04 /* BIP39 in Frameworks */ = {isa = PBXBuildFile; productRef = B15B792D2F29BFB600638F04 /* BIP39 */; };
+		B15B79532F29BFB600638F04 /* GoogleProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B15B79382F29BFB600638F04 /* GoogleProvider */; };
+		B15B79542F29BFB600638F04 /* AzureProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B15B79342F29BFB600638F04 /* AzureProvider */; };
+		B15B79552F29BFB600638F04 /* HuggingFaceProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B15B793B2F29BFB600638F04 /* HuggingFaceProvider */; };
+		B15B79562F29BFB600638F04 /* Clerk in Frameworks */ = {isa = PBXBuildFile; productRef = B15B79282F29BFB600638F04 /* Clerk */; };
+		B15B79572F29BFB600638F04 /* Clibsodium in Frameworks */ = {isa = PBXBuildFile; productRef = B15B792A2F29BFB600638F04 /* Clibsodium */; };
+		B15B79582F29BFB600638F04 /* ElevenLabsProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B15B79372F29BFB600638F04 /* ElevenLabsProvider */; };
+		B15B79592F29BFB600638F04 /* Sodium in Frameworks */ = {isa = PBXBuildFile; productRef = B15B792C2F29BFB600638F04 /* Sodium */; };
+		B15B795A2F29BFB600638F04 /* PerplexityProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B15B793E2F29BFB600638F04 /* PerplexityProvider */; };
+		B15B795B2F29BFB600638F04 /* DeepSeekProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B15B79362F29BFB600638F04 /* DeepSeekProvider */; };
+		B15B795C2F29BFB600638F04 /* AnthropicProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B15B79332F29BFB600638F04 /* AnthropicProvider */; };
+		B15B795D2F29BFB600638F04 /* AISDKProviderUtils in Frameworks */ = {isa = PBXBuildFile; productRef = B15B79312F29BFB600638F04 /* AISDKProviderUtils */; };
 		B1C768452F1D013F00B728F0 /* Clerk in Frameworks */ = {isa = PBXBuildFile; productRef = B1C768442F1D013F00B728F0 /* Clerk */; };
 		B1C768482F1D01C200B728F0 /* Clibsodium in Frameworks */ = {isa = PBXBuildFile; productRef = B1C768472F1D01C200B728F0 /* Clibsodium */; };
 		B1C7684A2F1D01C200B728F0 /* Sodium in Frameworks */ = {isa = PBXBuildFile; productRef = B1C768492F1D01C200B728F0 /* Sodium */; };
@@ -75,106 +67,20 @@
 
 /* Begin PBXFileReference section */
 		B12479EC2F1F498E00E6156D /* OneraUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OneraUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		B154EE2C2F29B5AD00C95C29 /* Onera Staging.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Onera Staging.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		B15B78FF2F29BBF400638F04 /* Production.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Production.xcconfig; sourceTree = "<group>"; };
-		B15B79002F29BBF400638F04 /* Production.xcconfig.example */ = {isa = PBXFileReference; lastKnownFileType = text; path = Production.xcconfig.example; sourceTree = "<group>"; };
-		B15B79012F29BBF400638F04 /* Staging.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Staging.xcconfig; sourceTree = "<group>"; };
-		B15B79022F29BBF400638F04 /* Staging.xcconfig.example */ = {isa = PBXFileReference; lastKnownFileType = text; path = Staging.xcconfig.example; sourceTree = "<group>"; };
+		B15B79622F29BFB600638F04 /* Onera Staging.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Onera Staging.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B1C767FF2F1CDF1900B728F0 /* Onera.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Onera.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		B154EE2D2F29B5AD00C95C29 /* Exceptions for "Onera" folder in "Onera Staging" target */ = {
+		B15B79632F29BFB600638F04 /* Exceptions for "Onera" folder in "Onera Staging" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				App/AppCoordinator.swift,
-				App/Configuration.swift,
-				App/DependencyContainer.swift,
-				App/OneraApp.swift,
-				Core/Errors.swift,
-				Core/Extensions.swift,
-				Core/Models/Chat.swift,
-				Core/Models/Folder.swift,
-				Core/Models/KeyShares.swift,
-				Core/Models/Message.swift,
-				Core/Models/Note.swift,
-				Core/Models/User.swift,
-				DesignSystem/Animations.swift,
-				DesignSystem/Colors.swift,
-				DesignSystem/Components/GlassEffect.swift,
-				DesignSystem/Radius.swift,
-				DesignSystem/Shadows.swift,
-				DesignSystem/Spacing.swift,
-				DesignSystem/Theme/AppTheme.swift,
-				DesignSystem/Theme/ClaudeTheme.swift,
-				DesignSystem/Theme/ThemeEnvironment.swift,
-				DesignSystem/Theme/ThemeManager.swift,
-				DesignSystem/Typography.swift,
-				Features/Auth/ViewModels/AuthViewModel.swift,
-				Features/Auth/ViewModels/E2EESetupViewModel.swift,
-				Features/Auth/ViewModels/E2EEUnlockViewModel.swift,
-				Features/Auth/ViewModels/PasswordSetupViewModel.swift,
-				Features/Auth/ViewModels/PasswordUnlockViewModel.swift,
-				Features/Auth/Views/AddApiKeyPromptView.swift,
-				Features/Auth/Views/AuthenticationView.swift,
-				Features/Auth/Views/E2EESetupView.swift,
-				Features/Auth/Views/E2EEUnlockView.swift,
-				Features/Auth/Views/OnboardingView.swift,
-				Features/Chat/ViewModels/ChatListViewModel.swift,
-				Features/Chat/ViewModels/ChatViewModel.swift,
-				Features/Chat/ViewModels/ModelSelectorViewModel.swift,
-				Features/Chat/Views/ChatListView.swift,
-				Features/Chat/Views/ChatView.swift,
-				Features/Chat/Views/CustomNavigationBar.swift,
-				Features/Chat/Views/MessageBubbleView.swift,
-				Features/Chat/Views/MessageInputView.swift,
-				Features/Chat/Views/ModelSelectorView.swift,
-				Features/Chat/Views/TTSPlayerOverlay.swift,
-				Features/Folders/ViewModels/FolderViewModel.swift,
-				Features/Folders/Views/FolderPickerSheet.swift,
-				Features/Folders/Views/FolderTreeView.swift,
-				Features/Main/Views/MainView.swift,
-				Features/Main/Views/RootView.swift,
-				Features/Main/Views/SidebarDrawerView.swift,
-				Features/Notes/ViewModels/NotesViewModel.swift,
-				Features/Notes/Views/NoteEditorView.swift,
-				Features/Notes/Views/NotesListView.swift,
-				Features/Settings/ViewModels/CredentialsViewModel.swift,
-				Features/Settings/ViewModels/SettingsViewModel.swift,
-				Features/Settings/Views/AddCredentialView.swift,
-				Features/Settings/Views/CredentialsListView.swift,
-				Features/Settings/Views/SettingsView.swift,
-				Resources/Assets.xcassets,
-				Services/AIProviderFactory.swift,
-				Services/AuthService.swift,
-				Services/ChatTasksService.swift,
-				Services/CredentialService.swift,
-				Services/CryptoService.swift,
-				Services/E2EEService.swift,
-				Services/FileProcessingService.swift,
-				Services/KeychainService.swift,
-				Services/LLMService.swift,
-				Services/NetworkService.swift,
-				Services/PasskeyService.swift,
-				Services/Protocols/AuthServiceProtocol.swift,
-				Services/Protocols/ChatRepositoryProtocol.swift,
-				Services/Protocols/CredentialServiceProtocol.swift,
-				Services/Protocols/CryptoServiceProtocol.swift,
-				Services/Protocols/E2EEServiceProtocol.swift,
-				Services/Protocols/KeychainServiceProtocol.swift,
-				Services/Protocols/LLMServiceProtocol.swift,
-				Services/Protocols/NetworkServiceProtocol.swift,
-				Services/Protocols/PasskeyServiceProtocol.swift,
-				Services/Repositories/ChatRepository.swift,
-				Services/Repositories/FolderRepository.swift,
-				Services/Repositories/NoteRepository.swift,
-				Services/SecureSession.swift,
-				Services/SpeechRecognitionService.swift,
-				Services/SpeechService.swift,
-				Services/WebAuthnModels.swift,
-				Testing/TestDependencyContainer.swift,
+				Config/Production.xcconfig,
+				Config/Production.xcconfig.example,
+				Config/Staging.xcconfig,
+				Config/Staging.xcconfig.example,
 			);
-			target = B154EDF12F29B5AD00C95C29 /* Onera Staging */;
+			target = B15B79272F29BFB600638F04 /* Onera Staging */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -187,7 +93,7 @@
 		B1C768012F1CDF1900B728F0 /* Onera */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				B154EE2D2F29B5AD00C95C29 /* Exceptions for "Onera" folder in "Onera Staging" target */,
+				B15B79632F29BFB600638F04 /* Exceptions for "Onera" folder in "Onera Staging" target */,
 			);
 			path = Onera;
 			sourceTree = "<group>";
@@ -202,33 +108,33 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		B154EE102F29B5AD00C95C29 /* Frameworks */ = {
+		B15B79462F29BFB600638F04 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B154EE112F29B5AD00C95C29 /* OpenAIProvider in Frameworks */,
-				B154EE122F29B5AD00C95C29 /* GroqProvider in Frameworks */,
-				B154EE132F29B5AD00C95C29 /* OpenAICompatibleProvider in Frameworks */,
-				B154EE142F29B5AD00C95C29 /* GoogleVertexProvider in Frameworks */,
-				B154EE152F29B5AD00C95C29 /* Highlightr in Frameworks */,
-				B154EE162F29B5AD00C95C29 /* CohereProvider in Frameworks */,
-				B154EE172F29B5AD00C95C29 /* Textual in Frameworks */,
-				B154EE182F29B5AD00C95C29 /* SwiftAISDK in Frameworks */,
-				B154EE192F29B5AD00C95C29 /* AISDKProvider in Frameworks */,
-				B154EE1A2F29B5AD00C95C29 /* AISDKZodAdapter in Frameworks */,
-				B154EE1B2F29B5AD00C95C29 /* XAIProvider in Frameworks */,
-				B154EE1C2F29B5AD00C95C29 /* BIP39 in Frameworks */,
-				B154EE1D2F29B5AD00C95C29 /* GoogleProvider in Frameworks */,
-				B154EE1E2F29B5AD00C95C29 /* AzureProvider in Frameworks */,
-				B154EE1F2F29B5AD00C95C29 /* HuggingFaceProvider in Frameworks */,
-				B154EE202F29B5AD00C95C29 /* Clerk in Frameworks */,
-				B154EE212F29B5AD00C95C29 /* Clibsodium in Frameworks */,
-				B154EE222F29B5AD00C95C29 /* ElevenLabsProvider in Frameworks */,
-				B154EE232F29B5AD00C95C29 /* Sodium in Frameworks */,
-				B154EE242F29B5AD00C95C29 /* PerplexityProvider in Frameworks */,
-				B154EE252F29B5AD00C95C29 /* DeepSeekProvider in Frameworks */,
-				B154EE262F29B5AD00C95C29 /* AnthropicProvider in Frameworks */,
-				B154EE272F29B5AD00C95C29 /* AISDKProviderUtils in Frameworks */,
+				B15B79472F29BFB600638F04 /* OpenAIProvider in Frameworks */,
+				B15B79482F29BFB600638F04 /* GroqProvider in Frameworks */,
+				B15B79492F29BFB600638F04 /* OpenAICompatibleProvider in Frameworks */,
+				B15B794A2F29BFB600638F04 /* GoogleVertexProvider in Frameworks */,
+				B15B794B2F29BFB600638F04 /* Highlightr in Frameworks */,
+				B15B794C2F29BFB600638F04 /* CohereProvider in Frameworks */,
+				B15B794D2F29BFB600638F04 /* Textual in Frameworks */,
+				B15B794E2F29BFB600638F04 /* SwiftAISDK in Frameworks */,
+				B15B794F2F29BFB600638F04 /* AISDKProvider in Frameworks */,
+				B15B79502F29BFB600638F04 /* AISDKZodAdapter in Frameworks */,
+				B15B79512F29BFB600638F04 /* XAIProvider in Frameworks */,
+				B15B79522F29BFB600638F04 /* BIP39 in Frameworks */,
+				B15B79532F29BFB600638F04 /* GoogleProvider in Frameworks */,
+				B15B79542F29BFB600638F04 /* AzureProvider in Frameworks */,
+				B15B79552F29BFB600638F04 /* HuggingFaceProvider in Frameworks */,
+				B15B79562F29BFB600638F04 /* Clerk in Frameworks */,
+				B15B79572F29BFB600638F04 /* Clibsodium in Frameworks */,
+				B15B79582F29BFB600638F04 /* ElevenLabsProvider in Frameworks */,
+				B15B79592F29BFB600638F04 /* Sodium in Frameworks */,
+				B15B795A2F29BFB600638F04 /* PerplexityProvider in Frameworks */,
+				B15B795B2F29BFB600638F04 /* DeepSeekProvider in Frameworks */,
+				B15B795C2F29BFB600638F04 /* AnthropicProvider in Frameworks */,
+				B15B795D2F29BFB600638F04 /* AISDKProviderUtils in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -265,24 +171,12 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		B15B79032F29BBF400638F04 /* Config */ = {
-			isa = PBXGroup;
-			children = (
-				B15B78FF2F29BBF400638F04 /* Production.xcconfig */,
-				B15B79002F29BBF400638F04 /* Production.xcconfig.example */,
-				B15B79012F29BBF400638F04 /* Staging.xcconfig */,
-				B15B79022F29BBF400638F04 /* Staging.xcconfig.example */,
-			);
-			path = Config;
-			sourceTree = "<group>";
-		};
 		B1C767F62F1CDF1900B728F0 = {
 			isa = PBXGroup;
 			children = (
 				B1C768012F1CDF1900B728F0 /* Onera */,
 				B12479ED2F1F498E00E6156D /* OneraUITests */,
 				B1C768002F1CDF1900B728F0 /* Products */,
-				B15B79032F29BBF400638F04 /* Config */,
 			);
 			sourceTree = "<group>";
 		};
@@ -291,7 +185,7 @@
 			children = (
 				B1C767FF2F1CDF1900B728F0 /* Onera.app */,
 				B12479EC2F1F498E00E6156D /* OneraUITests.xctest */,
-				B154EE2C2F29B5AD00C95C29 /* Onera Staging.app */,
+				B15B79622F29BFB600638F04 /* Onera Staging.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -322,13 +216,13 @@
 			productReference = B12479EC2F1F498E00E6156D /* OneraUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
-		B154EDF12F29B5AD00C95C29 /* Onera Staging */ = {
+		B15B79272F29BFB600638F04 /* Onera Staging */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B154EE292F29B5AD00C95C29 /* Build configuration list for PBXNativeTarget "Onera Staging" */;
+			buildConfigurationList = B15B795F2F29BFB600638F04 /* Build configuration list for PBXNativeTarget "Onera Staging" */;
 			buildPhases = (
-				B154EE0F2F29B5AD00C95C29 /* Sources */,
-				B154EE102F29B5AD00C95C29 /* Frameworks */,
-				B154EE282F29B5AD00C95C29 /* Resources */,
+				B15B79452F29BFB600638F04 /* Sources */,
+				B15B79462F29BFB600638F04 /* Frameworks */,
+				B15B795E2F29BFB600638F04 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -339,32 +233,32 @@
 			);
 			name = "Onera Staging";
 			packageProductDependencies = (
-				B154EDF22F29B5AD00C95C29 /* Clerk */,
-				B154EDF42F29B5AD00C95C29 /* Clibsodium */,
-				B154EDF62F29B5AD00C95C29 /* Sodium */,
-				B154EDF72F29B5AD00C95C29 /* BIP39 */,
-				B154EDF92F29B5AD00C95C29 /* AISDKProvider */,
-				B154EDFB2F29B5AD00C95C29 /* AISDKProviderUtils */,
-				B154EDFC2F29B5AD00C95C29 /* AISDKZodAdapter */,
-				B154EDFD2F29B5AD00C95C29 /* AnthropicProvider */,
-				B154EDFE2F29B5AD00C95C29 /* AzureProvider */,
-				B154EDFF2F29B5AD00C95C29 /* CohereProvider */,
-				B154EE002F29B5AD00C95C29 /* DeepSeekProvider */,
-				B154EE012F29B5AD00C95C29 /* ElevenLabsProvider */,
-				B154EE022F29B5AD00C95C29 /* GoogleProvider */,
-				B154EE032F29B5AD00C95C29 /* GoogleVertexProvider */,
-				B154EE042F29B5AD00C95C29 /* GroqProvider */,
-				B154EE052F29B5AD00C95C29 /* HuggingFaceProvider */,
-				B154EE062F29B5AD00C95C29 /* OpenAICompatibleProvider */,
-				B154EE072F29B5AD00C95C29 /* OpenAIProvider */,
-				B154EE082F29B5AD00C95C29 /* PerplexityProvider */,
-				B154EE092F29B5AD00C95C29 /* SwiftAISDK */,
-				B154EE0A2F29B5AD00C95C29 /* XAIProvider */,
-				B154EE0B2F29B5AD00C95C29 /* Highlightr */,
-				B154EE0D2F29B5AD00C95C29 /* Textual */,
+				B15B79282F29BFB600638F04 /* Clerk */,
+				B15B792A2F29BFB600638F04 /* Clibsodium */,
+				B15B792C2F29BFB600638F04 /* Sodium */,
+				B15B792D2F29BFB600638F04 /* BIP39 */,
+				B15B792F2F29BFB600638F04 /* AISDKProvider */,
+				B15B79312F29BFB600638F04 /* AISDKProviderUtils */,
+				B15B79322F29BFB600638F04 /* AISDKZodAdapter */,
+				B15B79332F29BFB600638F04 /* AnthropicProvider */,
+				B15B79342F29BFB600638F04 /* AzureProvider */,
+				B15B79352F29BFB600638F04 /* CohereProvider */,
+				B15B79362F29BFB600638F04 /* DeepSeekProvider */,
+				B15B79372F29BFB600638F04 /* ElevenLabsProvider */,
+				B15B79382F29BFB600638F04 /* GoogleProvider */,
+				B15B79392F29BFB600638F04 /* GoogleVertexProvider */,
+				B15B793A2F29BFB600638F04 /* GroqProvider */,
+				B15B793B2F29BFB600638F04 /* HuggingFaceProvider */,
+				B15B793C2F29BFB600638F04 /* OpenAICompatibleProvider */,
+				B15B793D2F29BFB600638F04 /* OpenAIProvider */,
+				B15B793E2F29BFB600638F04 /* PerplexityProvider */,
+				B15B793F2F29BFB600638F04 /* SwiftAISDK */,
+				B15B79402F29BFB600638F04 /* XAIProvider */,
+				B15B79412F29BFB600638F04 /* Highlightr */,
+				B15B79432F29BFB600638F04 /* Textual */,
 			);
 			productName = Onera;
-			productReference = B154EE2C2F29B5AD00C95C29 /* Onera Staging.app */;
+			productReference = B15B79622F29BFB600638F04 /* Onera Staging.app */;
 			productType = "com.apple.product-type.application";
 		};
 		B1C767FE2F1CDF1900B728F0 /* Onera */ = {
@@ -454,8 +348,8 @@
 			projectRoot = "";
 			targets = (
 				B1C767FE2F1CDF1900B728F0 /* Onera */,
-				B154EDF12F29B5AD00C95C29 /* Onera Staging */,
 				B12479EB2F1F498E00E6156D /* OneraUITests */,
+				B15B79272F29BFB600638F04 /* Onera Staging */,
 			);
 		};
 /* End PBXProject section */
@@ -468,14 +362,10 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		B154EE282F29B5AD00C95C29 /* Resources */ = {
+		B15B795E2F29BFB600638F04 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B15B79042F29BBF400638F04 /* Production.xcconfig in Resources */,
-				B15B79052F29BBF400638F04 /* Staging.xcconfig in Resources */,
-				B15B79062F29BBF400638F04 /* Production.xcconfig.example in Resources */,
-				B15B79072F29BBF400638F04 /* Staging.xcconfig.example in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -483,10 +373,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B15B79082F29BBF400638F04 /* Production.xcconfig in Resources */,
-				B15B79092F29BBF400638F04 /* Staging.xcconfig in Resources */,
-				B15B790A2F29BBF400638F04 /* Production.xcconfig.example in Resources */,
-				B15B790B2F29BBF400638F04 /* Staging.xcconfig.example in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -500,7 +386,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		B154EE0F2F29B5AD00C95C29 /* Sources */ = {
+		B15B79452F29BFB600638F04 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -565,28 +451,21 @@
 			};
 			name = Release;
 		};
-		B154EE2A2F29B5AD00C95C29 /* Debug */ = {
+		B15B79602F29BFB600638F04 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = B15B79012F29BBF400638F04 /* Staging.xcconfig */;
+			baseConfigurationReferenceAnchor = B1C768012F1CDF1900B728F0 /* Onera */;
+			baseConfigurationReferenceRelativePath = Config/Staging.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = Onera;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = Onera/Onera.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = FYS9RNAGTV;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSCameraUsageDescription = "Onera uses the camera to take photos for message attachments.";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "Onera uses Face ID to securely unlock your encrypted data without entering your password each time.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Onera uses the microphone for voice input to compose messages.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Onera needs access to your photo library to attach images to messages.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Onera uses speech recognition to convert your voice into text for messages.";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -604,28 +483,21 @@
 			};
 			name = Debug;
 		};
-		B154EE2B2F29B5AD00C95C29 /* Release */ = {
+		B15B79612F29BFB600638F04 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = B15B79012F29BBF400638F04 /* Staging.xcconfig */;
+			baseConfigurationReferenceAnchor = B1C768012F1CDF1900B728F0 /* Onera */;
+			baseConfigurationReferenceRelativePath = Config/Staging.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = Onera;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = Onera/Onera.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = FYS9RNAGTV;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSCameraUsageDescription = "Onera uses the camera to take photos for message attachments.";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "Onera uses Face ID to securely unlock your encrypted data without entering your password each time.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Onera uses the microphone for voice input to compose messages.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Onera needs access to your photo library to attach images to messages.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Onera uses speech recognition to convert your voice into text for messages.";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -645,7 +517,6 @@
 		};
 		B1C768082F1CDF1A00B728F0 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = B15B79012F29BBF400638F04 /* Staging.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -710,7 +581,6 @@
 		};
 		B1C768092F1CDF1A00B728F0 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = B15B78FF2F29BBF400638F04 /* Production.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -768,7 +638,8 @@
 		};
 		B1C7680B2F1CDF1A00B728F0 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = B15B78FF2F29BBF400638F04 /* Production.xcconfig */;
+			baseConfigurationReferenceAnchor = B1C768012F1CDF1900B728F0 /* Onera */;
+			baseConfigurationReferenceRelativePath = Config/Production.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = Onera;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -777,17 +648,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = FYS9RNAGTV;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSCameraUsageDescription = "Onera uses the camera to take photos for message attachments.";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "Onera uses Face ID to securely unlock your encrypted data without entering your password each time.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Onera uses the microphone for voice input to compose messages.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Onera needs access to your photo library to attach images to messages.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Onera uses speech recognition to convert your voice into text for messages.";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -807,7 +669,8 @@
 		};
 		B1C7680C2F1CDF1A00B728F0 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = B15B78FF2F29BBF400638F04 /* Production.xcconfig */;
+			baseConfigurationReferenceAnchor = B1C768012F1CDF1900B728F0 /* Onera */;
+			baseConfigurationReferenceRelativePath = Config/Production.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = Onera;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -816,17 +679,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = FYS9RNAGTV;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSCameraUsageDescription = "Onera uses the camera to take photos for message attachments.";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "Onera uses Face ID to securely unlock your encrypted data without entering your password each time.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Onera uses the microphone for voice input to compose messages.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Onera needs access to your photo library to attach images to messages.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Onera uses speech recognition to convert your voice into text for messages.";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -856,11 +710,11 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		B154EE292F29B5AD00C95C29 /* Build configuration list for PBXNativeTarget "Onera Staging" */ = {
+		B15B795F2F29BFB600638F04 /* Build configuration list for PBXNativeTarget "Onera Staging" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				B154EE2A2F29B5AD00C95C29 /* Debug */,
-				B154EE2B2F29B5AD00C95C29 /* Release */,
+				B15B79602F29BFB600638F04 /* Debug */,
+				B15B79612F29BFB600638F04 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -910,7 +764,7 @@
 				minimumVersion = 0.2.1;
 			};
 		};
-		B154EDF32F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "clerk-ios" */ = {
+		B15B79292F29BFB600638F04 /* XCRemoteSwiftPackageReference "clerk-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/clerk/clerk-ios";
 			requirement = {
@@ -918,7 +772,7 @@
 				minimumVersion = 0.71.4;
 			};
 		};
-		B154EDF52F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "swift-sodium" */ = {
+		B15B792B2F29BFB600638F04 /* XCRemoteSwiftPackageReference "swift-sodium" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/jedisct1/swift-sodium";
 			requirement = {
@@ -926,7 +780,7 @@
 				minimumVersion = 0.10.0;
 			};
 		};
-		B154EDF82F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "BIP39" */ = {
+		B15B792E2F29BFB600638F04 /* XCRemoteSwiftPackageReference "BIP39" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pengpengliu/BIP39";
 			requirement = {
@@ -934,7 +788,7 @@
 				kind = branch;
 			};
 		};
-		B154EDFA2F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */ = {
+		B15B79302F29BFB600638F04 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/teunlao/swift-ai-sdk";
 			requirement = {
@@ -942,7 +796,7 @@
 				minimumVersion = 0.1.4;
 			};
 		};
-		B154EE0C2F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "Highlightr" */ = {
+		B15B79422F29BFB600638F04 /* XCRemoteSwiftPackageReference "Highlightr" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/raspu/Highlightr";
 			requirement = {
@@ -950,7 +804,7 @@
 				minimumVersion = 2.3.0;
 			};
 		};
-		B154EE0E2F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "textual" */ = {
+		B15B79442F29BFB600638F04 /* XCRemoteSwiftPackageReference "textual" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/gonzalezreal/textual";
 			requirement = {
@@ -1080,119 +934,119 @@
 			package = B124776E2F1DF84D00E6156D /* XCRemoteSwiftPackageReference "textual" */;
 			productName = Textual;
 		};
-		B154EDF22F29B5AD00C95C29 /* Clerk */ = {
+		B15B79282F29BFB600638F04 /* Clerk */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EDF32F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "clerk-ios" */;
+			package = B15B79292F29BFB600638F04 /* XCRemoteSwiftPackageReference "clerk-ios" */;
 			productName = Clerk;
 		};
-		B154EDF42F29B5AD00C95C29 /* Clibsodium */ = {
+		B15B792A2F29BFB600638F04 /* Clibsodium */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EDF52F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "swift-sodium" */;
+			package = B15B792B2F29BFB600638F04 /* XCRemoteSwiftPackageReference "swift-sodium" */;
 			productName = Clibsodium;
 		};
-		B154EDF62F29B5AD00C95C29 /* Sodium */ = {
+		B15B792C2F29BFB600638F04 /* Sodium */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EDF52F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "swift-sodium" */;
+			package = B15B792B2F29BFB600638F04 /* XCRemoteSwiftPackageReference "swift-sodium" */;
 			productName = Sodium;
 		};
-		B154EDF72F29B5AD00C95C29 /* BIP39 */ = {
+		B15B792D2F29BFB600638F04 /* BIP39 */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EDF82F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "BIP39" */;
+			package = B15B792E2F29BFB600638F04 /* XCRemoteSwiftPackageReference "BIP39" */;
 			productName = BIP39;
 		};
-		B154EDF92F29B5AD00C95C29 /* AISDKProvider */ = {
+		B15B792F2F29BFB600638F04 /* AISDKProvider */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EDFA2F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			package = B15B79302F29BFB600638F04 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
 			productName = AISDKProvider;
 		};
-		B154EDFB2F29B5AD00C95C29 /* AISDKProviderUtils */ = {
+		B15B79312F29BFB600638F04 /* AISDKProviderUtils */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EDFA2F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			package = B15B79302F29BFB600638F04 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
 			productName = AISDKProviderUtils;
 		};
-		B154EDFC2F29B5AD00C95C29 /* AISDKZodAdapter */ = {
+		B15B79322F29BFB600638F04 /* AISDKZodAdapter */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EDFA2F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			package = B15B79302F29BFB600638F04 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
 			productName = AISDKZodAdapter;
 		};
-		B154EDFD2F29B5AD00C95C29 /* AnthropicProvider */ = {
+		B15B79332F29BFB600638F04 /* AnthropicProvider */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EDFA2F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			package = B15B79302F29BFB600638F04 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
 			productName = AnthropicProvider;
 		};
-		B154EDFE2F29B5AD00C95C29 /* AzureProvider */ = {
+		B15B79342F29BFB600638F04 /* AzureProvider */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EDFA2F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			package = B15B79302F29BFB600638F04 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
 			productName = AzureProvider;
 		};
-		B154EDFF2F29B5AD00C95C29 /* CohereProvider */ = {
+		B15B79352F29BFB600638F04 /* CohereProvider */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EDFA2F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			package = B15B79302F29BFB600638F04 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
 			productName = CohereProvider;
 		};
-		B154EE002F29B5AD00C95C29 /* DeepSeekProvider */ = {
+		B15B79362F29BFB600638F04 /* DeepSeekProvider */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EDFA2F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			package = B15B79302F29BFB600638F04 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
 			productName = DeepSeekProvider;
 		};
-		B154EE012F29B5AD00C95C29 /* ElevenLabsProvider */ = {
+		B15B79372F29BFB600638F04 /* ElevenLabsProvider */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EDFA2F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			package = B15B79302F29BFB600638F04 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
 			productName = ElevenLabsProvider;
 		};
-		B154EE022F29B5AD00C95C29 /* GoogleProvider */ = {
+		B15B79382F29BFB600638F04 /* GoogleProvider */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EDFA2F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			package = B15B79302F29BFB600638F04 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
 			productName = GoogleProvider;
 		};
-		B154EE032F29B5AD00C95C29 /* GoogleVertexProvider */ = {
+		B15B79392F29BFB600638F04 /* GoogleVertexProvider */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EDFA2F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			package = B15B79302F29BFB600638F04 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
 			productName = GoogleVertexProvider;
 		};
-		B154EE042F29B5AD00C95C29 /* GroqProvider */ = {
+		B15B793A2F29BFB600638F04 /* GroqProvider */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EDFA2F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			package = B15B79302F29BFB600638F04 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
 			productName = GroqProvider;
 		};
-		B154EE052F29B5AD00C95C29 /* HuggingFaceProvider */ = {
+		B15B793B2F29BFB600638F04 /* HuggingFaceProvider */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EDFA2F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			package = B15B79302F29BFB600638F04 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
 			productName = HuggingFaceProvider;
 		};
-		B154EE062F29B5AD00C95C29 /* OpenAICompatibleProvider */ = {
+		B15B793C2F29BFB600638F04 /* OpenAICompatibleProvider */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EDFA2F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			package = B15B79302F29BFB600638F04 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
 			productName = OpenAICompatibleProvider;
 		};
-		B154EE072F29B5AD00C95C29 /* OpenAIProvider */ = {
+		B15B793D2F29BFB600638F04 /* OpenAIProvider */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EDFA2F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			package = B15B79302F29BFB600638F04 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
 			productName = OpenAIProvider;
 		};
-		B154EE082F29B5AD00C95C29 /* PerplexityProvider */ = {
+		B15B793E2F29BFB600638F04 /* PerplexityProvider */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EDFA2F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			package = B15B79302F29BFB600638F04 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
 			productName = PerplexityProvider;
 		};
-		B154EE092F29B5AD00C95C29 /* SwiftAISDK */ = {
+		B15B793F2F29BFB600638F04 /* SwiftAISDK */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EDFA2F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			package = B15B79302F29BFB600638F04 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
 			productName = SwiftAISDK;
 		};
-		B154EE0A2F29B5AD00C95C29 /* XAIProvider */ = {
+		B15B79402F29BFB600638F04 /* XAIProvider */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EDFA2F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			package = B15B79302F29BFB600638F04 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
 			productName = XAIProvider;
 		};
-		B154EE0B2F29B5AD00C95C29 /* Highlightr */ = {
+		B15B79412F29BFB600638F04 /* Highlightr */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EE0C2F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "Highlightr" */;
+			package = B15B79422F29BFB600638F04 /* XCRemoteSwiftPackageReference "Highlightr" */;
 			productName = Highlightr;
 		};
-		B154EE0D2F29B5AD00C95C29 /* Textual */ = {
+		B15B79432F29BFB600638F04 /* Textual */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B154EE0E2F29B5AD00C95C29 /* XCRemoteSwiftPackageReference "textual" */;
+			package = B15B79442F29BFB600638F04 /* XCRemoteSwiftPackageReference "textual" */;
 			productName = Textual;
 		};
 		B1C768442F1D013F00B728F0 /* Clerk */ = {
