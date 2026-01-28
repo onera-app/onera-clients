@@ -59,9 +59,10 @@ final class E2EEUnlockViewModel {
         e2eeService.hasLocalPasskey()
     }
     
-    /// Show passkey option if supported and user has passkey
+    /// Show passkey option if supported and user has passkey registered on server
+    /// Cross-device passkeys (synced via iCloud Keychain) don't require local storage
     var canUsePasskey: Bool {
-        passkeySupported && hasServerPasskey && hasLocalPasskey
+        passkeySupported && hasServerPasskey
     }
     
     // MARK: - Dependencies
@@ -92,8 +93,9 @@ final class E2EEUnlockViewModel {
             let token = try await authService.getToken()
             hasServerPasskey = try await e2eeService.hasPasskeys(token: token)
             
-            // If user has passkey on server and locally, auto-trigger unlock
-            if hasServerPasskey && hasLocalPasskey {
+            // If user has passkey on server, auto-trigger unlock
+            // Cross-device passkeys (synced via iCloud Keychain) will be available
+            if hasServerPasskey && passkeySupported {
                 await unlockWithPasskey()
             }
         } catch {

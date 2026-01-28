@@ -422,6 +422,10 @@ final class MockSecureSession: SecureSessionProtocol {
         return false
     }
     
+    func clearPersistedSession() {
+        // No-op for mock
+    }
+    
     func recordActivity() {
         lastActivityDate = Date()
     }

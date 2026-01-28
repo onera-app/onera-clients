@@ -52,6 +52,12 @@ final class AppCoordinator {
         isLoading = true
         defer { isLoading = false }
         
+        // Check for demo mode - simplified flow
+        if DemoModeManager.shared.isActive {
+            await determineInitialStateForDemoMode()
+            return
+        }
+        
         do {
             // Check authentication status
             guard authService.isAuthenticated else {
@@ -70,26 +76,65 @@ final class AppCoordinator {
                 return
             }
             
-            // Attempt to unlock session
-            if await secureSession.isUnlocked {
-                transition(to: .authenticated)
-                return
+            // Attempt to unlock session - but ONLY if master key is valid
+            if await secureSession.isUnlocked, secureSession.masterKey != nil {
+                print("[AppCoordinator] Session already unlocked, master key size: \(secureSession.masterKey?.count ?? 0)")
+                // Verify the key actually works by checking if we can use it
+                if await verifyMasterKeyWorks(token: token) {
+                    transition(to: .authenticated)
+                    return
+                } else {
+                    print("[AppCoordinator] Stored session has invalid master key, locking and trying other methods...")
+                    await secureSession.lock()
+                }
             }
             
             // 1. First try to restore session with biometrics (Face ID / Touch ID)
-            if await secureSession.tryRestoreSession() {
-                transition(to: .authenticated)
-                return
+            print("[AppCoordinator] Attempting biometric session restore...")
+            if await secureSession.tryRestoreSession(), secureSession.masterKey != nil {
+                print("[AppCoordinator] Biometric restore succeeded, master key size: \(secureSession.masterKey?.count ?? 0)")
+                // Verify the restored key actually works
+                if await verifyMasterKeyWorks(token: token) {
+                    transition(to: .authenticated)
+                    return
+                } else {
+                    print("[AppCoordinator] Biometric-restored key is stale/invalid, clearing and trying other methods...")
+                    await secureSession.lock()
+                    secureSession.clearPersistedSession()
+                }
             }
+            print("[AppCoordinator] Biometric restore failed or key invalid, trying device share...")
             
             // 2. Try automatic unlock with device share (same device)
             do {
                 try await e2eeService.unlockWithDeviceShare(token: token)
+                print("[AppCoordinator] Device share unlock succeeded")
                 transition(to: .authenticated)
+                return
             } catch {
-                // Need manual recovery with password/recovery phrase
-                transition(to: .authenticatedNeedsE2EEUnlock)
+                print("[AppCoordinator] Device share unlock failed: \(error)")
             }
+            
+            // 3. Try passkey unlock (if user has passkeys set up)
+            print("[AppCoordinator] Checking for passkey unlock...")
+            do {
+                let hasPasskeys = try await e2eeService.hasPasskeys(token: token)
+                if hasPasskeys {
+                    print("[AppCoordinator] User has passkeys, attempting passkey unlock...")
+                    try await e2eeService.unlockWithPasskey(token: token)
+                    print("[AppCoordinator] Passkey unlock succeeded")
+                    transition(to: .authenticated)
+                    return
+                } else {
+                    print("[AppCoordinator] No passkeys found for user")
+                }
+            } catch {
+                print("[AppCoordinator] Passkey unlock failed: \(error)")
+            }
+            
+            // 4. Need manual recovery with password/recovery phrase
+            print("[AppCoordinator] Showing E2EE unlock screen for manual recovery")
+            transition(to: .authenticatedNeedsE2EEUnlock)
             
         } catch let networkError as NetworkError {
             // Check if it's an unauthorized error
@@ -107,9 +152,30 @@ final class AppCoordinator {
         }
     }
     
+    /// Simplified state determination for demo mode
+    private func determineInitialStateForDemoMode() async {
+        print("[DemoMode] Determining initial state for demo mode")
+        
+        // In demo mode, check if authenticated and go straight to main app
+        if authService.isAuthenticated {
+            print("[DemoMode] Already authenticated, transitioning to authenticated state")
+            transition(to: .authenticated)
+        } else {
+            print("[DemoMode] Not authenticated, showing login screen")
+            transition(to: .unauthenticated)
+        }
+    }
+    
     // MARK: - State Transitions
     
     func handleAuthenticationSuccess() async {
+        // Demo mode: Skip token verification and go straight to authenticated
+        if DemoModeManager.shared.isActive {
+            print("[DemoMode] Authentication success - transitioning to authenticated state")
+            transition(to: .authenticated)
+            return
+        }
+        
         // Wait for Clerk session to be fully established AND able to issue tokens
         // This helps with OAuth redirects where the session may not be immediately available
         var tokenReady = false
@@ -136,6 +202,32 @@ final class AppCoordinator {
         await determineInitialState()
     }
     
+    /// Verifies that the current master key can actually decrypt data
+    /// This catches stale keys from biometric restore that no longer match the server-side encryption
+    private func verifyMasterKeyWorks(token: String) async -> Bool {
+        do {
+            // Try to verify by checking if we can use the key for any operation
+            // The e2eeService.checkSetupStatus already uses the server, so we trust that
+            // A better check would be to try decrypting a known piece of data
+            
+            // For now, we'll verify by attempting a simple key derivation test
+            // If the master key is valid, basic crypto operations should work
+            guard let masterKey = secureSession.masterKey, masterKey.count == 32 else {
+                print("[AppCoordinator] Master key missing or wrong size")
+                return false
+            }
+            
+            // Try to get the auth share from server and verify it matches
+            // This is the most reliable way to check if the key is correct
+            let isValid = try await e2eeService.verifyMasterKey(token: token)
+            print("[AppCoordinator] Master key verification result: \(isValid)")
+            return isValid
+        } catch {
+            print("[AppCoordinator] Master key verification failed: \(error)")
+            return false
+        }
+    }
+    
     /// Called when user completes the educational onboarding flow
     func handleOnboardingComplete() {
         transition(to: .authenticatedNeedsE2EESetup)
@@ -160,6 +252,13 @@ final class AppCoordinator {
     func handleSignOut() async {
         await authService.signOut()
         await secureSession.lock()
+        
+        // Deactivate demo mode on sign out
+        if DemoModeManager.shared.isActive {
+            DemoModeManager.shared.deactivate()
+            print("[DemoMode] Demo mode deactivated on sign out")
+        }
+        
         transition(to: .unauthenticated)
     }
     

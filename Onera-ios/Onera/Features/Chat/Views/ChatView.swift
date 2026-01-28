@@ -22,7 +22,21 @@ struct ChatView: View {
     
     var body: some View {
         ZStack {
+            // Background color
+            theme.background
+                .ignoresSafeArea()
+            
+            // Main content - messages scroll behind header and input
             VStack(spacing: 0) {
+                if viewModel.messages.isEmpty {
+                    emptyStateView
+                } else {
+                    messagesView
+                        .tint(.blue) // Blue text selection color
+                }
+            }
+            // Add padding for header and input areas so content doesn't start under them
+            .safeAreaInset(edge: .top) {
                 if showCustomNavBar {
                     CustomNavigationBar(
                         modelSelector: viewModel.modelSelector,
@@ -31,23 +45,9 @@ struct ChatView: View {
                         showingModelDropdown: $showingModelDropdown
                     )
                 }
-                ZStack(alignment: .bottom) {
-                    ZStack {
-                        // Background - does NOT intercept taps so buttons work
-                        theme.background
-                            .ignoresSafeArea()
-                            .allowsHitTesting(false)
-                        
-                        if viewModel.messages.isEmpty {
-                            emptyStateView
-                        } else {
-                            messagesView
-                                .padding(.bottom, 24)
-                        }
-                    }
-                    
-                    inputSection
-                }
+            }
+            .safeAreaInset(edge: .bottom) {
+                inputSection
             }
             
             // Model dropdown overlay - rendered at top level so it's not clipped
@@ -124,9 +124,14 @@ struct ChatView: View {
                             .id(message.id)
                     }
                     
-                    // Spacer at bottom for scroll padding
+                    // Large tappable spacer at bottom to dismiss selection
                     Color.clear
-                        .frame(height: 20)
+                        .frame(height: 150)
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            dismissSelection()
+                        }
                 }
                 .padding()
             }
@@ -199,7 +204,6 @@ struct ChatView: View {
                 }
                 .padding(.horizontal)
                 .padding(.vertical, 8)
-                .background(Color(.secondarySystemBackground))
             }
             
             // Show hint if no model selected
@@ -214,7 +218,6 @@ struct ChatView: View {
                 }
                 .padding(.horizontal)
                 .padding(.vertical, 8)
-                .background(Color(.secondarySystemBackground))
             }
             
             MessageInputView(
@@ -231,7 +234,7 @@ struct ChatView: View {
             )
             .focused($isInputFocused)
         }
-        .background(Color.clear)
+        .background(.ultraThinMaterial)
     }
     
     private func scrollToBottom(_ proxy: ScrollViewProxy) {

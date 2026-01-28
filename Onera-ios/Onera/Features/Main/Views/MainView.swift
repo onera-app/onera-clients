@@ -32,12 +32,6 @@ struct MainView: View {
         UIScreen.main.bounds.width * 0.80
     }
     
-    // Edge zone for opening drawer - narrow strip at left edge
-    // Small enough to not conflict with chat action buttons
-    private var edgeZoneWidth: CGFloat {
-        20
-    }
-    
     // Current offset based on drawer state and drag
     private var currentOffset: CGFloat {
         let baseOffset = isDrawerOpen ? drawerWidth : 0
@@ -93,7 +87,7 @@ struct MainView: View {
                     .frame(width: drawerWidth)
                     .offset(x: sidebarOffset)
                     .animation(isDragging ? nil : .spring(response: 0.3, dampingFraction: 0.8), value: sidebarOffset)
-                    .gesture(closeDrawerGesture) // Close gesture on sidebar
+                    .simultaneousGesture(fullScreenDrawerGesture) // Swipe gesture on sidebar
                     .accessibilityIdentifier("sidebarDrawer")
                 }
                 
@@ -101,18 +95,6 @@ struct MainView: View {
                 ZStack {
                     chatContent
                         .allowsHitTesting(!isDrawerOpen)
-                    
-                    // Invisible edge zone for opening gesture - only when drawer is closed
-                    if !isDrawerOpen {
-                        HStack {
-                            Color.clear
-                                .frame(width: edgeZoneWidth)
-                                .contentShape(Rectangle())
-                                .gesture(edgeOpenGesture)
-                            Spacer()
-                        }
-                        .allowsHitTesting(true)
-                    }
                     
                     // Dimmed overlay - blocks chat interaction when open
                     Color.black.opacity(overlayOpacity)
@@ -123,11 +105,12 @@ struct MainView: View {
                                 isDrawerOpen = false
                             }
                         }
-                        .gesture(closeDrawerGesture) // Close gesture on overlay
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 .offset(x: currentOffset)
                 .animation(isDragging ? nil : .spring(response: 0.3, dampingFraction: 0.8), value: currentOffset)
+                // Full-screen swipe gesture for opening/closing drawer
+                .simultaneousGesture(fullScreenDrawerGesture)
             }
             .accessibilityIdentifier("mainView")
         }
@@ -161,31 +144,53 @@ struct MainView: View {
     
     // MARK: - Drawer Gestures
     
-    // Edge gesture for OPENING the drawer - only from left edge
-    // Uses larger minimum distance to avoid conflicts with scrolling and text selection
-    private var edgeOpenGesture: some Gesture {
-        DragGesture(minimumDistance: 15, coordinateSpace: .global)
+    // Full-screen gesture for opening AND closing the drawer
+    // Uses strict horizontal detection to avoid conflicts with scrolling and text selection
+    private var fullScreenDrawerGesture: some Gesture {
+        DragGesture(minimumDistance: 30, coordinateSpace: .global)
             .updating($dragOffset) { value, state, _ in
-                // Only trigger from left edge zone when drawer is closed
-                guard !isDrawerOpen else { return }
+                // Require very strongly horizontal movement (3x more horizontal than vertical)
+                // This prevents interference with text selection and scrolling
+                let isVeryHorizontal = abs(value.translation.width) > abs(value.translation.height) * 3
                 
-                let isFromLeftEdge = value.startLocation.x < edgeZoneWidth
-                let isHorizontalDrag = abs(value.translation.width) > abs(value.translation.height) * 1.5
-                let isMovingRight = value.translation.width > 0
+                // Also require minimum horizontal distance before activating
+                let hasMinDistance = abs(value.translation.width) > 40
                 
-                if isFromLeftEdge && isHorizontalDrag && isMovingRight {
-                    state = value.translation.width
+                if !isVeryHorizontal || !hasMinDistance {
+                    return
+                }
+                
+                if isDrawerOpen {
+                    // Closing: only allow left swipe
+                    if value.translation.width < 0 {
+                        state = value.translation.width
+                    }
+                } else {
+                    // Opening: only allow right swipe
+                    if value.translation.width > 0 {
+                        state = value.translation.width
+                    }
                 }
             }
             .onChanged { value in
-                guard !isDrawerOpen else { return }
+                // Require very strongly horizontal movement
+                let isVeryHorizontal = abs(value.translation.width) > abs(value.translation.height) * 3
+                let hasMinDistance = abs(value.translation.width) > 40
                 
-                let isFromLeftEdge = value.startLocation.x < edgeZoneWidth
-                let isHorizontalDrag = abs(value.translation.width) > abs(value.translation.height) * 1.5
-                let isMovingRight = value.translation.width > 0
+                if !isVeryHorizontal || !hasMinDistance {
+                    return
+                }
                 
-                if isFromLeftEdge && isHorizontalDrag && isMovingRight {
-                    isDragging = true
+                if isDrawerOpen {
+                    // Closing: only allow left swipe
+                    if value.translation.width < 0 {
+                        isDragging = true
+                    }
+                } else {
+                    // Opening: only allow right swipe
+                    if value.translation.width > 0 {
+                        isDragging = true
+                    }
                 }
             }
             .onEnded { value in
@@ -195,62 +200,34 @@ struct MainView: View {
                 let velocity = value.velocity.width
                 let snapThreshold = drawerWidth * 0.3
                 
-                // Flick gesture - velocity overrides position
-                if velocity > 500 {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
-                        isDrawerOpen = true
+                if isDrawerOpen {
+                    // Closing logic
+                    // Flick left to close
+                    if velocity < -500 {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                            isDrawerOpen = false
+                        }
+                        return
                     }
-                    return
-                }
-                
-                // Snap based on position
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
-                    isDrawerOpen = currentOffset > snapThreshold
-                }
-            }
-    }
-    
-    // Close gesture - works from sidebar and overlay when drawer is open
-    private var closeDrawerGesture: some Gesture {
-        DragGesture(minimumDistance: 15, coordinateSpace: .global)
-            .updating($dragOffset) { value, state, _ in
-                guard isDrawerOpen else { return }
-                
-                let isHorizontalDrag = abs(value.translation.width) > abs(value.translation.height)
-                let isMovingLeft = value.translation.width < 0
-                
-                if isHorizontalDrag && isMovingLeft {
-                    state = value.translation.width
-                }
-            }
-            .onChanged { value in
-                guard isDrawerOpen else { return }
-                
-                let isHorizontalDrag = abs(value.translation.width) > abs(value.translation.height)
-                let isMovingLeft = value.translation.width < 0
-                
-                if isHorizontalDrag && isMovingLeft {
-                    isDragging = true
-                }
-            }
-            .onEnded { value in
-                guard isDragging else { return }
-                isDragging = false
-                
-                let velocity = value.velocity.width
-                let snapThreshold = drawerWidth * 0.3
-                
-                // Flick gesture - velocity overrides position
-                if velocity < -500 {
+                    
+                    // Snap based on position
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
-                        isDrawerOpen = false
+                        isDrawerOpen = currentOffset > (drawerWidth - snapThreshold)
                     }
-                    return
-                }
-                
-                // Snap based on position
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
-                    isDrawerOpen = currentOffset > (drawerWidth - snapThreshold)
+                } else {
+                    // Opening logic
+                    // Flick right to open
+                    if velocity > 500 {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                            isDrawerOpen = true
+                        }
+                        return
+                    }
+                    
+                    // Snap based on position
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                        isDrawerOpen = currentOffset > snapThreshold
+                    }
                 }
             }
     }

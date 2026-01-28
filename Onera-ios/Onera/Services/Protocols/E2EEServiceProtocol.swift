@@ -68,6 +68,12 @@ protocol E2EEServiceProtocol: Sendable {
     
     /// Gets the decrypted recovery phrase (requires unlocked session)
     func getRecoveryPhrase(token: String) async throws -> String
+    
+    // MARK: - Verification
+    
+    /// Verifies that the current master key in session is valid by checking against server
+    /// Returns true if the key can successfully decrypt server-side data
+    func verifyMasterKey(token: String) async throws -> Bool
 }
 
 // MARK: - Secure Session Protocol
@@ -103,6 +109,9 @@ protocol SecureSessionProtocol: Sendable {
     /// Returns true if restoration was successful
     @discardableResult
     func tryRestoreSession() async -> Bool
+    
+    /// Clears any persisted session data (biometric keychain)
+    func clearPersistedSession()
     
     /// Records user activity to reset timeout
     func recordActivity()

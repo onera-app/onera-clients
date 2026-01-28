@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Clerk
+import Combine
 
 @main
 struct OneraApp: App {
@@ -15,6 +16,9 @@ struct OneraApp: App {
     @State private var clerk = Clerk.shared
     @State private var coordinator: AppCoordinator
     @AppStorage("colorScheme") private var colorScheme = 0
+    
+    // Demo mode observation for live updates
+    @State private var demoModeManager = DemoModeManager.shared
     
     /// Whether the app is running in UI testing mode
     private static var isUITesting: Bool {
@@ -54,7 +58,7 @@ struct OneraApp: App {
                     #endif
                 }
                 .task {
-                    // Skip Clerk configuration in UI testing mode
+                    // Skip Clerk configuration in UI testing and demo modes
                     if Self.isUITesting {
                         #if DEBUG
                         print("[UITesting] Running in UI testing mode")
@@ -69,11 +73,20 @@ struct OneraApp: App {
                 .onOpenURL { url in
                     handleDeepLink(url)
                 }
+                // Listen for demo mode activation notification
+                .onReceive(NotificationCenter.default.publisher(for: .demoModeActivated)) { _ in
+                    handleDemoModeActivation()
+                }
         }
     }
     
-    /// Returns the active dependency container
+    /// Returns the active dependency container based on current mode
     private var activeDependencies: DependencyContaining {
+        // Check demo mode first (can be activated at runtime)
+        if demoModeManager.isActive {
+            return DemoDependencyContainer.shared
+        }
+        
         #if DEBUG
         if Self.isUITesting {
             return TestDependencyContainer.shared
@@ -100,6 +113,32 @@ struct OneraApp: App {
             // Notify our auth service to update state
             let authService = DependencyContainer.shared.authService
             try? await authService.handleOAuthCallback(url: url)
+        }
+    }
+    
+    private func handleDemoModeActivation() {
+        print("[DemoMode] Activation notification received")
+        
+        // Create new coordinator with demo dependencies
+        let newCoordinator = AppCoordinator(dependencies: DemoDependencyContainer.shared)
+        coordinator = newCoordinator
+        print("[DemoMode] Coordinator reinitialized with demo dependencies")
+        
+        // Perform auto sign-in and navigation
+        Task { @MainActor in
+            // Brief delay for UI to update
+            try? await Task.sleep(for: .milliseconds(300))
+            
+            // Sign in with demo service
+            let demoAuthService = DemoDependencyContainer.shared.demoAuthService
+            do {
+                try await demoAuthService.signInWithGoogle()
+                print("[DemoMode] Auto sign-in completed, navigating...")
+                // Tell coordinator to handle the auth success
+                await newCoordinator.handleAuthenticationSuccess()
+            } catch {
+                print("[DemoMode] Auto sign-in error: \(error)")
+            }
         }
     }
 }

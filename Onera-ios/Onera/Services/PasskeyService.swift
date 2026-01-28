@@ -134,9 +134,10 @@ final class PasskeyService: NSObject, PasskeyServiceProtocol, @unchecked Sendabl
             throw PasskeyError.notSupported
         }
         
-        // Step 1: Get authentication options from server
+        // Step 1: Get authentication options from server (mutation/POST, not query/GET)
         let optionsResponse: WebAuthnAuthOptionsResponse = try await networkService.call(
             procedure: APIEndpoint.WebAuthn.generateAuthenticationOptions,
+            input: EmptyInput(),
             token: token
         )
         
@@ -428,6 +429,11 @@ extension PasskeyService: ASAuthorizationControllerPresentationContextProviding 
         return window
     }
 }
+
+// MARK: - Empty Input for Mutations
+
+/// Empty input struct for mutations that don't require input but use POST method
+private struct EmptyInput: Encodable {}
 
 // MARK: - Mock Implementation
 

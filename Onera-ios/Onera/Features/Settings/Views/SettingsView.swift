@@ -43,13 +43,12 @@ struct SettingsView: View {
                     Button {
                         dismiss()
                     } label: {
-                        Image(systemName: "xmark")
-                            .font(OneraTypography.iconLabel)
-                            .foregroundStyle(theme.textPrimary)
-                            .frame(width: 30, height: 30)
-                            .background(theme.secondaryBackground)
-                            .clipShape(Circle())
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 28))
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(theme.textSecondary)
                     }
+                    .buttonStyle(.plain)
                 }
             }
             .sheet(isPresented: $viewModel.showRecoveryPhrase) {

@@ -501,6 +501,43 @@ final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
         throw CryptoError.mnemonicGenerationFailed
     }
     
+    // MARK: - Verification
+    
+    func verifyMasterKey(token: String) async throws -> Bool {
+        guard let masterKey = await secureSession.masterKey else {
+            return false
+        }
+        
+        // Fetch key shares from server and try to verify the master key
+        // by checking if we can successfully decrypt something
+        do {
+            let keyShares: KeySharesGetResponse = try await networkService.call(
+                procedure: APIEndpoint.KeyShares.get,
+                token: token
+            )
+            
+            // Try to decrypt the encrypted recovery share using the master key
+            // If this succeeds, the master key is valid
+            guard let encryptedRecoveryKey = Data(base64Encoded: keyShares.encryptedRecoveryKey),
+                  let recoveryKeyNonce = Data(base64Encoded: keyShares.recoveryKeyNonce) else {
+                return false
+            }
+            
+            // Attempt decryption - if it succeeds without throwing, the key is valid
+            let _ = try cryptoService.decrypt(
+                ciphertext: encryptedRecoveryKey,
+                nonce: recoveryKeyNonce,
+                key: masterKey
+            )
+            
+            print("[E2EEService] Master key verification successful")
+            return true
+        } catch {
+            print("[E2EEService] Master key verification failed: \(error)")
+            return false
+        }
+    }
+    
     // MARK: - Private Helpers
     
     private func setupNewDeviceShare(masterKey: Data, token: String) async throws {
@@ -748,6 +785,11 @@ final class MockE2EEService: E2EEServiceProtocol, @unchecked Sendable {
     func getRecoveryPhrase(token: String) async throws -> String {
         if shouldFail { throw E2EEError.sessionLocked }
         return mockMnemonic
+    }
+    
+    func verifyMasterKey(token: String) async throws -> Bool {
+        if shouldFail { return false }
+        return hasKeys
     }
 }
 #endif

@@ -54,7 +54,7 @@ struct CustomNavigationBar: View {
         .padding(.top, OneraSpacing.sm)
         .padding(.bottom, OneraSpacing.xxs)
         .frame(height: 56)
-        .background(theme.background)
+        .background(.ultraThinMaterial)
     }
     
     // MARK: - Native Model Selector

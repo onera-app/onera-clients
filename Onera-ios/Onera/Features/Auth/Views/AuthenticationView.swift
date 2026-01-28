@@ -115,6 +115,8 @@ struct AuthenticationView: View {
             }
         }
         .padding(.horizontal, OneraSpacing.xxl)
+        // Demo mode activation: press and hold header for 10 seconds
+        .demoModeActivation()
     }
     
     // MARK: - Button Constants (Apple HIG compliant)

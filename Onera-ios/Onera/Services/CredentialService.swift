@@ -93,8 +93,13 @@ final class CredentialService: CredentialServiceProtocol {
         // Decode base64 ciphertext and nonce for API key data
         guard let ciphertextData = Data(base64Encoded: encrypted.encryptedData),
               let nonceData = Data(base64Encoded: encrypted.iv) else {
+            print("[CredentialService] Failed to decode base64 for credential \(encrypted.id)")
+            print("[CredentialService] encryptedData length: \(encrypted.encryptedData.count), iv length: \(encrypted.iv.count)")
             return nil
         }
+        
+        print("[CredentialService] Attempting to decrypt credential \(encrypted.id)")
+        print("[CredentialService] Ciphertext size: \(ciphertextData.count), Nonce size: \(nonceData.count), Key size: \(masterKey.count)")
         
         // Decrypt the credential data (API key, base URL, etc.)
         let plaintext: Data
@@ -105,7 +110,8 @@ final class CredentialService: CredentialServiceProtocol {
                 key: masterKey
             )
         } catch {
-            print("Failed to decrypt credential \(encrypted.id): \(error)")
+            print("[CredentialService] Failed to decrypt credential \(encrypted.id): \(error)")
+            print("[CredentialService] Expected nonce size: 24 bytes (XSalsa20-Poly1305)")
             return nil
         }
         
