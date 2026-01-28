@@ -66,6 +66,10 @@ Icon?
 *.p12
 *.key
 
+# Xcode configuration files with secrets (use .example files as templates)
+Onera-ios/Config/Production.xcconfig
+Onera-ios/Config/Staging.xcconfig
+
 # Fastlane
 fastlane/report.xml
 fastlane/Preview.html

@@ -4,6 +4,13 @@
 //
 //  App configuration and constants
 //
+//  Environment variables are set via xcconfig files:
+//  - Config/Production.xcconfig (for Production target)
+//  - Config/Staging.xcconfig (for Staging target)
+//
+//  Values are read from Config.plist which uses $(VARIABLE) substitution
+//  from the xcconfig build settings at compile time.
+//
 
 import Foundation
 
@@ -23,6 +30,28 @@ enum AppEnvironment: String {
     }
 }
 
+// MARK: - Config.plist Helper
+
+private enum ConfigPlist {
+    private static var config: [String: Any]? = {
+        guard let url = Bundle.main.url(forResource: "Config", withExtension: "plist"),
+              let data = try? Data(contentsOf: url),
+              let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any] else {
+            print("⚠️ Warning: Config.plist not found or invalid. Using default values.")
+            return nil
+        }
+        return plist
+    }()
+    
+    static func string(forKey key: String) -> String? {
+        config?[key] as? String
+    }
+    
+    static func string(forKey key: String, default defaultValue: String) -> String {
+        string(forKey: key) ?? defaultValue
+    }
+}
+
 // MARK: - Configuration
 
 enum Configuration {
@@ -30,20 +59,21 @@ enum Configuration {
     // MARK: - API Configuration
     
     static var apiBaseURL: URL {
-        return URL(string: "https://api.onera.chat")!
+        let urlString = ConfigPlist.string(forKey: "API_BASE_URL", default: "https://api.onera.chat")
+        guard let url = URL(string: urlString) else {
+            fatalError("Invalid API_BASE_URL in Config.plist: \(urlString)")
+        }
+        return url
     }
     
-    static let trpcPath = "/trpc"
+    static var trpcPath: String {
+        ConfigPlist.string(forKey: "TRPC_PATH", default: "/trpc")
+    }
     
     // MARK: - Clerk Configuration
     
     static var clerkPublishableKey: String {
-        switch AppEnvironment.current {
-        case .development, .staging:
-            return "REDACTED_CLERK_KEY"
-        case .production:
-            return "REDACTED_CLERK_KEY"
-        }
+        ConfigPlist.string(forKey: "CLERK_PUBLISHABLE_KEY", default: "REDACTED_CLERK_KEY")
     }
     
     // MARK: - Security Configuration
@@ -67,7 +97,9 @@ enum Configuration {
     // MARK: - Keychain Configuration
     
     enum Keychain: Sendable {
-        nonisolated static let serviceName = "chat.onera.keychain"
+        nonisolated static var serviceName: String {
+            ConfigPlist.string(forKey: "KEYCHAIN_SERVICE_NAME", default: "chat.onera.keychain")
+        }
         
         enum Keys: Sendable {
             nonisolated static let deviceId = "deviceId"
@@ -82,11 +114,11 @@ enum Configuration {
     
     enum WebAuthn {
         static var rpID: String {
-            return "onera.chat"
+            ConfigPlist.string(forKey: "WEBAUTHN_RP_ID", default: "onera.chat")
         }
         
         static var rpName: String {
-            return "Onera"
+            ConfigPlist.string(forKey: "WEBAUTHN_RP_NAME", default: "Onera")
         }
     }
     
