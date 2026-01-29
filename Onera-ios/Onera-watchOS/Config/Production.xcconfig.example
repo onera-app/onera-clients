@@ -1,0 +1,15 @@
+// Production.xcconfig (watchOS)
+// Configuration settings for the watchOS Production target
+
+// =====================================================
+// Bundle Configuration
+// =====================================================
+
+// Bundle identifier (must be child of iOS app bundle ID)
+PRODUCT_BUNDLE_IDENTIFIER = prod.app.onera.watchkitapp
+
+// Companion app bundle identifier
+WK_COMPANION_APP_BUNDLE_IDENTIFIER = prod.app.onera
+
+// App Group for sharing data with iOS app
+APP_GROUP_IDENTIFIER = group.prod.app.onera

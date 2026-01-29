@@ -1,0 +1,15 @@
+// Staging.xcconfig (watchOS)
+// Configuration settings for the watchOS Staging target
+
+// =====================================================
+// Bundle Configuration
+// =====================================================
+
+// Bundle identifier (must be child of iOS app bundle ID)
+PRODUCT_BUNDLE_IDENTIFIER = staging.app.onera.watchkitapp
+
+// Companion app bundle identifier
+WK_COMPANION_APP_BUNDLE_IDENTIFIER = staging.app.onera
+
+// App Group for sharing data with iOS app
+APP_GROUP_IDENTIFIER = group.staging.app.onera

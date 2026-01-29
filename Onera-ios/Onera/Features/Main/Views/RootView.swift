@@ -84,7 +84,7 @@ struct RootView: View {
                 }
                 
             case .authenticated:
-                MainView(
+                AdaptiveMainView(
                     onSignOut: { await coordinator.handleSignOut() }
                 )
             }

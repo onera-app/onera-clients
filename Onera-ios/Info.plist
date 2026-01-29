@@ -65,7 +65,27 @@
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<true/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).iPadSceneDelegate</string>
+				</dict>
+			</array>
+		</dict>
 	</dict>
+	
+	<!-- User Activity Types for Handoff and State Restoration -->
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>com.onera.chat</string>
+		<string>com.onera.note</string>
+		<string>com.onera.newChat</string>
+	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchScreen</key>
