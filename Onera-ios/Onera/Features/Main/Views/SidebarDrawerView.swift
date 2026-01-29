@@ -22,6 +22,7 @@ struct SidebarDrawerView: View {
     let onSelectChat: (String) -> Void
     let onNewChat: () -> Void
     let onDeleteChat: (String) async -> Void
+    let onMoveChatToFolder: ((String, String?) async -> Void)?
     let onOpenSettings: () -> Void
     let onRefresh: () async -> Void
     let onOpenNotes: (() -> Void)?
@@ -30,21 +31,51 @@ struct SidebarDrawerView: View {
     @State private var showingFolders = false
     @State private var selectedFolderId: String?
     @State private var settingsTrigger = false
+    @State private var chatToMoveToFolder: ChatSummary?
     
     private var filteredGroupedChats: [(ChatGroup, [ChatSummary])] {
-        if searchText.isEmpty {
-            return groupedChats
+        var result = groupedChats
+        
+        // Filter by folder if selected
+        if let folderId = selectedFolderId {
+            result = result.compactMap { group, chats in
+                let filtered = chats.filter { $0.folderId == folderId }
+                return filtered.isEmpty ? nil : (group, filtered)
+            }
         }
         
-        return groupedChats.compactMap { group, chats in
-            let filtered = chats.filter { $0.title.localizedCaseInsensitiveContains(searchText) }
-            return filtered.isEmpty ? nil : (group, filtered)
+        // Filter by search text
+        if !searchText.isEmpty {
+            result = result.compactMap { group, chats in
+                let filtered = chats.filter { $0.title.localizedCaseInsensitiveContains(searchText) }
+                return filtered.isEmpty ? nil : (group, filtered)
+            }
         }
+        
+        return result
     }
     
     var body: some View {
         drawerContent
             .background(theme.background)
+            .sheet(item: $chatToMoveToFolder) { chat in
+                if let folderViewModel = folderViewModel {
+                    FolderPickerSheet(
+                        viewModel: folderViewModel,
+                        selectedFolderId: Binding(
+                            get: { chat.folderId },
+                            set: { newFolderId in
+                                Task {
+                                    await onMoveChatToFolder?(chat.id, newFolderId)
+                                }
+                            }
+                        ),
+                        title: "Move to Folder",
+                        allowNone: true
+                    )
+                    .presentationDetents([.medium, .large])
+                }
+            }
     }
     
     // MARK: - Drawer Content
@@ -170,10 +201,16 @@ struct SidebarDrawerView: View {
                             viewModel: folderViewModel,
                             selectedFolderId: selectedFolderId,
                             onSelectFolder: { folderId in
-                                selectedFolderId = folderId
-                                // TODO: Filter chats by folder when implemented
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    // Toggle: if same folder selected, deselect to show all
+                                    if selectedFolderId == folderId {
+                                        selectedFolderId = nil
+                                    } else {
+                                        selectedFolderId = folderId
+                                    }
+                                }
                             },
-                            showAllOption: false
+                            showAllOption: true
                         )
                         .padding(.leading, OneraSpacing.xxl)
                         .padding(.top, OneraSpacing.xxs)
@@ -214,12 +251,16 @@ struct SidebarDrawerView: View {
                         ChatHistoryRow(
                             chat: chat,
                             isSelected: selectedChatId == chat.id,
+                            canMoveToFolder: folderViewModel != nil && onMoveChatToFolder != nil,
                             onSelect: {
                                 onSelectChat(chat.id)
                                 withAnimation { isOpen = false }
                             },
                             onDelete: {
                                 Task { await onDeleteChat(chat.id) }
+                            },
+                            onMoveToFolder: {
+                                chatToMoveToFolder = chat
                             }
                         )
                     }
@@ -394,8 +435,10 @@ private struct ChatHistoryRow: View {
     @Environment(\.theme) private var theme
     let chat: ChatSummary
     let isSelected: Bool
+    var canMoveToFolder: Bool = false
     let onSelect: () -> Void
     let onDelete: () -> Void
+    var onMoveToFolder: (() -> Void)?
     
     @State private var showDeleteConfirmation = false
     @State private var selectionTrigger = false
@@ -430,6 +473,14 @@ private struct ChatHistoryRow: View {
         .accessibilityHint("Opens this conversation")
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
         .contextMenu {
+            if canMoveToFolder {
+                Button {
+                    onMoveToFolder?()
+                } label: {
+                    Label(chat.folderId == nil ? "Move to Folder" : "Change Folder", systemImage: "folder")
+                }
+            }
+            
             Button(role: .destructive) {
                 showDeleteConfirmation = true
             } label: {

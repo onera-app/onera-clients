@@ -16,6 +16,9 @@ struct Chat: Identifiable, Equatable, Sendable {
     let createdAt: Date
     var updatedAt: Date
     
+    /// The folder this chat belongs to (nil = no folder)
+    var folderId: String?
+    
     /// The chat's symmetric encryption key (only in memory, never persisted)
     var encryptionKey: Data?
     
@@ -30,6 +33,7 @@ struct Chat: Identifiable, Equatable, Sendable {
         messages: [Message] = [],
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
+        folderId: String? = nil,
         encryptionKey: Data? = nil
     ) {
         self.id = id
@@ -37,6 +41,7 @@ struct Chat: Identifiable, Equatable, Sendable {
         self.messages = messages
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.folderId = folderId
         self.encryptionKey = encryptionKey
     }
     
@@ -60,9 +65,24 @@ struct ChatSummary: Identifiable, Equatable, Sendable {
     let title: String
     let createdAt: Date
     let updatedAt: Date
+    let folderId: String?
     
     var group: ChatGroup {
         ChatGroup.for(date: updatedAt)
+    }
+    
+    init(
+        id: String,
+        title: String,
+        createdAt: Date,
+        updatedAt: Date,
+        folderId: String? = nil
+    ) {
+        self.id = id
+        self.title = title
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.folderId = folderId
     }
 }
 
@@ -128,14 +148,16 @@ extension Chat {
     static func mock(
         id: String = UUID().uuidString,
         title: String = "Mock Chat",
-        messages: [Message] = []
+        messages: [Message] = [],
+        folderId: String? = nil
     ) -> Chat {
         Chat(
             id: id,
             title: title,
             messages: messages,
             createdAt: Date(),
-            updatedAt: Date()
+            updatedAt: Date(),
+            folderId: folderId
         )
     }
     
@@ -156,14 +178,16 @@ extension ChatSummary {
     static func mock(
         id: String = UUID().uuidString,
         title: String = "Mock Chat",
-        daysAgo: Int = 0
+        daysAgo: Int = 0,
+        folderId: String? = nil
     ) -> ChatSummary {
         let date = Calendar.current.date(byAdding: .day, value: -daysAgo, to: Date()) ?? Date()
         return ChatSummary(
             id: id,
             title: title,
             createdAt: date,
-            updatedAt: date
+            updatedAt: date,
+            folderId: folderId
         )
     }
 }

@@ -201,6 +201,31 @@ class ChatRepositoryImpl @Inject constructor(
             if (it.id == chat.id) updatedChat else it 
         }
     }
+    
+    /**
+     * Update a chat's folder assignment - Server First (matching iOS)
+     */
+    override suspend fun updateChatFolder(chatId: String, folderId: String?) {
+        Log.d(TAG, "Moving chat $chatId to folder $folderId...")
+        
+        val request = ChatUpdateRequest(
+            chatId = chatId,
+            folderId = folderId
+        )
+        
+        // Call server FIRST - throws on failure
+        val result = trpcClient.mutation<ChatUpdateRequest, ChatUpdateResponse>(
+            ChatProcedures.UPDATE,
+            request
+        )
+        result.getOrThrow()
+        Log.d(TAG, "Chat folder updated on server: $chatId -> $folderId")
+        
+        // Only update local state AFTER server success
+        _chats.value = _chats.value.map { chat ->
+            if (chat.id == chatId) chat.copy(folderId = folderId, updatedAt = System.currentTimeMillis()) else chat
+        }
+    }
 
     /**
      * Delete a chat - Server First (matching iOS)

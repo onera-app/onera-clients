@@ -12,6 +12,15 @@ sealed interface MainIntent : UiIntent {
     data class DeleteChat(val chatId: String) : MainIntent
     data class UpdateSearchQuery(val query: String) : MainIntent
     
+    // Folder intents
+    data object LoadFolders : MainIntent
+    data class CreateFolder(val name: String, val parentId: String? = null) : MainIntent
+    data class DeleteFolder(val folderId: String) : MainIntent
+    data class RenameFolder(val folderId: String, val newName: String) : MainIntent
+    data class SelectFolder(val folderId: String?) : MainIntent
+    data class MoveChatToFolder(val chatId: String, val folderId: String?) : MainIntent
+    data class ToggleFolderExpanded(val folderId: String) : MainIntent
+    
     // Chat intents
     data class SendMessage(val content: String) : MainIntent
     data class UpdateChatInput(val input: String) : MainIntent

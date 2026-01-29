@@ -164,7 +164,23 @@ final class ChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
                 encryptedTitle: encryptedTitle.base64EncodedString(),
                 titleNonce: titleNonce.base64EncodedString(),
                 encryptedChat: encryptedChat.base64EncodedString(),
-                chatNonce: chatNonce.base64EncodedString()
+                chatNonce: chatNonce.base64EncodedString(),
+                folderId: nil  // Don't update folder during content updates
+            ),
+            token: token
+        )
+    }
+    
+    func updateChatFolder(chatId: String, folderId: String?, token: String) async throws {
+        let _: ChatUpdateResponse = try await networkService.call(
+            procedure: APIEndpoint.Chats.update,
+            input: ChatUpdateRequest(
+                chatId: chatId,
+                encryptedTitle: nil,
+                titleNonce: nil,
+                encryptedChat: nil,
+                chatNonce: nil,
+                folderId: folderId
             ),
             token: token
         )
@@ -228,7 +244,7 @@ final class ChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
             titleNonce: titleNonce.base64EncodedString(),
             encryptedChat: encryptedChat.base64EncodedString(),
             chatNonce: chatNonce.base64EncodedString(),
-            folderId: nil
+            folderId: chat.folderId
         )
     }
     
@@ -306,6 +322,7 @@ final class ChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
             messages: chatData.messages,
             createdAt: response.createdAt,
             updatedAt: response.updatedAt,
+            folderId: response.folderId,
             encryptionKey: chatKey
         )
     }
@@ -339,7 +356,8 @@ final class ChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
             id: encrypted.id,
             title: title,
             createdAt: encrypted.createdAt,
-            updatedAt: encrypted.updatedAt
+            updatedAt: encrypted.updatedAt,
+            folderId: encrypted.folderId
         )
     }
 }
@@ -462,6 +480,7 @@ struct ChatUpdateRequest: Codable {
     let titleNonce: String?
     let encryptedChat: String?
     let chatNonce: String?
+    let folderId: String?
 }
 
 struct ChatUpdateResponse: Codable {
@@ -501,6 +520,10 @@ final class MockChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
     }
     
     func updateChat(_ chat: Chat, token: String) async throws {
+        if shouldFail { throw ChatError.updateFailed }
+    }
+    
+    func updateChatFolder(chatId: String, folderId: String?, token: String) async throws {
         if shouldFail { throw ChatError.updateFailed }
     }
     

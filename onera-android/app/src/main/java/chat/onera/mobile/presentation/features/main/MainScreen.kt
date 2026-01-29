@@ -169,11 +169,14 @@ fun MainScreen(
         ) {
             SidebarDrawerContent(
                 chats = state.chats,
-                groupedChats = state.groupedChats,
+                groupedChats = state.filteredGroupedChats,
                 selectedChatId = state.selectedChatId,
                 isLoading = state.isLoadingChats,
                 user = state.currentUser,
                 searchQuery = state.searchQuery,
+                folders = state.folders,
+                selectedFolderId = state.selectedFolderId,
+                expandedFolderIds = state.expandedFolderIds,
                 onSearchQueryChange = { viewModel.sendIntent(MainIntent.UpdateSearchQuery(it)) },
                 onSelectChat = { chatId ->
                     viewModel.sendIntent(MainIntent.SelectChat(chatId))
@@ -186,6 +189,9 @@ fun MainScreen(
                 onDeleteChat = { chatId ->
                     viewModel.sendIntent(MainIntent.DeleteChat(chatId))
                 },
+                onMoveChatToFolder = { chatId, folderId ->
+                    viewModel.sendIntent(MainIntent.MoveChatToFolder(chatId, folderId))
+                },
                 onOpenSettings = {
                     isDrawerOpen = false
                     onNavigateToSettings()
@@ -194,7 +200,16 @@ fun MainScreen(
                     isDrawerOpen = false
                     onNavigateToNotes()
                 },
-                onRefresh = { viewModel.sendIntent(MainIntent.RefreshChats) }
+                onRefresh = { viewModel.sendIntent(MainIntent.RefreshChats) },
+                onCreateFolder = { name, parentId ->
+                    viewModel.sendIntent(MainIntent.CreateFolder(name, parentId))
+                },
+                onSelectFolder = { folderId ->
+                    viewModel.sendIntent(MainIntent.SelectFolder(folderId))
+                },
+                onToggleFolderExpanded = { folderId ->
+                    viewModel.sendIntent(MainIntent.ToggleFolderExpanded(folderId))
+                }
             )
         }
         

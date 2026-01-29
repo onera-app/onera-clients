@@ -7,7 +7,8 @@ data class ChatSummary(
     val title: String,
     val lastMessage: String?,
     val updatedAt: Long,
-    val isEncrypted: Boolean = true
+    val isEncrypted: Boolean = true,
+    val folderId: String? = null
 )
 
 enum class ChatGroup(val displayName: String) {

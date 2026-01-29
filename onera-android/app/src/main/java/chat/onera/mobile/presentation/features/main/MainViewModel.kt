@@ -5,6 +5,9 @@ import android.net.Uri
 import android.util.Base64
 import androidx.lifecycle.viewModelScope
 import chat.onera.mobile.data.remote.llm.ImageData
+import chat.onera.mobile.demo.DemoData
+import chat.onera.mobile.demo.DemoModeManager
+import chat.onera.mobile.demo.DemoRepositoryContainer
 import chat.onera.mobile.domain.model.Chat
 import chat.onera.mobile.domain.model.Message
 import chat.onera.mobile.domain.model.User
@@ -13,6 +16,7 @@ import chat.onera.mobile.data.speech.TextToSpeechManager
 import chat.onera.mobile.domain.repository.AuthRepository
 import chat.onera.mobile.domain.repository.ChatRepository
 import chat.onera.mobile.domain.repository.CredentialRepository
+import chat.onera.mobile.domain.repository.FoldersRepository
 import chat.onera.mobile.domain.repository.LLMRepository
 import chat.onera.mobile.presentation.base.BaseViewModel
 import chat.onera.mobile.presentation.features.main.model.ChatGroup
@@ -27,6 +31,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -39,16 +44,28 @@ class MainViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val chatRepository: ChatRepository,
     private val credentialRepository: CredentialRepository,
+    private val foldersRepository: FoldersRepository,
     private val llmRepository: LLMRepository,
     private val speechRecognitionManager: SpeechRecognitionManager,
     private val textToSpeechManager: TextToSpeechManager
 ) : BaseViewModel<MainState, MainIntent, MainEffect>(MainState()) {
 
     private var streamingJob: Job? = null
+    
+    /**
+     * Get the effective chat repository - demo or real based on mode.
+     */
+    private val effectiveChatRepository: ChatRepository
+        get() = if (DemoModeManager.isActiveNow()) {
+            DemoRepositoryContainer.chatRepository
+        } else {
+            chatRepository
+        }
 
     init {
         loadInitialData()
         observeChats()
+        observeFolders()
         observeSpeechRecognition()
         observeTextToSpeech()
     }
@@ -78,11 +95,19 @@ class MainViewModel @Inject constructor(
             is MainIntent.NavigateToNextBranch -> navigateToNextBranch(intent.messageId)
             is MainIntent.SignOut -> signOut()
             is MainIntent.OnE2EEUnlocked -> onE2EEUnlocked()
+            // Folder intents
+            is MainIntent.LoadFolders -> loadFolders()
+            is MainIntent.CreateFolder -> createFolder(intent.name, intent.parentId)
+            is MainIntent.DeleteFolder -> deleteFolder(intent.folderId)
+            is MainIntent.RenameFolder -> renameFolder(intent.folderId, intent.newName)
+            is MainIntent.SelectFolder -> selectFolder(intent.folderId)
+            is MainIntent.MoveChatToFolder -> moveChatToFolder(intent.chatId, intent.folderId)
+            is MainIntent.ToggleFolderExpanded -> toggleFolderExpanded(intent.folderId)
         }
     }
     
     private fun onE2EEUnlocked() {
-        android.util.Log.d("MainViewModel", "E2EE unlocked, refreshing all data...")
+        Timber.d("E2EE unlocked, refreshing all data...")
         viewModelScope.launch {
             try {
                 // Refresh chats from server
@@ -91,9 +116,9 @@ class MainViewModel @Inject constructor(
                 refreshCredentialsAndWait()
                 // Reload models (now with credentials available)
                 loadModels()
-                android.util.Log.d("MainViewModel", "Data refresh after E2EE unlock complete")
+                Timber.d("Data refresh after E2EE unlock complete")
             } catch (e: Exception) {
-                android.util.Log.e("MainViewModel", "Failed to refresh data after E2EE unlock", e)
+                Timber.e(e, "Failed to refresh data after E2EE unlock")
             }
         }
     }
@@ -101,6 +126,13 @@ class MainViewModel @Inject constructor(
     private fun signOut() {
         viewModelScope.launch {
             try {
+                if (DemoModeManager.isActiveNow()) {
+                    // Demo mode: just deactivate and navigate
+                    DemoModeManager.deactivate()
+                    sendEffect(MainEffect.SignOutComplete)
+                    return@launch
+                }
+                
                 // Clear encryption key cache
                 chatRepository.clearKeyCache()
                 // Sign out from Clerk
@@ -149,7 +181,7 @@ class MainViewModel @Inject constructor(
     }
     
     private fun addAttachment(attachment: chat.onera.mobile.domain.model.Attachment) {
-        android.util.Log.d("MainViewModel", "Adding attachment: ${attachment.fileName}, uri: ${attachment.uri}")
+        Timber.d("Adding attachment: ${attachment.fileName}, uri: ${attachment.uri}")
         updateState {
             copy(
                 chatState = chatState.copy(
@@ -157,7 +189,7 @@ class MainViewModel @Inject constructor(
                 )
             )
         }
-        android.util.Log.d("MainViewModel", "Total attachments now: ${currentState.chatState.attachments.size}")
+        Timber.d("Total attachments now: ${currentState.chatState.attachments.size}")
     }
     
     private fun removeAttachment(attachmentId: String) {
@@ -219,7 +251,7 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             speechRecognitionManager.error.collect { error ->
                 if (error != null) {
-                    android.util.Log.e("MainViewModel", "Speech recognition error: $error")
+                    Timber.e("Speech recognition error: $error")
                     sendEffect(MainEffect.ShowError(error))
                 }
             }
@@ -257,6 +289,15 @@ class MainViewModel @Inject constructor(
     private fun loadInitialData() {
         viewModelScope.launch {
             try {
+                // Check for demo mode
+                if (DemoModeManager.isActiveNow()) {
+                    Timber.d("Demo mode active, loading demo data")
+                    updateState { copy(currentUser = DemoData.demoUser) }
+                    loadDemoChats()
+                    loadModels() // Will use demo models
+                    return@launch
+                }
+                
                 val user = authRepository.getCurrentUser()
                 updateState { copy(currentUser = user) }
                 refreshChats()
@@ -270,20 +311,41 @@ class MainViewModel @Inject constructor(
     }
     
     /**
+     * Load demo chats for demo mode.
+     */
+    private fun loadDemoChats() {
+        val demoChats = DemoData.demoChatSummaries
+        val grouped = groupChatsByDate(demoChats)
+        updateState { 
+            copy(
+                chats = demoChats,
+                groupedChats = grouped,
+                isLoadingChats = false
+            ) 
+        }
+    }
+    
+    /**
      * Refresh credentials and wait for completion.
      * This ensures loadModels() has credentials available.
      */
     private suspend fun refreshCredentialsAndWait() {
         try {
             credentialRepository.refreshCredentials()
-            android.util.Log.d("MainViewModel", "Credentials refreshed successfully")
+            Timber.d("Credentials refreshed successfully")
         } catch (e: Exception) {
             // Silently fail - credentials might not be available yet (E2EE locked)
-            android.util.Log.w("MainViewModel", "Failed to refresh credentials", e)
+            Timber.w(e, "Failed to refresh credentials")
         }
     }
 
     private fun observeChats() {
+        // Skip observing chats in demo mode - we load them directly
+        if (DemoModeManager.isActiveNow()) {
+            Timber.d("Demo mode: skipping chat observation")
+            return
+        }
+        
         chatRepository.observeChats()
             .onEach { chats ->
                 val summaries = chats.map { chat ->
@@ -313,6 +375,12 @@ class MainViewModel @Inject constructor(
 
     private fun refreshChats() {
         viewModelScope.launch {
+            // In demo mode, just reload demo chats
+            if (DemoModeManager.isActiveNow()) {
+                loadDemoChats()
+                return@launch
+            }
+            
             updateState { copy(isLoadingChats = true) }
             try {
                 chatRepository.refreshChats()
@@ -335,12 +403,12 @@ class MainViewModel @Inject constructor(
             }
             try {
                 // First try to get messages from local database
-                var messages = chatRepository.getChatMessages(chatId)
-                var chat = chatRepository.getChat(chatId)
+                var messages = effectiveChatRepository.getChatMessages(chatId)
+                var chat = effectiveChatRepository.getChat(chatId)
                 
                 // If no messages locally, fetch from server with decryption
                 if (messages.isEmpty()) {
-                    val fetchedChat = chatRepository.fetchChat(chatId)
+                    val fetchedChat = effectiveChatRepository.fetchChat(chatId)
                     if (fetchedChat != null) {
                         messages = fetchedChat.messages
                         chat = fetchedChat
@@ -384,7 +452,7 @@ class MainViewModel @Inject constructor(
     private fun deleteChat(chatId: String) {
         viewModelScope.launch {
             try {
-                chatRepository.deleteChat(chatId)
+                effectiveChatRepository.deleteChat(chatId)
                 if (currentState.selectedChatId == chatId) {
                     createNewChat()
                 }
@@ -396,6 +464,118 @@ class MainViewModel @Inject constructor(
 
     private fun updateSearchQuery(query: String) {
         updateState { copy(searchQuery = query) }
+    }
+    
+    // MARK: - Folder Methods
+    
+    private fun observeFolders() {
+        // Skip observing folders in demo mode
+        if (DemoModeManager.isActiveNow()) {
+            Timber.d("Demo mode: skipping folder observation")
+            return
+        }
+        
+        foldersRepository.observeFolders()
+            .onEach { folders ->
+                updateState { copy(folders = folders, isLoadingFolders = false) }
+            }
+            .catch { e ->
+                Timber.e(e, "Failed to observe folders")
+                updateState { copy(isLoadingFolders = false) }
+            }
+            .launchIn(viewModelScope)
+    }
+    
+    private fun loadFolders() {
+        viewModelScope.launch {
+            updateState { copy(isLoadingFolders = true) }
+            try {
+                foldersRepository.refreshFolders()
+                updateState { copy(isLoadingFolders = false) }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to load folders")
+                updateState { copy(isLoadingFolders = false) }
+                sendEffect(MainEffect.ShowError(e.message ?: "Failed to load folders"))
+            }
+        }
+    }
+    
+    private fun createFolder(name: String, parentId: String?) {
+        viewModelScope.launch {
+            try {
+                foldersRepository.createFolder(name, parentId)
+                Timber.d("Folder created: $name")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to create folder")
+                sendEffect(MainEffect.ShowError(e.message ?: "Failed to create folder"))
+            }
+        }
+    }
+    
+    private fun deleteFolder(folderId: String) {
+        viewModelScope.launch {
+            try {
+                foldersRepository.deleteFolder(folderId)
+                // If the deleted folder was selected, clear selection
+                if (currentState.selectedFolderId == folderId) {
+                    updateState { copy(selectedFolderId = null) }
+                }
+                Timber.d("Folder deleted: $folderId")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to delete folder")
+                sendEffect(MainEffect.ShowError(e.message ?: "Failed to delete folder"))
+            }
+        }
+    }
+    
+    private fun renameFolder(folderId: String, newName: String) {
+        viewModelScope.launch {
+            try {
+                val folder = currentState.folders.find { it.id == folderId }
+                if (folder != null) {
+                    foldersRepository.updateFolder(folder.copy(name = newName))
+                    Timber.d("Folder renamed: $folderId -> $newName")
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to rename folder")
+                sendEffect(MainEffect.ShowError(e.message ?: "Failed to rename folder"))
+            }
+        }
+    }
+    
+    private fun selectFolder(folderId: String?) {
+        updateState { 
+            copy(
+                // Toggle: if same folder selected, deselect to show all
+                selectedFolderId = if (selectedFolderId == folderId) null else folderId
+            ) 
+        }
+    }
+    
+    private fun toggleFolderExpanded(folderId: String) {
+        updateState {
+            copy(
+                expandedFolderIds = if (folderId in expandedFolderIds) {
+                    expandedFolderIds - folderId
+                } else {
+                    expandedFolderIds + folderId
+                }
+            )
+        }
+    }
+    
+    private fun moveChatToFolder(chatId: String, folderId: String?) {
+        viewModelScope.launch {
+            try {
+                effectiveChatRepository.updateChatFolder(chatId, folderId)
+                // Refresh chats to reflect the change
+                refreshChats()
+                Timber.d("Chat $chatId moved to folder $folderId")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to move chat to folder")
+                sendEffect(MainEffect.ShowError(e.message ?: "Failed to move chat to folder"))
+            }
+        }
     }
 
     /**
@@ -415,7 +595,7 @@ class MainViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                android.util.Log.e("MainViewModel", "Failed to convert attachment: ${attachment.fileName}", e)
+                Timber.e(e, "Failed to convert attachment: ${attachment.fileName}")
                 null
             }
         }
@@ -448,17 +628,17 @@ class MainViewModel @Inject constructor(
             val images = attachmentsToSend.mapNotNull { attachment ->
                 convertAttachmentToImageData(attachment)
             }
-            android.util.Log.d("MainViewModel", "Converted ${images.size} images for LLM")
+            Timber.d("Converted ${images.size} images for LLM")
             
             // Create chat on server FIRST if this is a new chat (matching iOS behavior)
             var chatId = currentState.chatState.chatId
             if (chatId == null) {
                 try {
-                    android.util.Log.d("MainViewModel", "Creating new chat on server...")
+                    Timber.d("Creating new chat on server...")
                     // Use first part of message as title (max 50 chars)
                     val title = content.take(50).ifBlank { "Image chat" }
-                    chatId = chatRepository.createChat(title)
-                    android.util.Log.d("MainViewModel", "Chat created: $chatId")
+                    chatId = effectiveChatRepository.createChat(title)
+                    Timber.d("Chat created: $chatId")
                     updateState { 
                         copy(
                             selectedChatId = chatId,
@@ -466,7 +646,7 @@ class MainViewModel @Inject constructor(
                         ) 
                     }
                 } catch (e: Exception) {
-                    android.util.Log.e("MainViewModel", "Failed to create chat", e)
+                    Timber.e(e, "Failed to create chat")
                     updateState { copy(chatState = chatState.copy(isSending = false)) }
                     sendEffect(MainEffect.ShowError("Failed to create chat: ${e.message}"))
                     return@launch
@@ -495,7 +675,7 @@ class MainViewModel @Inject constructor(
                 )
                 
                 // Save user message to repository
-                chatRepository.saveMessage(userMessage)
+                effectiveChatRepository.saveMessage(userMessage)
                 
                 updateState { 
                     copy(
@@ -524,7 +704,7 @@ class MainViewModel @Inject constructor(
             
             try {
                 // Stream response - use apiModelId which includes credentialId
-                streamingJob = chatRepository.sendMessageStream(
+                streamingJob = effectiveChatRepository.sendMessageStream(
                     chatId = chatId,
                     message = messageContent,
                     model = selectedModel.apiModelId,
@@ -563,7 +743,7 @@ class MainViewModel @Inject constructor(
                 )
                 
                 // Save assistant message to repository
-                chatRepository.saveMessage(assistantMessage)
+                effectiveChatRepository.saveMessage(assistantMessage)
                 
                 updateState { 
                     copy(
@@ -583,10 +763,10 @@ class MainViewModel @Inject constructor(
                 
                 // Sync the chat with messages to server
                 try {
-                    chatRepository.syncChat(chatId)
-                    android.util.Log.d("MainViewModel", "Chat synced to server: $chatId")
+                    effectiveChatRepository.syncChat(chatId)
+                    Timber.d("Chat synced to server: $chatId")
                 } catch (e: Exception) {
-                    android.util.Log.w("MainViewModel", "Failed to sync chat", e)
+                    Timber.w(e, "Failed to sync chat")
                 }
             } catch (e: Exception) {
                 updateState { copy(chatState = chatState.copy(isStreaming = false)) }
@@ -757,19 +937,34 @@ class MainViewModel @Inject constructor(
     private fun loadModels() {
         viewModelScope.launch {
             try {
+                // Check for demo mode first
+                if (DemoModeManager.isActiveNow()) {
+                    Timber.d("Demo mode active, using demo models")
+                    val demoModels = DemoData.demoModels
+                    updateState { 
+                        copy(
+                            chatState = chatState.copy(
+                                availableModels = demoModels,
+                                selectedModel = demoModels.firstOrNull()
+                            )
+                        ) 
+                    }
+                    return@launch
+                }
+                
                 // Get credentials from server-synced repository
                 val serverCredentials = credentialRepository.getCredentials()
                 
                 if (serverCredentials.isEmpty()) {
                     // No credentials, show message to add API keys
-                    android.util.Log.d("MainViewModel", "No credentials found for models")
+                    Timber.d("No credentials found for models")
                     updateState { 
                         copy(chatState = chatState.copy(availableModels = emptyList())) 
                     }
                     return@launch
                 }
                 
-                android.util.Log.d("MainViewModel", "Loading models for ${serverCredentials.size} credentials")
+                Timber.d("Loading models for ${serverCredentials.size} credentials")
                 
                 // For each credential, use default models for this provider
                 val allModels = mutableListOf<ModelOption>()
@@ -785,7 +980,7 @@ class MainViewModel @Inject constructor(
                     allModels.addAll(getDefaultModelsForProvider(provider, credential.id))
                 }
                 
-                android.util.Log.d("MainViewModel", "Loaded ${allModels.size} models")
+                Timber.d("Loaded ${allModels.size} models")
                 
                 updateState { 
                     copy(
@@ -796,7 +991,7 @@ class MainViewModel @Inject constructor(
                     ) 
                 }
             } catch (e: Exception) {
-                android.util.Log.e("MainViewModel", "Failed to load models", e)
+                Timber.e(e, "Failed to load models")
                 sendEffect(MainEffect.ShowError(e.message ?: "Failed to load models"))
             }
         }

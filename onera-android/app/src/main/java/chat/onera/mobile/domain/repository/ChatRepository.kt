@@ -12,6 +12,7 @@ interface ChatRepository {
     suspend fun getChat(chatId: String): Chat?
     suspend fun createChat(title: String): String
     suspend fun updateChat(chat: Chat)
+    suspend fun updateChatFolder(chatId: String, folderId: String?)
     suspend fun deleteChat(chatId: String)
     
     /**

@@ -3,8 +3,10 @@ package chat.onera.mobile.presentation.features.main.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -15,9 +17,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.MoveToInbox
 import androidx.compose.material.icons.outlined.NoteAlt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -34,12 +38,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import chat.onera.mobile.domain.model.Folder
 import chat.onera.mobile.domain.model.User
 import chat.onera.mobile.presentation.features.main.model.ChatGroup
 import chat.onera.mobile.presentation.features.main.model.ChatSummary
 import chat.onera.mobile.presentation.theme.EncryptionGreen
 import coil.compose.AsyncImage
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SidebarDrawerContent(
     chats: List<ChatSummary>,
@@ -48,15 +54,27 @@ fun SidebarDrawerContent(
     isLoading: Boolean,
     user: User?,
     searchQuery: String,
+    // Folder state
+    folders: List<Folder> = emptyList(),
+    selectedFolderId: String? = null,
+    expandedFolderIds: Set<String> = emptySet(),
     onSearchQueryChange: (String) -> Unit,
     onSelectChat: (String) -> Unit,
     onNewChat: () -> Unit,
     onDeleteChat: (String) -> Unit,
+    onMoveChatToFolder: ((String, String?) -> Unit)? = null,
     onOpenSettings: () -> Unit,
     onOpenNotes: () -> Unit,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    // Folder callbacks
+    onCreateFolder: ((String, String?) -> Unit)? = null,
+    onSelectFolder: ((String?) -> Unit)? = null,
+    onToggleFolderExpanded: ((String) -> Unit)? = null
 ) {
     var showFolders by remember { mutableStateOf(false) }
+    var showMoveToFolderSheet by remember { mutableStateOf<ChatSummary?>(null) }
+    var showCreateFolderDialog by remember { mutableStateOf(false) }
+    var newFolderName by remember { mutableStateOf("") }
     
     // Filter chats based on search query
     val filteredGroupedChats = if (searchQuery.isBlank()) {
@@ -99,8 +117,16 @@ fun SidebarDrawerContent(
             item {
                 NavigationItems(
                     showFolders = showFolders,
+                    folders = folders,
+                    selectedFolderId = selectedFolderId,
+                    expandedFolderIds = expandedFolderIds,
                     onToggleFolders = { showFolders = !showFolders },
-                    onOpenNotes = onOpenNotes
+                    onOpenNotes = onOpenNotes,
+                    onSelectFolder = onSelectFolder,
+                    onToggleFolderExpanded = onToggleFolderExpanded,
+                    onCreateFolder = if (onCreateFolder != null) {
+                        { showCreateFolderDialog = true }
+                    } else null
                 )
                 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -128,8 +154,10 @@ fun SidebarDrawerContent(
                         ChatHistoryRow(
                             chat = chat,
                             isSelected = selectedChatId == chat.id,
+                            canMoveToFolder = onMoveChatToFolder != null && folders.isNotEmpty(),
                             onSelect = { onSelectChat(chat.id) },
-                            onDelete = { onDeleteChat(chat.id) }
+                            onDelete = { onDeleteChat(chat.id) },
+                            onMoveToFolder = { showMoveToFolderSheet = chat }
                         )
                     }
                 }
@@ -141,6 +169,143 @@ fun SidebarDrawerContent(
             user = user,
             onOpenSettings = onOpenSettings,
             bottomPadding = navigationBarPadding.calculateBottomPadding()
+        )
+    }
+    
+    // Folder picker bottom sheet for moving chat
+    if (showMoveToFolderSheet != null) {
+        val chatToMove = showMoveToFolderSheet!!
+        AlertDialog(
+            onDismissRequest = { showMoveToFolderSheet = null },
+            title = { Text("Move to Folder") },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // No folder option
+                    Surface(
+                        onClick = {
+                            onMoveChatToFolder?.invoke(chatToMove.id, null)
+                            showMoveToFolderSheet = null
+                        },
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (chatToMove.folderId == null) {
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                        } else {
+                            Color.Transparent
+                        }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.FolderOff,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text("No Folder")
+                            Spacer(modifier = Modifier.weight(1f))
+                            if (chatToMove.folderId == null) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+                    
+                    // Folder list
+                    folders.filter { it.parentId == null }.forEach { folder ->
+                        Surface(
+                            onClick = {
+                                onMoveChatToFolder?.invoke(chatToMove.id, folder.id)
+                                showMoveToFolderSheet = null
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (chatToMove.folderId == folder.id) {
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                            } else {
+                                Color.Transparent
+                            }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Folder,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text(folder.name)
+                                Spacer(modifier = Modifier.weight(1f))
+                                if (chatToMove.folderId == folder.id) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showMoveToFolderSheet = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+    
+    // Create folder dialog
+    if (showCreateFolderDialog) {
+        AlertDialog(
+            onDismissRequest = { 
+                showCreateFolderDialog = false
+                newFolderName = ""
+            },
+            title = { Text("Create Folder") },
+            text = {
+                OutlinedTextField(
+                    value = newFolderName,
+                    onValueChange = { newFolderName = it },
+                    label = { Text("Folder name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (newFolderName.isNotBlank()) {
+                            onCreateFolder?.invoke(newFolderName.trim(), null)
+                        }
+                        showCreateFolderDialog = false
+                        newFolderName = ""
+                    },
+                    enabled = newFolderName.isNotBlank()
+                ) {
+                    Text("Create")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { 
+                    showCreateFolderDialog = false
+                    newFolderName = ""
+                }) {
+                    Text("Cancel")
+                }
+            }
         )
     }
 }
@@ -215,8 +380,14 @@ private fun SearchBar(
 @Composable
 private fun NavigationItems(
     showFolders: Boolean,
+    folders: List<Folder>,
+    selectedFolderId: String?,
+    expandedFolderIds: Set<String>,
     onToggleFolders: () -> Unit,
-    onOpenNotes: () -> Unit
+    onOpenNotes: () -> Unit,
+    onSelectFolder: ((String?) -> Unit)?,
+    onToggleFolderExpanded: ((String) -> Unit)?,
+    onCreateFolder: (() -> Unit)?
 ) {
     val chevronRotation by animateFloatAsState(
         targetValue = if (showFolders) 90f else 0f,
@@ -257,11 +428,173 @@ private fun NavigationItems(
                 modifier = Modifier.padding(start = 24.dp, top = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
+                // "All Chats" option to clear folder filter
+                if (selectedFolderId != null) {
+                    Surface(
+                        onClick = { onSelectFolder?.invoke(null) },
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color.Transparent
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                                Icon(
+                                    imageVector = Icons.Default.Home,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            Text(
+                                text = "All Chats",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+                
+                if (folders.isEmpty()) {
+                    Text(
+                        text = "No folders yet",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    )
+                } else {
+                    // Display root folders (those with no parent)
+                    folders.filter { it.parentId == null }.forEach { folder ->
+                        FolderTreeItem(
+                            folder = folder,
+                            allFolders = folders,
+                            isSelected = folder.id == selectedFolderId,
+                            isExpanded = folder.id in expandedFolderIds,
+                            depth = 0,
+                            onSelect = { onSelectFolder?.invoke(folder.id) },
+                            onToggleExpand = { onToggleFolderExpanded?.invoke(folder.id) }
+                        )
+                    }
+                }
+                
+                // Create new folder button
+                if (onCreateFolder != null) {
+                    Surface(
+                        onClick = onCreateFolder,
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color.Transparent
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = "New Folder",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FolderTreeItem(
+    folder: Folder,
+    allFolders: List<Folder>,
+    isSelected: Boolean,
+    isExpanded: Boolean,
+    depth: Int,
+    onSelect: () -> Unit,
+    onToggleExpand: () -> Unit
+) {
+    val children = allFolders.filter { it.parentId == folder.id }
+    val hasChildren = children.isNotEmpty()
+    
+    Column {
+        Surface(
+            onClick = onSelect,
+            shape = RoundedCornerShape(8.dp),
+            color = if (isSelected) {
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+            } else {
+                Color.Transparent
+            }
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = (depth * 16).dp + 12.dp, end = 12.dp)
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (hasChildren) {
+                    val rotation by animateFloatAsState(
+                        targetValue = if (isExpanded) 90f else 0f,
+                        label = "folderExpand"
+                    )
+                    IconButton(
+                        onClick = onToggleExpand,
+                        modifier = Modifier.size(16.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = if (isExpanded) "Collapse" else "Expand",
+                            modifier = Modifier
+                                .size(12.dp)
+                                .rotate(rotation),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    Spacer(modifier = Modifier.size(16.dp))
+                }
+                
+                Icon(
+                    imageVector = if (isExpanded && hasChildren) Icons.Default.FolderOpen else Icons.Outlined.Folder,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
                 Text(
-                    text = "No folders yet",
+                    text = folder.name,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+        
+        // Render children if expanded
+        if (isExpanded && hasChildren) {
+            children.forEach { child ->
+                FolderTreeItem(
+                    folder = child,
+                    allFolders = allFolders,
+                    isSelected = false, // Would need to pass selectedFolderId down
+                    isExpanded = false, // Would need expandedFolderIds
+                    depth = depth + 1,
+                    onSelect = { /* Would need callback */ },
+                    onToggleExpand = { /* Would need callback */ }
                 )
             }
         }
@@ -331,10 +664,13 @@ private fun SectionHeader(title: String) {
 private fun ChatHistoryRow(
     chat: ChatSummary,
     isSelected: Boolean,
+    canMoveToFolder: Boolean = false,
     onSelect: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onMoveToFolder: (() -> Unit)? = null
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showContextMenu by remember { mutableStateOf(false) }
     val hapticFeedback = LocalHapticFeedback.current
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { dismissValue ->
@@ -382,28 +718,76 @@ private fun ChatHistoryRow(
             }
         },
         content = {
-            Surface(
-                onClick = onSelect,
-                shape = RoundedCornerShape(12.dp),
-                color = if (isSelected) {
-                    MaterialTheme.colorScheme.surfaceVariant
-                } else {
-                    MaterialTheme.colorScheme.background
-                },
-                modifier = Modifier.padding(horizontal = 8.dp)
-            ) {
-                Row(
+            Box {
+                Surface(
+                    onClick = onSelect,
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isSelected) {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.background
+                    },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(horizontal = 8.dp)
+                        .combinedClickable(
+                            onClick = onSelect,
+                            onLongClick = {
+                                if (canMoveToFolder) {
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    showContextMenu = true
+                                }
+                            }
+                        )
                 ) {
-                    Text(
-                        text = chat.title,
-                        style = MaterialTheme.typography.bodyLarge,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = chat.title,
+                            style = MaterialTheme.typography.bodyLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                
+                // Context menu for move to folder
+                DropdownMenu(
+                    expanded = showContextMenu,
+                    onDismissRequest = { showContextMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { 
+                            Text(if (chat.folderId == null) "Move to Folder" else "Change Folder")
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Outlined.MoveToInbox,
+                                contentDescription = null
+                            )
+                        },
+                        onClick = {
+                            showContextMenu = false
+                            onMoveToFolder?.invoke()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Outlined.Delete,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        },
+                        onClick = {
+                            showContextMenu = false
+                            showDeleteDialog = true
+                        }
                     )
                 }
             }

@@ -1,6 +1,7 @@
 package chat.onera.mobile.presentation.features.main
 
 import chat.onera.mobile.domain.model.Attachment
+import chat.onera.mobile.domain.model.Folder
 import chat.onera.mobile.domain.model.Message
 import chat.onera.mobile.domain.model.User
 import chat.onera.mobile.presentation.base.UiState
@@ -17,9 +18,30 @@ data class MainState(
     val selectedChatId: String? = null,
     val currentUser: User? = null,
     
+    // Folder state
+    val folders: List<Folder> = emptyList(),
+    val selectedFolderId: String? = null,
+    val expandedFolderIds: Set<String> = emptySet(),
+    val isLoadingFolders: Boolean = false,
+    
     // Chat state
     val chatState: ChatState = ChatState()
-) : UiState
+) : UiState {
+    
+    /**
+     * Get chats filtered by the selected folder.
+     * If no folder is selected, returns all chats.
+     */
+    val filteredGroupedChats: List<Pair<ChatGroup, List<ChatSummary>>>
+        get() = if (selectedFolderId == null) {
+            groupedChats
+        } else {
+            groupedChats.mapNotNull { (group, chats) ->
+                val filtered = chats.filter { it.folderId == selectedFolderId }
+                if (filtered.isEmpty()) null else group to filtered
+            }
+        }
+}
 
 data class ChatState(
     val chatId: String? = null,

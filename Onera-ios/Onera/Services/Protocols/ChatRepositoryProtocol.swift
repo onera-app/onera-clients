@@ -27,6 +27,9 @@ protocol ChatRepositoryProtocol: Sendable {
     /// Updates an existing chat
     func updateChat(_ chat: Chat, token: String) async throws
     
+    /// Updates a chat's folder assignment
+    func updateChatFolder(chatId: String, folderId: String?, token: String) async throws
+    
     /// Deletes a chat
     func deleteChat(id: String, token: String) async throws
     

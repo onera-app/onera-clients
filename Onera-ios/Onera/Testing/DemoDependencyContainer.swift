@@ -247,6 +247,14 @@ final class DemoChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
         chats[chat.id] = chat
     }
     
+    func updateChatFolder(chatId: String, folderId: String?, token: String) async throws {
+        try await Task.sleep(for: .milliseconds(100))
+        if var chat = chats[chatId] {
+            chat.folderId = folderId
+            chats[chatId] = chat
+        }
+    }
+    
     func deleteChat(id: String, token: String) async throws {
         chats.removeValue(forKey: id)
     }

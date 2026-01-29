@@ -71,6 +71,9 @@ struct MainView: View {
                         onDeleteChat: { id in
                             await listViewModel.deleteChat(id)
                         },
+                        onMoveChatToFolder: { chatId, folderId in
+                            await moveChatToFolder(chatId: chatId, folderId: folderId)
+                        },
                         onOpenSettings: {
                             showSettings = true
                         },
@@ -319,6 +322,21 @@ struct MainView: View {
         selectedChatId = nil
         Task {
             await chatViewModel?.createNewChat()
+        }
+    }
+    
+    private func moveChatToFolder(chatId: String, folderId: String?) async {
+        do {
+            let token = try await dependencies.authService.getToken()
+            try await dependencies.chatRepository.updateChatFolder(
+                chatId: chatId,
+                folderId: folderId,
+                token: token
+            )
+            // Refresh the chat list to reflect the change
+            await chatListViewModel?.loadChats()
+        } catch {
+            print("[MainView] Failed to move chat to folder: \(error)")
         }
     }
 }
