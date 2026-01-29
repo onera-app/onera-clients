@@ -115,19 +115,22 @@ struct MessageBubbleView: View {
             } label: {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 12, weight: .medium))
-                    .frame(minWidth: 44, minHeight: 44)
+                    .frame(minWidth: AccessibilitySize.minTouchTarget, minHeight: AccessibilitySize.minTouchTarget)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .disabled(current <= 1)
             .opacity(current > 1 ? 1 : 0.3)
             .accessibilityIdentifier("branchPrevious")
+            .accessibilityLabel("Previous response version")
+            .accessibilityHint(current > 1 ? "Shows version \(current - 1) of \(total)" : "No previous version available")
             
             // Count display
             Text("\(current)/\(total)")
                 .font(OneraTypography.monoSmall.weight(.medium))
                 .foregroundStyle(theme.textSecondary)
                 .accessibilityIdentifier("branchCount")
+                .accessibilityLabel("Response version \(current) of \(total)")
             
             // Next button
             Button {
@@ -137,16 +140,20 @@ struct MessageBubbleView: View {
             } label: {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 12, weight: .medium))
-                    .frame(minWidth: 44, minHeight: 44)
+                    .frame(minWidth: AccessibilitySize.minTouchTarget, minHeight: AccessibilitySize.minTouchTarget)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .disabled(current >= total)
             .opacity(current < total ? 1 : 0.3)
             .accessibilityIdentifier("branchNext")
+            .accessibilityLabel("Next response version")
+            .accessibilityHint(current < total ? "Shows version \(current + 1) of \(total)" : "No next version available")
         }
         .foregroundStyle(theme.textSecondary)
         .padding(.leading, OneraSpacing.sm)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Response versions. Version \(current) of \(total)")
     }
     
     // MARK: - Thinking Tag Parser
@@ -355,14 +362,16 @@ struct MessageBubbleView: View {
             Image(systemName: showCopiedFeedback ? "checkmark" : "doc.on.doc")
                 .font(OneraTypography.iconLabel)
                 .foregroundStyle(showCopiedFeedback ? theme.success : theme.textSecondary)
-                .frame(width: 36, height: 36)
+                .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
                 .background(showCopiedFeedback ? theme.success.opacity(0.15) : theme.secondaryBackground)
                 .clipShape(Circle())
-                .animation(OneraAnimation.springBouncy, value: showCopiedFeedback)
+                .animateBouncyWithReducedMotion(value: showCopiedFeedback)
         }
         .buttonStyle(ActionButtonStyle())
         .contentShape(Circle())
         .accessibilityIdentifier("copyButton")
+        .accessibilityLabel(showCopiedFeedback ? "Copied to clipboard" : "Copy message")
+        .accessibilityHint("Copies the message text to clipboard")
     }
     
     private func doCopy() {
@@ -391,16 +400,18 @@ struct MessageBubbleView: View {
             Image(systemName: "arrow.clockwise")
                 .font(OneraTypography.iconLabel)
                 .foregroundStyle(isRegenerating ? theme.info : theme.textSecondary)
-                .frame(width: 36, height: 36)
+                .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
                 .background(isRegenerating ? theme.info.opacity(0.15) : theme.secondaryBackground)
                 .clipShape(Circle())
                 .rotationEffect(.degrees(isRegenerating ? 360 : 0))
-                .animation(isRegenerating ? OneraAnimation.rotate : .default, value: isRegenerating)
+                .animateRepeatingIfAllowed(OneraAnimation.rotate, isActive: isRegenerating)
         }
         .buttonStyle(.plain)
         .contentShape(Circle())
         .disabled(isRegenerating)
         .accessibilityIdentifier("regenerateButton")
+        .accessibilityLabel(isRegenerating ? "Regenerating response" : "Regenerate response")
+        .accessibilityHint("Generates a new response from the assistant")
     }
     
     private func doRegenerate() {
@@ -429,13 +440,15 @@ struct MessageBubbleView: View {
             Image(systemName: isSpeaking ? "stop.fill" : "speaker.wave.2")
                 .font(OneraTypography.iconLabel)
                 .foregroundStyle(isSpeaking ? theme.error : theme.textSecondary)
-                .frame(width: 36, height: 36)
+                .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
                 .background(isSpeaking ? theme.error.opacity(0.15) : theme.secondaryBackground)
                 .clipShape(Circle())
         }
         .buttonStyle(.plain)
         .contentShape(Circle())
         .accessibilityIdentifier("speakButton")
+        .accessibilityLabel(isSpeaking ? "Stop speaking" : "Read aloud")
+        .accessibilityHint(isSpeaking ? "Stops text-to-speech" : "Reads the message aloud")
     }
     
     private func doSpeak() {
@@ -592,11 +605,14 @@ struct CodeBlockView: View {
                     }
                     .foregroundStyle(copied ? theme.success : theme.textSecondary)
                     .padding(.horizontal, OneraSpacing.md)
-                    .padding(.vertical, OneraSpacing.sm)
+                    .frame(minHeight: AccessibilitySize.minTouchTarget)
                     .background(copied ? theme.success.opacity(0.2) : theme.secondaryBackground)
                     .clipShape(RoundedRectangle(cornerRadius: OneraRadius.small))
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("codeBlockCopyButton")
+                .accessibilityLabel(copied ? "Code copied to clipboard" : "Copy code")
+                .accessibilityHint("Copies the code block to clipboard")
             }
             .padding(.horizontal, OneraSpacing.md)
             .padding(.vertical, OneraSpacing.sm)
@@ -844,6 +860,10 @@ struct ReasoningView: View {
         }
         .buttonStyle(.plain)
         .disabled(isStreaming)
+        .accessibilityIdentifier("reasoningButton")
+        .accessibilityLabel(isStreaming ? "AI is thinking" : "View reasoning")
+        .accessibilityHint(isStreaming ? "Thinking in progress" : "Opens the reasoning details drawer")
+        .accessibilityValue(duration > 0 ? Text("Thought for \(duration) seconds") : Text(""))
         .sheet(isPresented: $showDrawer) {
             ThinkingDrawerView(
                 reasoning: reasoning,
@@ -947,7 +967,11 @@ struct ThinkingDrawerView: View {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 24))
                             .foregroundStyle(theme.textSecondary)
+                            .frame(minWidth: AccessibilitySize.minTouchTarget, minHeight: AccessibilitySize.minTouchTarget)
                     }
+                    .accessibilityIdentifier("dismissReasoningDrawer")
+                    .accessibilityLabel("Close")
+                    .accessibilityHint("Closes the reasoning drawer")
                 }
             }
         }

@@ -63,29 +63,36 @@ struct MessageInputView: View {
                         .padding(.horizontal, OneraSpacing.lg)
                         .padding(.vertical, OneraSpacing.md)
                         .accessibilityIdentifier("messageInput")
+                        .accessibilityLabel("Message input")
+                        .accessibilityHint("Type your message here")
                     
                     if text.isEmpty && !isRecording {
-                        // Placeholder action icon
+                        // Placeholder action icon (decorative)
                         Image(systemName: "waveform")
                             .font(OneraTypography.iconLarge)
                             .foregroundStyle(theme.textSecondary)
                             .padding(.trailing, OneraSpacing.md)
+                            .accessibilityHidden(true)
                     } else if !text.isEmpty {
                         // Send button when text present
                         Button(action: onSend) {
                             Image(systemName: "arrow.up")
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundStyle(theme.background)
-                                .frame(width: 30, height: 30)
+                                .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
                                 .background(theme.textPrimary)
                                 .clipShape(Circle())
                         }
                         .padding(.trailing, OneraSpacing.xs)
                         .disabled(!canSend || isSending)
+                        .sensoryFeedback(.impact(weight: .medium), trigger: text.isEmpty)
                         .accessibilityIdentifier("sendButton")
+                        .accessibilityLabel("Send message")
+                        .accessibilityHint(canSend ? "Sends your message" : "Cannot send while processing")
+                        .accessibilityAddTraits(.isButton)
                     }
                 }
-                .glassEffect()
+                .oneraGlass()
                 
                 // Mic Button - floating glass circle
                 if text.isEmpty || isRecording {
@@ -110,16 +117,17 @@ struct MessageInputView: View {
     
     private var attachmentButton: some View {
         Button {
-            let generator = UIImpactFeedbackGenerator(style: .light)
-            generator.impactOccurred()
             showingAttachmentOptions = true
         } label: {
             Image(systemName: "plus")
                 .font(OneraTypography.iconXLarge)
                 .foregroundStyle(theme.textPrimary)
-                .frame(width: 44, height: 44)
-                .glassCircle()
+                .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
+                .oneraGlassCircle()
         }
+        .sensoryFeedback(.impact(weight: .light), trigger: showingAttachmentOptions)
+        .accessibilityLabel("Add attachment")
+        .accessibilityHint("Opens menu to attach photos or files")
         .confirmationDialog("Add Attachment", isPresented: $showingAttachmentOptions, titleVisibility: .visible) {
             Button("Take Photo") {
                 showingCamera = true
@@ -244,6 +252,7 @@ struct MessageInputView: View {
                 .fill(theme.error)
                 .frame(width: 8, height: 8)
                 .modifier(PulsingModifier())
+                .accessibilityHidden(true)
             
             Text("Recording...")
                 .font(OneraTypography.caption)
@@ -256,6 +265,9 @@ struct MessageInputView: View {
             }
             .font(OneraTypography.caption.bold())
             .foregroundStyle(theme.textPrimary)
+            .frame(minWidth: AccessibilitySize.minTouchTarget, minHeight: AccessibilitySize.minTouchTarget)
+            .accessibilityLabel("Stop recording")
+            .accessibilityHint("Stops voice recording and processes your speech")
         }
         .padding(.horizontal, OneraSpacing.lg)
         .padding(.vertical, OneraSpacing.compact)
@@ -264,6 +276,8 @@ struct MessageInputView: View {
                 .fill(.ultraThinMaterial)
         )
         .padding(.horizontal, OneraSpacing.md)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Recording in progress")
     }
     
     // MARK: - Attachment Previews
@@ -301,11 +315,14 @@ struct MessageInputView: View {
             Image(systemName: isRecording ? "stop.fill" : "mic.fill")
                 .font(OneraTypography.iconLarge)
                 .foregroundStyle(isRecording ? theme.error : theme.textPrimary)
-                .frame(width: 44, height: 44)
-                .glassCircle()
+                .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
+                .oneraGlassCircle()
         }
         .buttonStyle(.plain)
-        .animation(OneraAnimation.fast, value: isRecording)
+        .sensoryFeedback(.impact(weight: .medium), trigger: isRecording)
+        .animateWithReducedMotion(OneraAnimation.fast, value: isRecording)
+        .accessibilityLabel(isRecording ? "Stop recording" : "Start voice recording")
+        .accessibilityHint(isRecording ? "Stops voice recording" : "Starts voice recording to dictate your message")
     }
 }
 
@@ -343,7 +360,13 @@ private struct AttachmentPreviewItem: View {
                     .background(Circle().fill(.black.opacity(0.6)))
             }
             .offset(x: 6, y: -6)
+            .frame(minWidth: AccessibilitySize.minTouchTarget, minHeight: AccessibilitySize.minTouchTarget)
+            .accessibilityLabel("Remove attachment")
+            .accessibilityHint("Removes \(attachment.fileName ?? "this attachment")")
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(attachment.type == .image ? "Image attachment" : "File: \(attachment.fileName ?? "unnamed")")
+        .accessibilityAddTraits(.isButton)
     }
     
     private var placeholder: some View {

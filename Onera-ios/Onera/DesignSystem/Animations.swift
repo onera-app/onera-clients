@@ -2,13 +2,14 @@
 //  Animations.swift
 //  Onera
 //
-//  Centralized animation presets
+//  Centralized animation presets with reduced motion support
 //
 
 import SwiftUI
 
 /// Onera Design System - Animation Tokens
 /// Consistent animation presets used throughout the app
+/// All animations respect the system's Reduce Motion accessibility setting
 enum OneraAnimation {
     
     // MARK: - Duration Constants
@@ -75,6 +76,14 @@ enum OneraAnimation {
     
     /// Blinking animation (cursor)
     static let blink = Animation.easeInOut(duration: 0.5).repeatForever()
+    
+    // MARK: - Reduced Motion Fallbacks
+    
+    /// Simple fade for reduced motion - use instead of bouncy springs
+    static let reducedMotionFallback = Animation.easeInOut(duration: 0.2)
+    
+    /// No animation - use instead of repeating animations when reduced motion is on
+    static let none: Animation? = nil
 }
 
 // MARK: - Transition Helpers
@@ -105,6 +114,46 @@ extension AnyTransition {
     }
 }
 
+// MARK: - Reduced Motion Modifier
+
+/// A view modifier that respects the Reduce Motion accessibility setting
+/// Automatically uses a simpler animation or no animation when enabled
+struct ReducedMotionModifier<V: Equatable>: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    
+    let animation: Animation?
+    let reducedAnimation: Animation?
+    let value: V
+    
+    init(
+        _ animation: Animation?,
+        reduced: Animation? = OneraAnimation.reducedMotionFallback,
+        value: V
+    ) {
+        self.animation = animation
+        self.reducedAnimation = reduced
+        self.value = value
+    }
+    
+    func body(content: Content) -> some View {
+        content.animation(reduceMotion ? reducedAnimation : animation, value: value)
+    }
+}
+
+/// A view modifier for repeating animations that respects Reduce Motion
+/// Disables repeating animations entirely when Reduce Motion is enabled
+struct ReducedMotionRepeatingModifier: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    
+    let animation: Animation
+    let isActive: Bool
+    
+    func body(content: Content) -> some View {
+        content
+            .animation(reduceMotion ? nil : (isActive ? animation : nil), value: isActive)
+    }
+}
+
 // MARK: - View Extension for Animations
 
 extension View {
@@ -121,5 +170,68 @@ extension View {
     /// Apply bouncy spring animation
     func animateBouncy<V: Equatable>(value: V) -> some View {
         animation(OneraAnimation.springBouncy, value: value)
+    }
+    
+    // MARK: - Reduced Motion Aware Animations
+    
+    /// Apply animation that respects Reduce Motion setting
+    /// When Reduce Motion is enabled, uses a simpler fade animation
+    func animateWithReducedMotion<V: Equatable>(
+        _ animation: Animation?,
+        reduced: Animation? = OneraAnimation.reducedMotionFallback,
+        value: V
+    ) -> some View {
+        modifier(ReducedMotionModifier(animation, reduced: reduced, value: value))
+    }
+    
+    /// Apply animation that is disabled when Reduce Motion is enabled
+    /// Use for non-essential, decorative animations
+    func animateIfMotionAllowed<V: Equatable>(
+        _ animation: Animation?,
+        value: V
+    ) -> some View {
+        modifier(ReducedMotionModifier(animation, reduced: nil, value: value))
+    }
+    
+    /// Apply bouncy spring that falls back to simple ease when Reduce Motion is enabled
+    func animateBouncyWithReducedMotion<V: Equatable>(value: V) -> some View {
+        modifier(ReducedMotionModifier(
+            OneraAnimation.springBouncy,
+            reduced: OneraAnimation.reducedMotionFallback,
+            value: value
+        ))
+    }
+    
+    /// Apply repeating animation that is disabled when Reduce Motion is enabled
+    /// Use for pulsing, rotating, or blinking effects
+    func animateRepeatingIfAllowed(_ animation: Animation, isActive: Bool) -> some View {
+        modifier(ReducedMotionRepeatingModifier(animation: animation, isActive: isActive))
+    }
+}
+
+// MARK: - Accessibility Helper View
+
+/// A wrapper that provides static alternative content when Reduce Motion is enabled
+/// Use for complex animations that need a completely different presentation
+struct ReducedMotionContent<AnimatedContent: View, StaticContent: View>: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    
+    let animated: () -> AnimatedContent
+    let static_: () -> StaticContent
+    
+    init(
+        @ViewBuilder animated: @escaping () -> AnimatedContent,
+        @ViewBuilder static staticContent: @escaping () -> StaticContent
+    ) {
+        self.animated = animated
+        self.static_ = staticContent
+    }
+    
+    var body: some View {
+        if reduceMotion {
+            static_()
+        } else {
+            animated()
+        }
     }
 }

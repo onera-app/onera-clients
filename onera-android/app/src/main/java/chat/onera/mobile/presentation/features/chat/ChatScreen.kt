@@ -143,8 +143,8 @@ fun ChatScreen(
                     focusManager.clearFocus()
                     viewModel.sendIntent(ChatIntent.SendMessage) 
                 },
-                isLoading = state.isStreaming,
-                enabled = !state.isStreaming
+                isLoading = state.isStreaming || state.isSending,
+                enabled = !state.isStreaming && !state.isSending
             )
         }
     }

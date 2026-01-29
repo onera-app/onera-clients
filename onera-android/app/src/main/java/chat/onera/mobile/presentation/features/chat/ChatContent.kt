@@ -277,6 +277,7 @@ fun ChatContent(
                         android.util.Log.d("ChatContent", "Attachment click - showing picker")
                         showAttachmentPicker = true 
                     },
+                    isSending = chatState.isSending,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }

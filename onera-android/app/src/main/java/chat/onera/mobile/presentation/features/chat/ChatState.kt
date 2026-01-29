@@ -18,6 +18,7 @@ data class ChatState(
     val chatTitle: String = "New Chat",
     val messages: List<Message> = emptyList(),
     val inputText: String = "",
+    val isSending: Boolean = false,
     val isStreaming: Boolean = false,
     val streamingMessage: String = "",
     val isEncrypted: Boolean = true,

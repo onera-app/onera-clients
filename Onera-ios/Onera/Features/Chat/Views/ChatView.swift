@@ -69,6 +69,8 @@ struct ChatView: View {
                 .animation(.spring(response: 0.3, dampingFraction: 0.8), value: viewModel.isSpeaking)
             }
         }
+        .sensoryFeedback(.success, trigger: viewModel.messages.count)
+        .sensoryFeedback(.start, trigger: viewModel.isStreaming)
         .task {
             await viewModel.loadModels()
         }
@@ -234,7 +236,14 @@ struct ChatView: View {
             )
             .focused($isInputFocused)
         }
-        .background(.ultraThinMaterial)
+        .background(
+            LinearGradient(
+                colors: [theme.background.opacity(0), theme.background],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea(edges: .bottom)
+        )
     }
     
     private func scrollToBottom(_ proxy: ScrollViewProxy) {

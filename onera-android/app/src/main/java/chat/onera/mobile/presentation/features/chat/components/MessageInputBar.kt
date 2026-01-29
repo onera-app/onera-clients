@@ -34,7 +34,8 @@ fun MessageInputBar(
     onAttachmentClick: (() -> Unit)? = null,
     isRecording: Boolean = false,
     onStartRecording: (() -> Unit)? = null,
-    onStopRecording: (() -> Unit)? = null
+    onStopRecording: (() -> Unit)? = null,
+    isSending: Boolean = false
 ) {
     val focusRequester = remember { FocusRequester() }
     val hasText = value.isNotBlank()
@@ -129,17 +130,26 @@ fun MessageInputBar(
                     hasText -> {
                         FilledIconButton(
                             onClick = onSend,
+                            enabled = !isSending,
                             modifier = Modifier.size(40.dp),
                             colors = IconButtonDefaults.filledIconButtonColors(
                                 containerColor = MaterialTheme.colorScheme.primary,
                                 contentColor = MaterialTheme.colorScheme.onPrimary
                             )
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowUpward,
-                                contentDescription = "Send",
-                                modifier = Modifier.size(20.dp)
-                            )
+                            if (isSending) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.ArrowUpward,
+                                    contentDescription = "Send",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
                     }
                     isRecording -> {

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "anthropic/claude-sonnet-4-20250514",
+  "command": {
+    "ios-build": {
+      "description": "Build and run iOS app",
+      "prompt": "Help me build and test the iOS app: $input"
+    },
+    "android-build": {
+      "description": "Build and run Android app",
+      "prompt": "Help me build and test the Android app: $input"
+    },
+    "ios-ui": {
+      "description": "iOS UI development with Liquid Glass",
+      "prompt": "@ios-dev @ui-ux I need to create iOS UI: $input. Use the Liquid Glass design system and load the ios-liquid-glass skill."
+    },
+    "android-ui": {
+      "description": "Android UI development with Material 3",
+      "prompt": "@android-dev @ui-ux I need to create Android UI: $input. Follow Material Design 3 and load the android-material3 skill."
+    },
+    "sync": {
+      "description": "Sync feature implementation across platforms",
+      "prompt": "I need to implement this feature on both iOS and Android: $input. Ensure consistent behavior across platforms."
+    },
+    "mvvm": {
+      "description": "iOS MVVM architecture help",
+      "prompt": "@ios-dev Help me with MVVM architecture: $input. Load the swift-mvvm skill for patterns."
+    },
+    "mvi": {
+      "description": "Android MVI architecture help",
+      "prompt": "@android-dev Help me with MVI architecture: $input. Load the kotlin-mvi skill for patterns."
+    }
+  }
+}

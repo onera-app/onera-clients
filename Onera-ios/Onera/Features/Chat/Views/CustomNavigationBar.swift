@@ -15,21 +15,27 @@ struct CustomNavigationBar: View {
     let onNewConversation: () -> Void
     
     @Binding var showingModelDropdown: Bool
+    @State private var menuTapTrigger = false
+    @State private var newConversationTrigger = false
     
     var body: some View {
         HStack(spacing: 0) {
             // Left: Sidebar menu with liquid glass effect
             Button {
+                menuTapTrigger.toggle()
                 onMenuTap()
             } label: {
                 Image(systemName: "line.3.horizontal")
                     .font(OneraTypography.iconLabel)
                     .foregroundStyle(theme.textPrimary)
-                    .frame(width: 40, height: 40)
-                    .glassCircle()
+                    .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
+                    .oneraGlassCircle()
             }
             .buttonStyle(.plain)
+            .sensoryFeedback(.impact(weight: .light), trigger: menuTapTrigger)
             .padding(.leading, OneraSpacing.lg)
+            .accessibilityLabel("Open sidebar menu")
+            .accessibilityHint("Shows chat history and navigation")
             
             Spacer()
             
@@ -40,21 +46,32 @@ struct CustomNavigationBar: View {
             
             // Right: New conversation button with liquid glass effect
             Button {
+                newConversationTrigger.toggle()
                 onNewConversation()
             } label: {
                 Image(systemName: "square.and.pencil")
                     .font(OneraTypography.iconLabel)
                     .foregroundStyle(theme.textPrimary)
-                    .frame(width: 40, height: 40)
-                    .glassCircle()
+                    .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
+                    .oneraGlassCircle()
             }
             .buttonStyle(.plain)
+            .sensoryFeedback(.impact(weight: .medium), trigger: newConversationTrigger)
             .padding(.trailing, OneraSpacing.lg)
+            .accessibilityLabel("New conversation")
+            .accessibilityHint("Starts a new chat conversation")
         }
         .padding(.top, OneraSpacing.sm)
         .padding(.bottom, OneraSpacing.xxs)
         .frame(height: 56)
-        .background(.ultraThinMaterial)
+        .background(
+            LinearGradient(
+                colors: [theme.background, theme.background.opacity(0)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea(edges: .top)
+        )
     }
     
     // MARK: - Native Model Selector
@@ -89,6 +106,7 @@ struct CustomNavigationBar: View {
                 if modelSelector.isLoading {
                     ProgressView()
                         .scaleEffect(0.7)
+                        .accessibilityLabel("Loading models")
                 }
                 
                 Text(modelSelector.selectedModel?.displayName ?? "Select Model")
@@ -99,11 +117,16 @@ struct CustomNavigationBar: View {
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(theme.textSecondary)
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, OneraSpacing.comfortable)
             .padding(.vertical, OneraSpacing.sm)
+            .oneraGlass()
         }
         .menuStyle(.borderlessButton)
-        .background(.clear)
+        .accessibilityLabel("Select AI model")
+        .accessibilityValue(modelSelector.selectedModel?.displayName ?? "No model selected")
+        .accessibilityHint("Opens menu to choose a different AI model")
     }
 }
+

@@ -39,16 +39,11 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
                         dismiss()
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 28))
-                            .symbolRenderingMode(.hierarchical)
-                            .foregroundStyle(theme.textSecondary)
                     }
-                    .buttonStyle(.plain)
+                    .fontWeight(.semibold)
                 }
             }
             .sheet(isPresented: $viewModel.showRecoveryPhrase) {
@@ -56,18 +51,6 @@ struct SettingsView: View {
                     viewModel: viewModel,
                     onDismiss: { viewModel.clearRecoveryPhrase() }
                 )
-            }
-            .confirmationDialog(
-                "Sign Out",
-                isPresented: $viewModel.showSignOutConfirmation,
-                titleVisibility: .visible
-            ) {
-                Button("Sign Out", role: .destructive) {
-                    Task { await viewModel.signOut() }
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("Are you sure you want to sign out? Make sure you have your recovery phrase saved.")
             }
             .onAppear {
                 viewModel.loadSettings()
@@ -309,6 +292,21 @@ struct SettingsView: View {
                 }
             }
             .accessibilityIdentifier("signOutButton")
+            .confirmationDialog(
+                "Sign Out",
+                isPresented: $viewModel.showSignOutConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Sign Out", role: .destructive) {
+                    Task { await viewModel.signOut() }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Are you sure you want to sign out? Make sure you have your recovery phrase saved.")
+            }
+        } footer: {
+            Text("You'll need your recovery phrase to access your encrypted data on this device again.")
+                .font(OneraTypography.caption)
         }
     }
 }

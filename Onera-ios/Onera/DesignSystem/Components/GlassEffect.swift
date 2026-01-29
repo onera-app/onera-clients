@@ -5,12 +5,16 @@
 //  Reusable glass morphism effect component
 //  Adapts to light and dark modes for native appearance
 //
+//  NOTE: Modifiers are prefixed with "onera" to avoid conflict with
+//  iOS 26's native .glassEffect() API. On iOS 26+, the native API
+//  will be used automatically for better performance and native feel.
+//
 
 import SwiftUI
 
 /// Glass effect modifier that applies the liquid glass design pattern
 /// Adapts automatically to light/dark mode for a native look
-struct GlassEffect<S: InsettableShape>: ViewModifier {
+struct OneraGlassEffect<S: InsettableShape>: ViewModifier {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.theme) private var theme
     
@@ -96,37 +100,98 @@ struct GlassEffect<S: InsettableShape>: ViewModifier {
     }
 }
 
-// MARK: - Convenience Modifiers
+// MARK: - iOS 26+ Native Glass Effect Wrapper
 
-extension View {
-    /// Apply glass effect with a capsule shape (default for buttons)
-    func glassEffect(showBorder: Bool = true, showShadow: Bool = true) -> some View {
-        modifier(GlassEffect(shape: Capsule(), showBorder: showBorder, showShadow: showShadow))
-    }
-    
-    /// Apply glass effect with a circle shape (for icon buttons)
-    func glassCircle(showBorder: Bool = true, showShadow: Bool = true) -> some View {
-        modifier(GlassEffect(shape: Circle(), showBorder: showBorder, showShadow: showShadow))
-    }
-    
-    /// Apply glass effect with a rounded rectangle shape
-    func glassRounded(_ cornerRadius: CGFloat = OneraRadius.medium, showBorder: Bool = true, showShadow: Bool = true) -> some View {
-        modifier(GlassEffect(shape: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous), showBorder: showBorder, showShadow: showShadow))
-    }
-    
-    /// Apply glass effect with a custom shape
-    func glass<S: InsettableShape>(shape: S, showBorder: Bool = true, showShadow: Bool = true) -> some View {
-        modifier(GlassEffect(shape: shape, showBorder: showBorder, showShadow: showShadow))
+/// Wrapper that uses native iOS 26 glassEffect when available
+@available(iOS 26.0, *)
+struct NativeGlassModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content.glassEffect()
     }
 }
 
-// MARK: - Glass Button Style
+// MARK: - Convenience Modifiers
+
+extension View {
+    /// Apply Onera glass effect with a capsule shape (default for buttons)
+    /// On iOS 26+, automatically uses native .glassEffect() for better performance
+    @ViewBuilder
+    func oneraGlass(showBorder: Bool = true, showShadow: Bool = true) -> some View {
+        if #available(iOS 26.0, *) {
+            self.glassEffect()
+        } else {
+            self.modifier(OneraGlassEffect(shape: Capsule(), showBorder: showBorder, showShadow: showShadow))
+        }
+    }
+    
+    /// Apply Onera glass effect with a circle shape (for icon buttons)
+    /// On iOS 26+, automatically uses native .glassEffect() with circle shape
+    @ViewBuilder
+    func oneraGlassCircle(showBorder: Bool = true, showShadow: Bool = true) -> some View {
+        if #available(iOS 26.0, *) {
+            self.glassEffect(.regular, in: .circle)
+        } else {
+            self.modifier(OneraGlassEffect(shape: Circle(), showBorder: showBorder, showShadow: showShadow))
+        }
+    }
+    
+    /// Apply Onera glass effect with a rounded rectangle shape
+    /// On iOS 26+, automatically uses native .glassEffect() with rounded rect
+    @ViewBuilder
+    func oneraGlassRounded(_ cornerRadius: CGFloat = OneraRadius.medium, showBorder: Bool = true, showShadow: Bool = true) -> some View {
+        if #available(iOS 26.0, *) {
+            self.glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        } else {
+            self.modifier(OneraGlassEffect(shape: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous), showBorder: showBorder, showShadow: showShadow))
+        }
+    }
+    
+    /// Apply Onera glass effect with a custom shape (iOS 17-25 only)
+    /// For iOS 26+, use native .glassEffect() directly with your shape
+    func oneraGlass<S: InsettableShape>(shape: S, showBorder: Bool = true, showShadow: Bool = true) -> some View {
+        modifier(OneraGlassEffect(shape: shape, showBorder: showBorder, showShadow: showShadow))
+    }
+    
+    // MARK: - Legacy Aliases (Deprecated)
+    // These maintain backwards compatibility but will show deprecation warnings
+    
+    /// Apply glass effect with a capsule shape
+    /// - Note: Renamed to `oneraGlass()` to avoid conflict with iOS 26 native API
+    @available(*, deprecated, renamed: "oneraGlass", message: "Use oneraGlass() to avoid iOS 26 API conflict")
+    func glassEffect(showBorder: Bool = true, showShadow: Bool = true) -> some View {
+        modifier(OneraGlassEffect(shape: Capsule(), showBorder: showBorder, showShadow: showShadow))
+    }
+    
+    /// Apply glass effect with a circle shape
+    /// - Note: Renamed to `oneraGlassCircle()` to avoid conflict with iOS 26 native API
+    @available(*, deprecated, renamed: "oneraGlassCircle", message: "Use oneraGlassCircle() to avoid iOS 26 API conflict")
+    func glassCircle(showBorder: Bool = true, showShadow: Bool = true) -> some View {
+        modifier(OneraGlassEffect(shape: Circle(), showBorder: showBorder, showShadow: showShadow))
+    }
+    
+    /// Apply glass effect with a rounded rectangle shape
+    /// - Note: Renamed to `oneraGlassRounded()` to avoid conflict with iOS 26 native API
+    @available(*, deprecated, renamed: "oneraGlassRounded", message: "Use oneraGlassRounded() to avoid iOS 26 API conflict")
+    func glassRounded(_ cornerRadius: CGFloat = OneraRadius.medium, showBorder: Bool = true, showShadow: Bool = true) -> some View {
+        modifier(OneraGlassEffect(shape: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous), showBorder: showBorder, showShadow: showShadow))
+    }
+    
+    /// Apply glass effect with a custom shape
+    /// - Note: Renamed to `oneraGlass(shape:)` to avoid conflict with iOS 26 native API
+    @available(*, deprecated, renamed: "oneraGlass(shape:showBorder:showShadow:)", message: "Use oneraGlass(shape:) to avoid iOS 26 API conflict")
+    func glass<S: InsettableShape>(shape: S, showBorder: Bool = true, showShadow: Bool = true) -> some View {
+        modifier(OneraGlassEffect(shape: shape, showBorder: showBorder, showShadow: showShadow))
+    }
+}
+
+// MARK: - Glass Button Styles
 
 /// A button style that applies the glass effect automatically
-/// Adapts to light/dark mode
+/// Adapts to light/dark mode and respects Reduce Motion accessibility setting
 struct GlassButtonStyle: ButtonStyle {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.theme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     @ViewBuilder
     func makeBody(configuration: ButtonStyleConfiguration) -> some View {
@@ -154,17 +219,19 @@ struct GlassButtonStyle: ButtonStyle {
                 x: 0,
                 y: colorScheme == .dark ? 2 : 1
             )
-            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            // Scale effect respects Reduce Motion - disabled when enabled
+            .scaleEffect(reduceMotion ? 1.0 : (configuration.isPressed ? 0.95 : 1.0))
             .opacity(configuration.isPressed ? 0.8 : 1.0)
-            .animation(OneraAnimation.quick, value: configuration.isPressed)
+            .animation(reduceMotion ? nil : OneraAnimation.quick, value: configuration.isPressed)
     }
 }
 
 /// A capsule button style with glass effect
-/// Adapts to light/dark mode
+/// Adapts to light/dark mode and respects Reduce Motion accessibility setting
 struct GlassCapsuleButtonStyle: ButtonStyle {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.theme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     @ViewBuilder
     func makeBody(configuration: ButtonStyleConfiguration) -> some View {
@@ -192,9 +259,51 @@ struct GlassCapsuleButtonStyle: ButtonStyle {
                 x: 0,
                 y: colorScheme == .dark ? 2 : 1
             )
-            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            // Scale effect respects Reduce Motion - disabled when enabled
+            .scaleEffect(reduceMotion ? 1.0 : (configuration.isPressed ? 0.95 : 1.0))
             .opacity(configuration.isPressed ? 0.8 : 1.0)
-            .animation(OneraAnimation.quick, value: configuration.isPressed)
+            .animation(reduceMotion ? nil : OneraAnimation.quick, value: configuration.isPressed)
+    }
+}
+
+// MARK: - iOS 26+ Native Glass Button Styles
+
+/// Button style that uses iOS 26 native .glass style when available
+/// Falls back to custom GlassButtonStyle on earlier versions
+struct AdaptiveGlassButtonStyle: ButtonStyle {
+    func makeBody(configuration: ButtonStyleConfiguration) -> some View {
+        if #available(iOS 26.0, *) {
+            configuration.label
+                .buttonStyle(.glass)
+        } else {
+            GlassButtonStyle().makeBody(configuration: configuration)
+        }
+    }
+}
+
+/// Button style that uses iOS 26 native .glassProminent style when available
+/// Falls back to custom styling on earlier versions
+struct AdaptiveGlassProminentButtonStyle: ButtonStyle {
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.theme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    
+    func makeBody(configuration: ButtonStyleConfiguration) -> some View {
+        if #available(iOS 26.0, *) {
+            configuration.label
+                .buttonStyle(.glassProminent)
+        } else {
+            // Fallback: Solid prominent style
+            configuration.label
+                .background(
+                    Capsule()
+                        .fill(theme.accent)
+                )
+                .foregroundStyle(.white)
+                .scaleEffect(reduceMotion ? 1.0 : (configuration.isPressed ? 0.95 : 1.0))
+                .opacity(configuration.isPressed ? 0.8 : 1.0)
+                .animation(reduceMotion ? nil : OneraAnimation.quick, value: configuration.isPressed)
+        }
     }
 }
 

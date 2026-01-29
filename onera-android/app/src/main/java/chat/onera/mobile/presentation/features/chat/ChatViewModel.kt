@@ -65,7 +65,10 @@ class ChatViewModel @Inject constructor(
 
     private fun sendMessage() {
         val text = currentState.inputText.trim()
-        if (text.isBlank() || currentState.isStreaming) return
+        if (text.isBlank() || currentState.isStreaming || currentState.isSending) return
+
+        // Set isSending synchronously BEFORE launching coroutine to prevent race condition
+        updateState { copy(isSending = true) }
 
         viewModelScope.launch {
             // Create new chat if needed
@@ -76,7 +79,7 @@ class ChatViewModel @Inject constructor(
                     sendEffect(ChatEffect.ChatCreated(newChatId))
                     newChatId
                 } catch (e: Exception) {
-                    updateState { copy(error = "Failed to create chat: ${e.message}") }
+                    updateState { copy(isSending = false, error = "Failed to create chat: ${e.message}") }
                     return@launch
                 }
             }
@@ -94,6 +97,7 @@ class ChatViewModel @Inject constructor(
                 copy(
                     inputText = "",
                     messages = messages + userMessage,
+                    isSending = false,
                     isStreaming = true,
                     streamingMessage = ""
                 ) 

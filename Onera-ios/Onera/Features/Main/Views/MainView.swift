@@ -240,6 +240,8 @@ struct MainView: View {
             ChatView(
                 viewModel: viewModel,
                 onMenuTap: {
+                    // Dismiss keyboard before opening drawer
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                     withAnimation(.easeOut(duration: 0.25)) {
                         isDrawerOpen = true
                     }

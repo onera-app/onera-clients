@@ -29,6 +29,7 @@ struct SidebarDrawerView: View {
     @State private var searchText = ""
     @State private var showingFolders = false
     @State private var selectedFolderId: String?
+    @State private var settingsTrigger = false
     
     private var filteredGroupedChats: [(ChatGroup, [ChatSummary])] {
         if searchText.isEmpty {
@@ -75,45 +76,34 @@ struct SidebarDrawerView: View {
     // MARK: - Search Bar
     
     private var searchBar: some View {
-        HStack(alignment: .center, spacing: OneraSpacing.compact) {
-            // Search field pill with liquid glass effect
-            HStack(spacing: OneraSpacing.compact) {
-                Image(systemName: "magnifyingglass")
-                    .font(OneraTypography.iconLabel)
-                    .foregroundStyle(theme.textSecondary)
-                
-                TextField("", text: $searchText, prompt: Text("Search").foregroundStyle(theme.textSecondary))
-                    .font(OneraTypography.body)
-                    .foregroundStyle(theme.textPrimary)
-                    .accessibilityIdentifier("searchField")
-                
-                if !searchText.isEmpty {
-                    Button {
-                        searchText = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(theme.textSecondary)
-                    }
-                }
-            }
-            .padding(.vertical, OneraSpacing.compact)
-            .padding(.horizontal, OneraSpacing.comfortable)
-            .glassEffect()
+        // Search field pill with liquid glass effect
+        HStack(spacing: OneraSpacing.compact) {
+            Image(systemName: "magnifyingglass")
+                .font(OneraTypography.iconLabel)
+                .foregroundStyle(theme.textSecondary)
+                .accessibilityHidden(true)
             
-            // New chat button with liquid glass effect
-            Button {
-                onNewChat()
-                withAnimation { isOpen = false }
-            } label: {
-                Image(systemName: "square.and.pencil")
-                    .font(OneraTypography.iconLarge)
-                    .foregroundStyle(theme.textPrimary)
-                    .frame(width: 42, height: 42)
-                    .glassCircle()
+            TextField("", text: $searchText, prompt: Text("Search").foregroundStyle(theme.textSecondary))
+                .font(OneraTypography.body)
+                .foregroundStyle(theme.textPrimary)
+                .accessibilityIdentifier("searchField")
+                .accessibilityLabel("Search chats")
+                .accessibilityHint("Filter chat history by title")
+            
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(theme.textSecondary)
+                }
+                .accessibilityLabel("Clear search")
+                .accessibilityHint("Clears the search text")
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("newChatButton")
         }
+        .padding(.vertical, OneraSpacing.compact)
+        .padding(.horizontal, OneraSpacing.comfortable)
+        .oneraGlass()
     }
     
     // MARK: - Navigation Items
@@ -143,6 +133,7 @@ struct SidebarDrawerView: View {
                         Image(systemName: "folder")
                             .font(.system(size: 16))
                             .foregroundStyle(theme.textSecondary)
+                            .accessibilityHidden(true)
                         
                         Text("Folders")
                             .font(OneraTypography.body)
@@ -153,6 +144,7 @@ struct SidebarDrawerView: View {
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(theme.textSecondary)
                             .rotationEffect(.degrees(showingFolders ? 90 : 0))
+                            .accessibilityHidden(true)
                     }
                     .padding(.horizontal, OneraSpacing.md)
                     .padding(.vertical, OneraSpacing.compact)
@@ -164,8 +156,12 @@ struct SidebarDrawerView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .sensoryFeedback(.selection, trigger: showingFolders)
                 .foregroundStyle(theme.textPrimary)
                 .accessibilityIdentifier("foldersSection")
+                .accessibilityLabel("Folders")
+                .accessibilityHint(showingFolders ? "Double tap to collapse" : "Double tap to expand")
+                .accessibilityValue(showingFolders ? "Expanded" : "Collapsed")
                 
                 // Expanded folder tree
                 if showingFolders {
@@ -246,36 +242,30 @@ struct SidebarDrawerView: View {
     private var loadingView: some View {
         VStack(spacing: OneraSpacing.md) {
             ProgressView()
+                .accessibilityLabel("Loading chats")
             Text("Loading chats...")
                 .font(OneraTypography.subheadline)
                 .foregroundStyle(theme.textSecondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, OneraSpacing.max)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Loading chat history")
     }
     
     private func errorView(_ error: Error) -> some View {
-        VStack(spacing: OneraSpacing.md) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(OneraTypography.title)
-                .foregroundStyle(theme.warning)
-            
-            Text("Failed to load chats")
-                .font(OneraTypography.subheadline)
-                .foregroundStyle(theme.textSecondary)
-            
+        ContentUnavailableView {
+            Label("Failed to load chats", systemImage: "exclamationmark.triangle")
+        } description: {
             Text(error.localizedDescription)
-                .font(OneraTypography.caption)
-                .foregroundStyle(theme.textTertiary)
-                .multilineTextAlignment(.center)
-            
+        } actions: {
             Button {
                 Task { await onRefresh() }
             } label: {
                 Text("Retry")
-                    .font(OneraTypography.subheadline.weight(.medium))
             }
             .buttonStyle(.bordered)
+            .accessibilityHint("Attempts to load chats again")
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, OneraSpacing.lg)
@@ -283,19 +273,11 @@ struct SidebarDrawerView: View {
     }
     
     private var emptyStateView: some View {
-        VStack(spacing: OneraSpacing.md) {
-            Image(systemName: "bubble.left.and.bubble.right")
-                .font(OneraTypography.title)
-                .foregroundStyle(theme.textSecondary)
-            
-            Text("No chats yet")
-                .font(OneraTypography.subheadline)
-                .foregroundStyle(theme.textSecondary)
-            
-            Text("Start a new conversation")
-                .font(OneraTypography.caption)
-                .foregroundStyle(theme.textTertiary)
-        }
+        ContentUnavailableView(
+            "No chats yet",
+            systemImage: "bubble.left.and.bubble.right",
+            description: Text("Start a new conversation")
+        )
         .frame(maxWidth: .infinity)
         .padding(.vertical, OneraSpacing.max)
     }
@@ -304,15 +286,18 @@ struct SidebarDrawerView: View {
     
     private var footerSection: some View {
         Button {
+            settingsTrigger.toggle()
             onOpenSettings()
         } label: {
             HStack(spacing: OneraSpacing.compact) {
                 if let user = user {
                     userAvatar(user)
+                        .accessibilityHidden(true)
                 } else {
                     Image(systemName: "person.circle.fill")
                         .font(.system(size: 28))
                         .foregroundStyle(theme.textSecondary)
+                        .accessibilityHidden(true)
                 }
                 
                 // Show only first name
@@ -325,16 +310,20 @@ struct SidebarDrawerView: View {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(theme.textTertiary)
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, OneraSpacing.comfortable)
             .padding(.vertical, OneraSpacing.compact)
-            .glassEffect()
+            .oneraGlass()
         }
         .buttonStyle(.plain)
+        .sensoryFeedback(.impact(weight: .light), trigger: settingsTrigger)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, OneraSpacing.lg)
         .padding(.vertical, OneraSpacing.md)
         .accessibilityIdentifier("settingsButton")
+        .accessibilityLabel("Settings for \(user?.firstName ?? "account")")
+        .accessibilityHint("Opens settings and profile options")
     }
     
     private func userAvatar(_ user: User) -> some View {
@@ -374,6 +363,7 @@ private struct NavigationItemRow: View {
                 Image(systemName: icon)
                     .font(.system(size: 16))
                     .foregroundStyle(isSelected ? theme.textPrimary : theme.textSecondary)
+                    .accessibilityHidden(true)
                 
                 Text(title)
                     .font(OneraTypography.body)
@@ -383,7 +373,7 @@ private struct NavigationItemRow: View {
             }
             .padding(.horizontal, OneraSpacing.md)
             .padding(.vertical, OneraSpacing.compact)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: AccessibilitySize.minTouchTarget, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: OneraRadius.medium)
                     .fill(isSelected ? theme.secondaryBackground : Color.clear)
@@ -393,6 +383,8 @@ private struct NavigationItemRow: View {
         .buttonStyle(.plain)
         .foregroundStyle(theme.textPrimary)
         .accessibilityIdentifier(accessibilityId ?? title.lowercased())
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }
 
@@ -406,9 +398,13 @@ private struct ChatHistoryRow: View {
     let onDelete: () -> Void
     
     @State private var showDeleteConfirmation = false
+    @State private var selectionTrigger = false
     
     var body: some View {
-        Button(action: onSelect) {
+        Button {
+            selectionTrigger.toggle()
+            onSelect()
+        } label: {
             HStack(spacing: OneraSpacing.iconTextGap) {
                 Text(chat.title)
                     .font(OneraTypography.body)
@@ -419,7 +415,7 @@ private struct ChatHistoryRow: View {
             }
             .padding(.horizontal, OneraSpacing.md)
             .padding(.vertical, OneraSpacing.compact)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: AccessibilitySize.minTouchTarget, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: OneraRadius.medium)
                     .fill(isSelected ? theme.secondaryBackground : Color.clear)
@@ -427,8 +423,12 @@ private struct ChatHistoryRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .sensoryFeedback(.selection, trigger: selectionTrigger)
         .padding(.horizontal, OneraSpacing.sm)
         .accessibilityIdentifier("chatRow_\(chat.id)")
+        .accessibilityLabel(chat.title)
+        .accessibilityHint("Opens this conversation")
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
         .contextMenu {
             Button(role: .destructive) {
                 showDeleteConfirmation = true

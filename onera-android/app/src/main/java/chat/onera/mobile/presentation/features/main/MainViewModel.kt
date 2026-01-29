@@ -426,11 +426,17 @@ class MainViewModel @Inject constructor(
         val hasAttachments = currentState.chatState.attachments.isNotEmpty()
         if (content.isBlank() && !hasAttachments) return
         
+        // Prevent duplicate sends - check isSending and isStreaming SYNCHRONOUSLY before launching coroutine
+        if (currentState.chatState.isSending || currentState.chatState.isStreaming) return
+        
         val selectedModel = currentState.chatState.selectedModel
         if (selectedModel == null) {
             sendEffect(MainEffect.ShowError("Please select a model first"))
             return
         }
+
+        // Set isSending synchronously BEFORE launching coroutine to prevent race condition
+        updateState { copy(chatState = chatState.copy(isSending = true)) }
 
         // Capture attachments before clearing
         val attachmentsToSend = currentState.chatState.attachments.toList()
@@ -461,6 +467,7 @@ class MainViewModel @Inject constructor(
                     }
                 } catch (e: Exception) {
                     android.util.Log.e("MainViewModel", "Failed to create chat", e)
+                    updateState { copy(chatState = chatState.copy(isSending = false)) }
                     sendEffect(MainEffect.ShowError("Failed to create chat: ${e.message}"))
                     return@launch
                 }
@@ -496,6 +503,7 @@ class MainViewModel @Inject constructor(
                             allMessages = chatState.allMessages + userMessage,
                             inputText = "",
                             attachments = emptyList(), // Clear attachments after sending
+                            isSending = false,
                             isStreaming = true,
                             streamingMessage = ""
                         )
@@ -505,6 +513,7 @@ class MainViewModel @Inject constructor(
                 updateState { 
                     copy(
                         chatState = chatState.copy(
+                            isSending = false,
                             isStreaming = true,
                             streamingMessage = "",
                             attachments = emptyList() // Clear attachments

@@ -30,6 +30,7 @@ data class ChatState(
     val selectedBranches: Map<String, Int> = emptyMap(),
     val inputText: String = "",
     val isLoading: Boolean = false,
+    val isSending: Boolean = false,
     val isStreaming: Boolean = false,
     val streamingMessage: String = "",
     val selectedModel: ModelOption? = null,

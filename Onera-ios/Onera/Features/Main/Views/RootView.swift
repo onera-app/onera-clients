@@ -55,7 +55,8 @@ struct RootView: View {
                     ),
                     authService: dependencies.authService,
                     e2eeService: dependencies.e2eeService,
-                    onComplete: { coordinator.handleE2EEUnlockComplete() }
+                    onComplete: { coordinator.handleE2EEUnlockComplete() },
+                    onSignOut: { Task { await coordinator.handleSignOut() } }
                 )
                 
             case .authenticatedNeedsAddApiKey:

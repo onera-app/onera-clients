@@ -2,22 +2,25 @@
 //  Typography.swift
 //  Onera
 //
-//  Centralized typography system
+//  Centralized typography system with Dynamic Type support
 //
 
 import SwiftUI
 
 /// Onera Design System - Typography Tokens
 /// All font styles used throughout the app should be referenced from here
+/// All styles support Dynamic Type for accessibility
 enum OneraTypography {
     
-    // MARK: - Display Styles
+    // MARK: - Display Styles (Scalable)
     
-    /// Large display text (32pt, semibold) - Welcome screens, hero text
-    static let displayLarge = Font.system(size: 32, weight: .semibold)
+    /// Large display text - Welcome screens, hero text
+    /// Scales with Dynamic Type based on .largeTitle
+    static let displayLarge = Font.largeTitle.weight(.semibold)
     
-    /// Medium display text (24pt, semibold) - Section headers
-    static let displayMedium = Font.system(size: 24, weight: .semibold)
+    /// Medium display text - Section headers
+    /// Scales with Dynamic Type based on .title
+    static let displayMedium = Font.title.weight(.semibold)
     
     // MARK: - Title Styles
     
@@ -66,25 +69,63 @@ enum OneraTypography {
     /// Monospaced digit - Numbers that should align
     static let monoDigit = Font.caption.monospacedDigit()
     
-    // MARK: - Custom Sizes
+    // MARK: - Semantic Styles (Scalable)
     
-    /// Navigation bar model name (17pt, semibold)
-    static let navTitle = Font.system(size: 17, weight: .semibold)
+    /// Navigation bar title - Scales with body text style
+    static let navTitle = Font.headline
     
-    /// Button text (17pt, medium)
-    static let button = Font.system(size: 17, weight: .medium)
+    /// Button text - Scales with body text style
+    static let button = Font.body.weight(.medium)
     
-    /// Small button text (12pt, medium)
-    static let buttonSmall = Font.system(size: 12, weight: .medium)
+    /// Small button text - Scales with caption text style
+    static let buttonSmall = Font.caption.weight(.medium)
     
-    /// Icon-sized text (16pt, medium)
-    static let iconLabel = Font.system(size: 16, weight: .medium)
+    /// Icon-sized text - Scales with callout text style
+    static let iconLabel = Font.callout.weight(.medium)
     
-    /// Large icon text (18pt, medium)
-    static let iconLarge = Font.system(size: 18, weight: .medium)
+    /// Large icon text - Scales with body text style
+    static let iconLarge = Font.body.weight(.medium)
     
-    /// Extra large icon text (20pt, medium)
-    static let iconXLarge = Font.system(size: 20, weight: .medium)
+    /// Extra large icon text - Scales with headline text style
+    static let iconXLarge = Font.headline.weight(.medium)
+}
+
+// MARK: - Scaled Metrics for Custom Sizes
+
+/// Use these @ScaledMetric properties in views that need specific pixel sizes
+/// that still scale with Dynamic Type
+struct ScaledTypographySizes {
+    /// Large display icon size (base: 48pt, scales with .largeTitle)
+    @ScaledMetric(relativeTo: .largeTitle) var displayIconLarge: CGFloat = 48
+    
+    /// Medium display icon size (base: 32pt, scales with .title)
+    @ScaledMetric(relativeTo: .title) var displayIconMedium: CGFloat = 32
+    
+    /// Standard icon size (base: 24pt, scales with .body)
+    @ScaledMetric(relativeTo: .body) var iconStandard: CGFloat = 24
+    
+    /// Small icon size (base: 16pt, scales with .caption)
+    @ScaledMetric(relativeTo: .caption) var iconSmall: CGFloat = 16
+    
+    /// Avatar size (base: 40pt, scales with .body)
+    @ScaledMetric(relativeTo: .body) var avatar: CGFloat = 40
+    
+    /// Large avatar size (base: 80pt, scales with .title)
+    @ScaledMetric(relativeTo: .title) var avatarLarge: CGFloat = 80
+    
+    /// Touch target minimum (base: 44pt, scales with .body)
+    @ScaledMetric(relativeTo: .body) var touchTarget: CGFloat = 44
+    
+    /// Button height (base: 50pt, scales with .body)
+    @ScaledMetric(relativeTo: .body) var buttonHeight: CGFloat = 50
+    
+    /// Navigation bar button size (base: 44pt, scales with .body)
+    @ScaledMetric(relativeTo: .body) var navButton: CGFloat = 44
+    
+    /// Chevron/disclosure indicator size (base: 10pt, scales with .caption2)
+    @ScaledMetric(relativeTo: .caption2) var chevron: CGFloat = 10
+    
+    init() {}
 }
 
 // MARK: - Font Weight Helpers

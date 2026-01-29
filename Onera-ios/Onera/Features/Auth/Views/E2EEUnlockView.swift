@@ -29,16 +29,21 @@ struct E2EEUnlockView: View {
     
     private let authService: AuthServiceProtocol
     private let e2eeService: E2EEServiceProtocol
+    private let onSignOut: (() -> Void)?
+    
+    @State private var showingSignOutConfirmation = false
     
     init(
         viewModel: E2EEUnlockViewModel,
         authService: AuthServiceProtocol,
         e2eeService: E2EEServiceProtocol,
-        onComplete: @escaping () -> Void
+        onComplete: @escaping () -> Void,
+        onSignOut: (() -> Void)? = nil
     ) {
         self.viewModel = viewModel
         self.authService = authService
         self.e2eeService = e2eeService
+        self.onSignOut = onSignOut
         self.passwordViewModel = PasswordUnlockViewModel(
             authService: authService,
             e2eeService: e2eeService,
@@ -252,6 +257,46 @@ struct E2EEUnlockView: View {
                 }
             } header: {
                 Text("Unlock Method")
+            }
+            
+            // Sign out section
+            if onSignOut != nil {
+                Section {
+                    Button(role: .destructive) {
+                        showingSignOutConfirmation = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                                .font(.title2)
+                                .foregroundStyle(.red)
+                                .frame(width: 32)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Sign Out")
+                                    .font(.body.weight(.medium))
+                                Text("Sign out and use a different account")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            
+                            Spacer()
+                        }
+                    }
+                } header: {
+                    Text("Account")
+                }
+                .confirmationDialog(
+                    "Sign Out",
+                    isPresented: $showingSignOutConfirmation,
+                    titleVisibility: .visible
+                ) {
+                    Button("Sign Out", role: .destructive) {
+                        onSignOut?()
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("Are you sure you want to sign out? You'll need to sign in again to access your encrypted data.")
+                }
             }
         }
     }
