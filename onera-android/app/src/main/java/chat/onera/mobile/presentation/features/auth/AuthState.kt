@@ -13,5 +13,6 @@ data class AuthState(
 enum class AuthMethod {
     NONE,
     GOOGLE,
-    APPLE
+    APPLE,
+    DEMO  // For Play Store review mode
 }

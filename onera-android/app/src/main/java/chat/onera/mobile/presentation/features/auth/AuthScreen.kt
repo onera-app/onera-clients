@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import chat.onera.mobile.R
+import chat.onera.mobile.demo.DemoModeActivationWrapper
+import chat.onera.mobile.demo.DemoModeActivationOverlay
 import kotlinx.coroutines.delay
 
 @Composable
@@ -44,6 +46,7 @@ fun AuthScreen(
     var titleText by remember { mutableStateOf("") }
     var showCircle by remember { mutableStateOf(false) }
     var showDrawer by remember { mutableStateOf(false) }
+    var showDemoActivation by remember { mutableStateOf(false) }
     
     val fullTitle = "Let's collaborate"
     
@@ -92,6 +95,8 @@ fun AuthScreen(
             .background(MaterialTheme.colorScheme.background)
     ) {
         // Centered header - positioned slightly above center
+        // Wrapped with DemoModeActivationWrapper for Play Store review
+        // Tap 10 times rapidly to activate demo mode
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -99,27 +104,34 @@ fun AuthScreen(
                 .offset(y = if (showDrawer) (-60).dp else 0.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
+            DemoModeActivationWrapper(
+                onDemoModeActivated = {
+                    showDemoActivation = true
+                    viewModel.sendIntent(AuthIntent.ActivateDemoMode)
+                }
             ) {
-                Text(
-                    text = titleText,
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                
-                Spacer(modifier = Modifier.width(8.dp))
-                
-                // Animated circle icon
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .scale(circleScale)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.onBackground)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = titleText,
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    // Animated circle icon
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .scale(circleScale)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.onBackground)
+                    )
+                }
             }
         }
         

@@ -1,12 +1,12 @@
-# Onera Mobile Apps
+# Onera Mobile & Desktop Apps
 
-Native iOS and Android applications for Onera - an end-to-end encrypted AI chat app.
+Native iOS, iPadOS, macOS, and Android applications for Onera - an end-to-end encrypted AI chat app.
 
 ## Project Structure
 
 ```
 onera-mob/
-├── Onera-ios/           # iOS app (SwiftUI)
+├── Onera-ios/           # iOS & iPadOS app (SwiftUI)
 │   ├── Onera/
 │   │   ├── App/         # App entry, DI, coordinator
 │   │   ├── Core/        # Models, extensions, errors
@@ -19,6 +19,15 @@ onera-mob/
 │   │   ├── DesignSystem/ # Liquid Glass, typography, colors
 │   │   └── Services/     # API, auth, encryption
 │   └── OneraUITests/    # UI tests
+│
+├── Onera-macos/         # macOS app (SwiftUI native)
+│   ├── Onera/
+│   │   ├── App/         # App entry, scenes, commands
+│   │   ├── Core/        # Shared models, extensions
+│   │   ├── Features/    # Feature modules (mirroring iOS)
+│   │   ├── DesignSystem/ # macOS-adapted design system
+│   │   └── Services/     # Shared services
+│   └── OneraTests/      # Unit tests
 │
 └── onera-android/       # Android app (Kotlin)
     └── app/src/main/java/chat/onera/mobile/
@@ -66,6 +75,92 @@ final class ChatViewModel {
 - Protocol-based for testability
 - DependencyContainer for injection
 - Async/await for all network calls
+
+## iPadOS Architecture
+
+iPadOS shares the iOS codebase but adds tablet-specific features.
+
+### Stage Manager & Multi-Window
+```swift
+@main
+struct OneraApp: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+        .defaultSize(CGSize(width: 1024, height: 768))
+        
+        WindowGroup("Chat", for: Chat.ID.self) { $chatId in
+            ChatWindowView(chatId: chatId)
+        }
+    }
+}
+```
+
+### Adaptive Layouts
+- Use `NavigationSplitView` with 2-3 columns
+- Support all size classes (full, split, slide over)
+- Test in Stage Manager with various window sizes
+
+### Keyboard & Trackpad
+- Add keyboard shortcuts via `.keyboardShortcut()` and `Commands`
+- Support hover states with `.onHover`
+- Full keyboard navigation with `@FocusState`
+
+### Apple Pencil
+- PencilKit for drawing/annotation
+- Double-tap and squeeze gestures
+- Hover preview (Apple Pencil Pro)
+
+## macOS Architecture
+
+macOS uses the same MVVM pattern but with Mac-native UI patterns.
+
+### App Structure
+```swift
+@main
+struct OneraApp: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+        .commands {
+            AppCommands()
+        }
+        .defaultSize(width: 1200, height: 800)
+        
+        Settings {
+            SettingsView()
+        }
+    }
+}
+```
+
+### Navigation Pattern
+```swift
+NavigationSplitView {
+    SidebarView(selection: $selectedFolder)
+        .navigationSplitViewColumnWidth(min: 200, ideal: 250, max: 300)
+} content: {
+    ContentListView(folder: selectedFolder)
+} detail: {
+    DetailView(item: selectedItem)
+}
+```
+
+### Key macOS Features
+- **Menus**: Custom `CommandMenu` and `CommandGroup`
+- **Keyboard shortcuts**: All common actions (⌘N, ⌘S, ⌘W, etc.)
+- **Settings**: ⌘, opens tabbed settings
+- **Windows**: Multiple window types, remember positions
+- **Inspector**: Right sidebar for item details
+- **Table**: Native `Table` view for data
+
+### Design Considerations
+- Respect menu bar conventions
+- Support keyboard-first navigation
+- Use standard window controls
+- Follow sidebar/content/detail patterns
 
 ## Android Architecture
 
@@ -120,16 +215,24 @@ sealed interface ChatEffect : UiEffect {
 - Conflict resolution on reconnect
 
 ### Accessibility
-- Dynamic Type (iOS) / Font scaling (Android)
+- Dynamic Type (iOS/macOS) / Font scaling (Android)
 - VoiceOver / TalkBack support
+- Full keyboard navigation (all platforms)
 - Minimum touch targets (44pt iOS / 48dp Android)
 
 ## Development Commands
 
-### iOS
+### iOS / iPadOS
 ```bash
 cd Onera-ios
 xcodebuild -scheme Onera -destination 'platform=iOS Simulator,name=iPhone 16'
+xcodebuild -scheme Onera -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M4)'
+```
+
+### macOS
+```bash
+cd Onera-macos
+xcodebuild -scheme Onera -destination 'platform=macOS'
 ```
 
 ### Android
@@ -141,9 +244,11 @@ cd onera-android
 
 ## Feature Parity Checklist
 
-When implementing features, ensure both platforms support:
+When implementing features, ensure all platforms support:
 - [ ] Core functionality matches
 - [ ] Error handling consistent
 - [ ] Loading states similar
 - [ ] Offline behavior aligned
 - [ ] Accessibility supported
+- [ ] Keyboard shortcuts (iPadOS, macOS)
+- [ ] Multi-window support (iPadOS Stage Manager, macOS)

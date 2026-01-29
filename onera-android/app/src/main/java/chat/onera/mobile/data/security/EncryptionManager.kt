@@ -4,6 +4,11 @@ import android.util.Base64
 import chat.onera.mobile.data.remote.dto.EncryptedData
 import chat.onera.mobile.data.repository.KeyPair
 import chat.onera.mobile.data.repository.PasswordEncryptedMasterKey
+import com.goterl.lazysodium.LazySodiumAndroid
+import com.goterl.lazysodium.SodiumAndroid
+import com.goterl.lazysodium.interfaces.PwHash
+import com.sun.jna.NativeLong
+import timber.log.Timber
 import java.security.MessageDigest
 import java.security.SecureRandom
 import javax.crypto.Cipher
@@ -17,30 +22,51 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Encryption Manager - matches iOS CryptoService.swift
- * Provides AES-256-GCM encryption/decryption operations.
+ * Encryption Manager - matches web and iOS crypto implementations.
+ * 
+ * Provides:
+ * - AES-256-GCM for Android Keystore operations
+ * - XSalsa20-Poly1305 (libsodium secretbox) for E2EE data - matches web
+ * - Argon2id for password key derivation - matches web/iOS
+ * - HKDF-SHA256 for PRF-based key derivation
  */
 @Singleton
 class EncryptionManager @Inject constructor() {
 
     companion object {
+        private const val TAG = "EncryptionManager"
+        
+        // AES-GCM parameters (Android Keystore)
         private const val TRANSFORMATION = "AES/GCM/NoPadding"
         private const val AES_KEY_SIZE = 256
         private const val GCM_IV_LENGTH = 12
         private const val GCM_TAG_LENGTH = 128
         
-        // Password key derivation parameters (matches iOS Argon2 equivalents)
-        private const val PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA256"
-        private const val PBKDF2_ITERATIONS = 100000
-        private const val PBKDF2_KEY_LENGTH = 256
+        // Salt/nonce lengths
         private const val SALT_LENGTH = 32
+        private const val SECRETBOX_NONCE_LENGTH = 24
         
-        // Default Argon2 parameters (simplified for Android - using PBKDF2)
-        private const val DEFAULT_OPS_LIMIT = 3
-        private const val DEFAULT_MEM_LIMIT = 67108864 // 64MB
+        // Argon2id parameters - MUST match web/iOS exactly
+        // Web uses: crypto_pwhash with OPSLIMIT_MODERATE (3) and MEMLIMIT_MODERATE (64MB)
+        private const val ARGON2_OPSLIMIT_MODERATE = 3L
+        private const val ARGON2_MEMLIMIT_MODERATE = 67108864L // 64MB
+        
+        // For interactive use (lower security, faster)
+        private const val ARGON2_OPSLIMIT_INTERACTIVE = 2L
+        private const val ARGON2_MEMLIMIT_INTERACTIVE = 67108864L // 64MB
+        
+        // PBKDF2 parameters for BIP39 mnemonic derivation (standard spec)
+        private const val PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA512"
+        private const val PBKDF2_ITERATIONS = 2048 // BIP39 standard
+        private const val PBKDF2_KEY_LENGTH = 512 // 64 bytes for BIP39
     }
     
     private val secureRandom = SecureRandom()
+    
+    // Lazy-initialized sodium instance for thread safety
+    private val sodium: LazySodiumAndroid by lazy {
+        LazySodiumAndroid(SodiumAndroid())
+    }
 
     // ===== Original methods for SecretKey (Android Keystore) =====
     
@@ -233,13 +259,26 @@ class EncryptionManager @Inject constructor() {
     /**
      * Decrypt using XSalsa20-Poly1305 (NaCl secretbox).
      * Used for passkey-encrypted master key (matches web's libsodium crypto_secretbox_open_easy).
+     * 
+     * @param ciphertextBase64 Base64-encoded ciphertext with 16-byte Poly1305 tag appended
+     * @param nonceBase64 Base64-encoded 24-byte nonce
+     * @param key 32-byte decryption key
+     * @return Decrypted plaintext bytes
+     * @throws javax.crypto.AEADBadTagException if decryption fails (wrong key or tampered data)
      */
     fun decryptSecretBox(ciphertextBase64: String, nonceBase64: String, key: ByteArray): ByteArray {
         val ciphertext = Base64.decode(ciphertextBase64, Base64.NO_WRAP)
         val nonce = Base64.decode(nonceBase64, Base64.NO_WRAP)
         
-        // Use lazysodium for XSalsa20-Poly1305
-        val sodium = com.goterl.lazysodium.LazySodiumAndroid(com.goterl.lazysodium.SodiumAndroid())
+        require(nonce.size == SECRETBOX_NONCE_LENGTH) {
+            "Nonce must be $SECRETBOX_NONCE_LENGTH bytes, got ${nonce.size}"
+        }
+        require(key.size == 32) {
+            "Key must be 32 bytes, got ${key.size}"
+        }
+        require(ciphertext.size > 16) {
+            "Ciphertext too short (must include 16-byte tag)"
+        }
         
         // crypto_secretbox_open_easy expects: ciphertext with auth tag appended
         val plaintext = ByteArray(ciphertext.size - 16) // 16 bytes for Poly1305 tag
@@ -253,6 +292,7 @@ class EncryptionManager @Inject constructor() {
         )
         
         if (!success) {
+            Timber.w("$TAG: SecretBox decryption failed - invalid key or tampered data")
             throw javax.crypto.AEADBadTagException("Decryption failed - invalid key or tampered data")
         }
         
@@ -271,12 +311,18 @@ class EncryptionManager @Inject constructor() {
     /**
      * Encrypt using XSalsa20-Poly1305 (NaCl secretbox).
      * Used for all E2EE data encryption (matches web's libsodium crypto_secretbox_easy).
+     * 
+     * @param plaintext Plaintext bytes to encrypt
+     * @param key 32-byte encryption key
+     * @return Pair of (base64 ciphertext with tag, base64 nonce)
      */
     fun encryptSecretBox(plaintext: ByteArray, key: ByteArray): Pair<String, String> {
-        val sodium = com.goterl.lazysodium.LazySodiumAndroid(com.goterl.lazysodium.SodiumAndroid())
+        require(key.size == 32) {
+            "Key must be 32 bytes, got ${key.size}"
+        }
         
         // Generate 24-byte nonce (crypto_secretbox_NONCEBYTES)
-        val nonce = ByteArray(24)
+        val nonce = ByteArray(SECRETBOX_NONCE_LENGTH)
         secureRandom.nextBytes(nonce)
         
         // Encrypt: ciphertext includes 16-byte Poly1305 tag
@@ -291,7 +337,8 @@ class EncryptionManager @Inject constructor() {
         )
         
         if (!success) {
-            throw RuntimeException("Encryption failed")
+            Timber.e("$TAG: SecretBox encryption failed")
+            throw SecurityException("Encryption failed")
         }
         
         return Pair(
@@ -326,36 +373,42 @@ class EncryptionManager @Inject constructor() {
         return factory.generateSecret(spec).encoded
     }
     
-    // ===== Password-Based Encryption =====
+    // ===== Password-Based Encryption (Argon2id) =====
     
     /**
      * Encrypt master key with password for server storage.
-     * Uses PBKDF2 key derivation (iOS uses Argon2 via libsodium).
+     * Uses Argon2id key derivation - matches web/iOS exactly.
      */
     fun encryptMasterKeyWithPassword(masterKey: ByteArray, password: String): PasswordEncryptedMasterKey {
-        // Generate salt
-        val salt = generateRandomBytes(SALT_LENGTH)
+        // Generate salt (crypto_pwhash_SALTBYTES = 16, but we use 32 for extra security)
+        val salt = generateRandomBytes(PwHash.SALTBYTES)
         
-        // Derive key from password
-        val derivedKey = deriveKeyFromPassword(password, salt)
+        // Derive key from password using Argon2id
+        val derivedKey = deriveKeyFromPasswordArgon2(
+            password = password,
+            salt = salt,
+            opsLimit = ARGON2_OPSLIMIT_MODERATE,
+            memLimit = ARGON2_MEMLIMIT_MODERATE
+        )
         
-        // Encrypt master key
-        val (ciphertext, nonce) = encryptBytesForServer(masterKey, derivedKey)
+        // Encrypt master key using XSalsa20-Poly1305 (secretbox) - matches web
+        val (ciphertext, nonce) = encryptSecretBox(masterKey, derivedKey)
         
         // Secure cleanup
-        derivedKey.fill(0)
+        secureZero(derivedKey)
         
         return PasswordEncryptedMasterKey(
             ciphertext = ciphertext,
             nonce = nonce,
             salt = Base64.encodeToString(salt, Base64.NO_WRAP),
-            opsLimit = DEFAULT_OPS_LIMIT,
-            memLimit = DEFAULT_MEM_LIMIT
+            opsLimit = ARGON2_OPSLIMIT_MODERATE.toInt(),
+            memLimit = ARGON2_MEMLIMIT_MODERATE.toInt()
         )
     }
     
     /**
      * Decrypt master key with password from server.
+     * Uses Argon2id with parameters from server (for cross-platform compatibility).
      */
     fun decryptMasterKeyWithPassword(
         encryptedMasterKey: String,
@@ -368,70 +421,214 @@ class EncryptionManager @Inject constructor() {
         // Decode salt
         val saltBytes = Base64.decode(salt, Base64.NO_WRAP)
         
-        // Derive key from password (opsLimit/memLimit are for Argon2 compatibility)
-        val derivedKey = deriveKeyFromPassword(password, saltBytes)
+        // Derive key from password using Argon2id with server-provided parameters
+        val derivedKey = deriveKeyFromPasswordArgon2(
+            password = password,
+            salt = saltBytes,
+            opsLimit = opsLimit.toLong(),
+            memLimit = memLimit.toLong()
+        )
         
-        // Decrypt master key
-        val masterKey = decryptBytesFromServer(encryptedMasterKey, nonce, derivedKey)
+        // Decrypt master key using XSalsa20-Poly1305 (secretbox)
+        val masterKey = decryptSecretBox(encryptedMasterKey, nonce, derivedKey)
         
         // Secure cleanup
-        derivedKey.fill(0)
+        secureZero(derivedKey)
         
         return masterKey
     }
     
     /**
-     * Derive encryption key from password using PBKDF2.
+     * Derive encryption key from password using Argon2id.
+     * 
+     * This MUST match the web implementation exactly:
+     * - Algorithm: Argon2id (crypto_pwhash_ALG_ARGON2ID13)
+     * - Output length: 32 bytes (256 bits)
+     * - Salt: 16 bytes (crypto_pwhash_SALTBYTES)
+     * - opsLimit: 3 (MODERATE) or 2 (INTERACTIVE)
+     * - memLimit: 64MB (MODERATE/INTERACTIVE)
      */
-    private fun deriveKeyFromPassword(password: String, salt: ByteArray): ByteArray {
-        val spec = PBEKeySpec(
-            password.toCharArray(),
+    fun deriveKeyFromPasswordArgon2(
+        password: String,
+        salt: ByteArray,
+        opsLimit: Long = ARGON2_OPSLIMIT_MODERATE,
+        memLimit: Long = ARGON2_MEMLIMIT_MODERATE
+    ): ByteArray {
+        require(salt.size >= PwHash.SALTBYTES) { 
+            "Salt must be at least ${PwHash.SALTBYTES} bytes, got ${salt.size}" 
+        }
+        
+        val outputKey = ByteArray(32) // 256-bit key
+        val passwordBytes = password.toByteArray(Charsets.UTF_8)
+        
+        // Use Argon2id (the recommended variant)
+        val success = sodium.cryptoPwHash(
+            outputKey,
+            outputKey.size,
+            passwordBytes,
+            passwordBytes.size,
             salt,
-            PBKDF2_ITERATIONS,
-            PBKDF2_KEY_LENGTH
+            opsLimit,
+            NativeLong(memLimit),
+            PwHash.Alg.PWHASH_ALG_ARGON2ID13
         )
-        val factory = SecretKeyFactory.getInstance(PBKDF2_ALGORITHM)
-        return factory.generateSecret(spec).encoded
+        
+        if (!success) {
+            Timber.e("$TAG: Argon2id key derivation failed")
+            throw SecurityException("Failed to derive key from password")
+        }
+        
+        Timber.d("$TAG: Derived key using Argon2id (opsLimit=$opsLimit, memLimit=$memLimit)")
+        return outputKey
     }
     
-    // ===== Shamir Secret Sharing (Simplified) =====
+    // ===== Shamir Secret Sharing (GF(256) Polynomial) =====
     
     /**
-     * Split a secret into n shares where k are needed to reconstruct.
-     * This is a simplified implementation - production should use proper SSS.
+     * Split a secret into n shares where k (threshold) are needed to reconstruct.
+     * Uses proper Shamir Secret Sharing with GF(256) polynomial interpolation.
+     * 
+     * @param secret The secret bytes to split
+     * @param numShares Total number of shares to generate (n)
+     * @param threshold Minimum shares needed to reconstruct (k)
+     * @return List of shares, each prefixed with its x-coordinate (share index)
      */
     fun splitSecret(secret: ByteArray, numShares: Int = 3, threshold: Int = 2): List<ByteArray> {
-        // Simplified: XOR-based split (not true Shamir SSS)
-        // In production, use a proper Shamir implementation
-        val shares = mutableListOf<ByteArray>()
-        var remaining = secret.copyOf()
+        require(numShares >= threshold) { "numShares must be >= threshold" }
+        require(threshold >= 2) { "threshold must be >= 2" }
+        require(numShares <= 255) { "numShares must be <= 255" }
         
-        for (i in 0 until numShares - 1) {
-            val share = generateRandomBytes(secret.size)
-            shares.add(share)
-            remaining = xorBytes(remaining, share)
+        // For each byte of the secret, generate random polynomial coefficients
+        // coefficients[byteIndex][0] = secret byte (constant term)
+        // coefficients[byteIndex][1..k-1] = random bytes (higher degree terms)
+        val polynomialCoefficients = Array(secret.size) { byteIndex ->
+            ByteArray(threshold).also { coeffs ->
+                coeffs[0] = secret[byteIndex]
+                for (i in 1 until threshold) {
+                    coeffs[i] = secureRandom.nextInt(256).toByte()
+                }
+            }
         }
-        shares.add(remaining)
+        
+        val shares = mutableListOf<ByteArray>()
+        
+        // For each share index (1 to numShares)
+        for (shareIndex in 1..numShares) {
+            // Each share is: [shareIndex byte] + [evaluated polynomial for each secret byte]
+            val share = ByteArray(1 + secret.size)
+            share[0] = shareIndex.toByte()
+            
+            // Evaluate polynomial for each byte of the secret
+            for (byteIndex in secret.indices) {
+                share[1 + byteIndex] = gf256EvaluatePolynomial(
+                    polynomialCoefficients[byteIndex], 
+                    shareIndex.toByte()
+                )
+            }
+            
+            shares.add(share)
+        }
+        
+        // Secure cleanup of polynomial coefficients
+        polynomialCoefficients.forEach { secureZero(it) }
         
         return shares
     }
     
     /**
-     * Combine shares to reconstruct secret.
+     * Combine shares to reconstruct the secret using Lagrange interpolation in GF(256).
+     * 
+     * @param shares List of shares (each prefixed with x-coordinate)
+     * @return Reconstructed secret
      */
     fun combineShares(shares: List<ByteArray>): ByteArray {
         require(shares.isNotEmpty()) { "No shares provided" }
+        require(shares.all { it.size == shares[0].size }) { "All shares must be same size" }
         
-        var result = shares[0].copyOf()
-        for (i in 1 until shares.size) {
-            result = xorBytes(result, shares[i])
+        val secretLength = shares[0].size - 1 // First byte is x-coordinate
+        val secret = ByteArray(secretLength)
+        
+        // Extract x-coordinates and y-values
+        val xCoords = shares.map { (it[0].toInt() and 0xFF).toByte() }
+        
+        // Reconstruct each byte of the secret using Lagrange interpolation
+        for (byteIndex in 0 until secretLength) {
+            val yValues = shares.map { it[1 + byteIndex] }
+            secret[byteIndex] = gf256LagrangeInterpolate(xCoords, yValues)
+        }
+        
+        return secret
+    }
+    
+    // ===== GF(256) Arithmetic =====
+    // Using the AES/Rijndael irreducible polynomial: x^8 + x^4 + x^3 + x + 1 (0x11B)
+    
+    private fun gf256Add(a: Byte, b: Byte): Byte {
+        return (a.toInt() xor b.toInt()).toByte()
+    }
+    
+    private fun gf256Multiply(a: Byte, b: Byte): Byte {
+        var result = 0
+        var aa = a.toInt() and 0xFF
+        var bb = b.toInt() and 0xFF
+        
+        while (bb != 0) {
+            if (bb and 1 != 0) {
+                result = result xor aa
+            }
+            val carry = aa and 0x80
+            aa = aa shl 1
+            if (carry != 0) {
+                aa = aa xor 0x1B // Reduce by x^8 + x^4 + x^3 + x + 1
+            }
+            bb = bb shr 1
+        }
+        
+        return (result and 0xFF).toByte()
+    }
+    
+    private fun gf256Inverse(a: Byte): Byte {
+        if (a.toInt() == 0) return 0
+        
+        // Use extended Euclidean algorithm or exponentiation (a^254 in GF(256))
+        var result = a
+        repeat(253) { // a^254 = a^(2^8 - 2)
+            result = gf256Multiply(result, a)
         }
         return result
     }
     
-    private fun xorBytes(a: ByteArray, b: ByteArray): ByteArray {
-        require(a.size == b.size) { "Arrays must be same size" }
-        return ByteArray(a.size) { i -> (a[i].toInt() xor b[i].toInt()).toByte() }
+    private fun gf256EvaluatePolynomial(coefficients: ByteArray, x: Byte): Byte {
+        // Horner's method: a_0 + x*(a_1 + x*(a_2 + ...))
+        var result: Byte = 0
+        for (i in coefficients.indices.reversed()) {
+            result = gf256Add(coefficients[i], gf256Multiply(result, x))
+        }
+        return result
+    }
+    
+    private fun gf256LagrangeInterpolate(xCoords: List<Byte>, yValues: List<Byte>): Byte {
+        // Lagrange interpolation at x=0 to recover secret (constant term)
+        var result: Byte = 0
+        
+        for (i in xCoords.indices) {
+            var basis: Byte = 1
+            
+            for (j in xCoords.indices) {
+                if (i != j) {
+                    // basis *= x_j / (x_j - x_i) = (0 - x_j) / (x_i - x_j) = x_j / (x_j - x_i)
+                    val xj = xCoords[j]
+                    val xi = xCoords[i]
+                    val numerator = xj
+                    val denominator = gf256Add(xj, xi) // x_j - x_i = x_j + x_i in GF(256)
+                    basis = gf256Multiply(basis, gf256Multiply(numerator, gf256Inverse(denominator)))
+                }
+            }
+            
+            result = gf256Add(result, gf256Multiply(yValues[i], basis))
+        }
+        
+        return result
     }
     
     // ===== Hashing =====

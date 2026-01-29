@@ -137,6 +137,9 @@ dependencies {
     implementation(libs.markdown.renderer)
     implementation(libs.markdown.renderer.coil)
     
+    // Logging
+    implementation(libs.timber)
+    
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

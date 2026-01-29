@@ -8,4 +8,7 @@ sealed interface AuthIntent : UiIntent {
     data object CheckAuthStatus : AuthIntent
     data object ClearError : AuthIntent
     data object SignOut : AuthIntent
+    
+    /** Activate demo mode for Play Store review */
+    data object ActivateDemoMode : AuthIntent
 }

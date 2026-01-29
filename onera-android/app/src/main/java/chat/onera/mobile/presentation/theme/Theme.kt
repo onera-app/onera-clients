@@ -3,8 +3,10 @@ package chat.onera.mobile.presentation.theme
 import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -14,6 +16,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import chat.onera.mobile.data.preferences.AppTheme
 
@@ -226,6 +229,48 @@ private val ForestLightColorScheme = lightColorScheme(
 )
 
 // ==============================================================================
+// MATERIAL 3 SHAPES
+// ==============================================================================
+
+/**
+ * Material 3 shape system for Onera.
+ * Provides consistent corner radii across the app.
+ */
+val OneraShapes = Shapes(
+    // Extra small: chips, badges
+    extraSmall = RoundedCornerShape(4.dp),
+    // Small: buttons, text fields
+    small = RoundedCornerShape(8.dp),
+    // Medium: cards, dialogs
+    medium = RoundedCornerShape(12.dp),
+    // Large: sheets, large cards
+    large = RoundedCornerShape(16.dp),
+    // Extra large: full-screen sheets
+    extraLarge = RoundedCornerShape(28.dp)
+)
+
+/**
+ * Message bubble shapes - asymmetric for visual distinction.
+ */
+object MessageShapes {
+    val userBubble = RoundedCornerShape(
+        topStart = 16.dp,
+        topEnd = 16.dp,
+        bottomStart = 16.dp,
+        bottomEnd = 4.dp
+    )
+    
+    val assistantBubble = RoundedCornerShape(
+        topStart = 16.dp,
+        topEnd = 16.dp,
+        bottomStart = 4.dp,
+        bottomEnd = 16.dp
+    )
+    
+    val codeBlock = RoundedCornerShape(8.dp)
+}
+
+// ==============================================================================
 // THEME SELECTION HELPER
 // ==============================================================================
 
@@ -275,6 +320,7 @@ fun OneraTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
+        shapes = OneraShapes,
         content = content
     )
 }

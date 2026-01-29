@@ -10,9 +10,21 @@
       "description": "Build and run Android app",
       "prompt": "Help me build and test the Android app: $input"
     },
+    "macos-build": {
+      "description": "Build and run macOS app",
+      "prompt": "Help me build and test the macOS app: $input"
+    },
     "ios-ui": {
       "description": "iOS UI development with Liquid Glass",
       "prompt": "@ios-dev @ui-ux I need to create iOS UI: $input. Use the Liquid Glass design system and load the ios-liquid-glass skill."
+    },
+    "ipados-ui": {
+      "description": "iPadOS UI with Stage Manager and keyboard support",
+      "prompt": "@ipados-dev @ui-ux I need to create iPadOS UI: $input. Load the ipados-features skill for Stage Manager, keyboard/trackpad, and Apple Pencil patterns."
+    },
+    "macos-ui": {
+      "description": "macOS UI with sidebars, menus, and keyboard shortcuts",
+      "prompt": "@macos-dev @ui-ux I need to create macOS UI: $input. Load the macos-swiftui and macos-hig skills for native Mac patterns."
     },
     "android-ui": {
       "description": "Android UI development with Material 3",
@@ -20,15 +32,27 @@
     },
     "sync": {
       "description": "Sync feature implementation across platforms",
-      "prompt": "I need to implement this feature on both iOS and Android: $input. Ensure consistent behavior across platforms."
+      "prompt": "I need to implement this feature on iOS, iPadOS, macOS, and Android: $input. Ensure consistent behavior across all platforms."
     },
     "mvvm": {
-      "description": "iOS MVVM architecture help",
+      "description": "iOS/macOS MVVM architecture help",
       "prompt": "@ios-dev Help me with MVVM architecture: $input. Load the swift-mvvm skill for patterns."
     },
     "mvi": {
       "description": "Android MVI architecture help",
       "prompt": "@android-dev Help me with MVI architecture: $input. Load the kotlin-mvi skill for patterns."
+    },
+    "stage-manager": {
+      "description": "iPadOS Stage Manager and multi-window support",
+      "prompt": "@ipados-dev Help me implement Stage Manager and multi-window support: $input. Load the ipados-features skill."
+    },
+    "pencil": {
+      "description": "Apple Pencil integration",
+      "prompt": "@ipados-dev Help me implement Apple Pencil support: $input. Load the ipados-features skill for PencilKit patterns."
+    },
+    "keyboard": {
+      "description": "Keyboard shortcuts and navigation",
+      "prompt": "@ipados-dev @macos-dev Help me implement keyboard shortcuts and navigation: $input. Load the appropriate platform skills."
     }
   }
 }
