@@ -1,242 +1,243 @@
 # Onera Mobile & Desktop Apps
 
-Native iOS, iPadOS, macOS, and Android applications for Onera - an end-to-end encrypted AI chat app.
+Native iOS, iPadOS, macOS, watchOS, and Android applications for Onera - an end-to-end encrypted AI chat app.
+
+## Golden Rule: Native First
+
+**ALWAYS use native components. NEVER customize when Apple/Google provides a solution.**
 
 ## Project Structure
 
 ```
 onera-mob/
-├── Onera-ios/           # iOS & iPadOS app (SwiftUI)
+├── Onera/                    # iOS, iPadOS, macOS (SwiftUI)
 │   ├── Onera/
-│   │   ├── App/         # App entry, DI, coordinator
-│   │   ├── Core/        # Models, extensions, errors
-│   │   ├── Features/    # Feature modules
+│   │   ├── App/              # App entry, DI, coordinator
+│   │   ├── Core/             # Shared models, extensions
+│   │   │   ├── Models/       # Chat, Message, Folder, Note, User
+│   │   │   ├── Platform/     # Platform-specific utilities
+│   │   │   └── Extensions/
+│   │   ├── Features/         # Feature modules
 │   │   │   ├── Auth/
 │   │   │   ├── Chat/
 │   │   │   ├── Notes/
 │   │   │   ├── Folders/
-│   │   │   └── Settings/
-│   │   ├── DesignSystem/ # Liquid Glass, typography, colors
-│   │   └── Services/     # API, auth, encryption
-│   └── OneraUITests/    # UI tests
+│   │   │   ├── Settings/
+│   │   │   ├── Main/
+│   │   │   │   ├── Views/    # Shared views
+│   │   │   │   └── macOS/    # Mac-specific main view
+│   │   │   └── MenuBar/      # macOS menu bar extra
+│   │   ├── DesignSystem/     # Theme, typography, colors
+│   │   └── Services/         # API, auth, encryption
+│   └── Onera-watchOS Watch App/
+│       ├── Features/
+│       │   ├── Chat/         # WatchChatListView
+│       │   └── QuickReply/   # WatchQuickReplyView
+│       ├── Services/         # WatchConnectivityManager
+│       └── App/              # WatchAppState
 │
-├── Onera-macos/         # macOS app (SwiftUI native)
-│   ├── Onera/
-│   │   ├── App/         # App entry, scenes, commands
-│   │   ├── Core/        # Shared models, extensions
-│   │   ├── Features/    # Feature modules (mirroring iOS)
-│   │   ├── DesignSystem/ # macOS-adapted design system
-│   │   └── Services/     # Shared services
-│   └── OneraTests/      # Unit tests
-│
-└── onera-android/       # Android app (Kotlin)
+└── onera-android/            # Android app (Kotlin)
     └── app/src/main/java/chat/onera/mobile/
-        ├── di/          # Hilt modules
-        ├── data/        # Repositories, remote, local
-        ├── domain/      # Models, use cases, repositories
+        ├── di/               # Hilt modules
+        ├── data/             # Repositories, remote, local
+        ├── domain/           # Models, use cases
         └── presentation/
-            ├── base/    # BaseViewModel, MVI contracts
-            ├── features/ # Feature screens
-            │   ├── auth/
-            │   ├── chat/
-            │   ├── notes/
-            │   └── settings/
-            ├── components/ # Shared composables
-            ├── navigation/ # NavHost, routes
-            └── theme/    # Material 3 theming
+            ├── base/         # BaseViewModel, MVI
+            ├── features/     # Feature screens
+            ├── components/   # Shared composables
+            ├── navigation/   # NavHost, routes
+            └── theme/        # Material 3
 ```
 
-## iOS Architecture
+## Architecture
 
-### MVVM with @Observable
+### Apple Platforms: MVVM with @Observable
+
 ```swift
 @MainActor
 @Observable
 final class ChatViewModel {
+    // Read-only state
     private(set) var messages: [Message] = []
     private(set) var isLoading = false
-    private(set) var isSending = false
+    private(set) var error: Error?
+    
+    // Writable input
     var inputText = ""
     
+    // Dependencies (protocol-based)
     private let chatService: ChatServiceProtocol
     
-    func sendMessage() async { ... }
-}
-```
-
-### Design System - Liquid Glass (iOS 26+)
-- Use `glassEffect()` modifier for glass morphism
-- Dark mode: `ultraThinMaterial` with gradient borders
-- Light mode: solid backgrounds with subtle borders
-- Use `GlassEffectContainer` for multiple glass elements
-- Typography: `OneraTypography`, spacing: `OneraSpacing`
-
-### Services
-- Protocol-based for testability
-- DependencyContainer for injection
-- Async/await for all network calls
-
-## iPadOS Architecture
-
-iPadOS shares the iOS codebase but adds tablet-specific features.
-
-### Stage Manager & Multi-Window
-```swift
-@main
-struct OneraApp: App {
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
-        .defaultSize(CGSize(width: 1024, height: 768))
-        
-        WindowGroup("Chat", for: Chat.ID.self) { $chatId in
-            ChatWindowView(chatId: chatId)
-        }
+    func sendMessage() async {
+        guard !inputText.isEmpty, !isSending else { return }
+        isSending = true
+        defer { isSending = false }
+        // ...
     }
 }
 ```
 
-### Adaptive Layouts
-- Use `NavigationSplitView` with 2-3 columns
-- Support all size classes (full, split, slide over)
-- Test in Stage Manager with various window sizes
+### Android: MVI Pattern
 
-### Keyboard & Trackpad
-- Add keyboard shortcuts via `.keyboardShortcut()` and `Commands`
-- Support hover states with `.onHover`
-- Full keyboard navigation with `@FocusState`
-
-### Apple Pencil
-- PencilKit for drawing/annotation
-- Double-tap and squeeze gestures
-- Hover preview (Apple Pencil Pro)
-
-## macOS Architecture
-
-macOS uses the same MVVM pattern but with Mac-native UI patterns.
-
-### App Structure
-```swift
-@main
-struct OneraApp: App {
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
-        .commands {
-            AppCommands()
-        }
-        .defaultSize(width: 1200, height: 800)
-        
-        Settings {
-            SettingsView()
-        }
-    }
-}
-```
-
-### Navigation Pattern
-```swift
-NavigationSplitView {
-    SidebarView(selection: $selectedFolder)
-        .navigationSplitViewColumnWidth(min: 200, ideal: 250, max: 300)
-} content: {
-    ContentListView(folder: selectedFolder)
-} detail: {
-    DetailView(item: selectedItem)
-}
-```
-
-### Key macOS Features
-- **Menus**: Custom `CommandMenu` and `CommandGroup`
-- **Keyboard shortcuts**: All common actions (⌘N, ⌘S, ⌘W, etc.)
-- **Settings**: ⌘, opens tabbed settings
-- **Windows**: Multiple window types, remember positions
-- **Inspector**: Right sidebar for item details
-- **Table**: Native `Table` view for data
-
-### Design Considerations
-- Respect menu bar conventions
-- Support keyboard-first navigation
-- Use standard window controls
-- Follow sidebar/content/detail patterns
-
-## Android Architecture
-
-### MVI Pattern
 ```kotlin
-// State
 data class ChatState(
     val messages: List<Message> = emptyList(),
     val isLoading: Boolean = false,
-    val inputText: String = "",
-    val isSending: Boolean = false
+    val inputText: String = ""
 ) : UiState
 
-// Intent
 sealed interface ChatIntent : UiIntent {
     data object LoadChat : ChatIntent
     data class SendMessage(val content: String) : ChatIntent
 }
 
-// Effect
 sealed interface ChatEffect : UiEffect {
     data object ScrollToBottom : ChatEffect
     data class ShowError(val message: String) : ChatEffect
 }
 ```
 
-### Clean Architecture Layers
-1. **Presentation**: ViewModels, Composables, MVI
-2. **Domain**: Models, Use Cases, Repository interfaces
-3. **Data**: Repository implementations, Remote/Local sources
+## Platform-Specific Patterns
 
-### Material Design 3
-- Use `MaterialTheme` colors and typography
-- Support dynamic colors (Material You)
-- Follow touch target guidelines (48dp)
+### iOS (iPhone)
 
-## Shared Requirements
+- `NavigationStack` for navigation
+- `TabView` for tabs
+- `List` for all lists
+- Liquid Glass for navigation chrome only
+- 44pt minimum touch targets
 
-### E2EE
-- All chat content encrypted client-side
-- Use platform crypto (Keychain/Keystore)
-- Key derivation from passkey
+### iPadOS
 
-### Authentication
-- Clerk SDK for auth
-- Biometric unlock support
-- Passkey/WebAuthn support
+- `NavigationSplitView` with 2-3 columns
+- Keyboard shortcuts for all actions
+- Trackpad hover states
+- Apple Pencil support where appropriate
+- Stage Manager multi-window support
 
-### Offline Support
-- Cache messages locally
-- Queue actions for sync
-- Conflict resolution on reconnect
+### macOS
 
-### Accessibility
-- Dynamic Type (iOS/macOS) / Font scaling (Android)
-- VoiceOver / TalkBack support
-- Full keyboard navigation (all platforms)
-- Minimum touch targets (44pt iOS / 48dp Android)
+- `NavigationSplitView` with sidebar
+- `Commands` for menu bar
+- `Settings { }` scene for preferences
+- `MenuBarExtra` for quick access
+- Multiple window types (Chat, Note pop-outs)
+- Full keyboard navigation
+
+### watchOS (Companion)
+
+- Syncs from iPhone via WatchConnectivity
+- Quick interactions (< 10 seconds)
+- No authentication (iPhone handles)
+- Pre-set quick replies + dictation
+- Complications for glanceable info
+
+### Android
+
+- Jetpack Compose with Material 3
+- MVI architecture
+- Hilt for DI
+- 48dp minimum touch targets
+- Material You dynamic colors
+
+## Native Components - Always Use
+
+| Need | iOS/iPad/Mac | Android |
+|------|--------------|---------|
+| Lists | `List` | `LazyColumn` |
+| Forms | `Form` | `Column` + Material fields |
+| Navigation | `NavigationStack`/`SplitView` | `NavHost` |
+| Tabs | `TabView` | `TabRow` |
+| Modals | `.sheet` | `BottomSheet` |
+| Alerts | `.alert` | `AlertDialog` |
+| Search | `.searchable` | `SearchBar` |
+| Loading | `ProgressView` | `CircularProgressIndicator` |
+| Empty | `ContentUnavailableView` | Custom (no standard) |
+| Icons | SF Symbols | Material Icons |
+
+## Available Agents
+
+| Agent | Use For |
+|-------|---------|
+| `@apple-platform` | Shared SwiftUI patterns, MVVM, DI |
+| `@ios-dev` | iPhone UI, Liquid Glass |
+| `@ipados-dev` | iPad UI, Stage Manager, Pencil |
+| `@macos-dev` | Mac UI, menus, windows |
+| `@watchos-dev` | Watch companion app |
+| `@android-dev` | Android UI, MVI |
+| `@ui-ux` | Native-first design review |
+
+## Available Skills
+
+| Skill | Contents |
+|-------|----------|
+| `apple-hig` | Core HIG principles, all platforms |
+| `ios-liquid-glass` | Liquid Glass design system |
+| `ipados-features` | Stage Manager, Pencil, keyboard |
+| `macos-native` | Sidebars, menus, windows, keyboard |
+| `watchos-patterns` | WatchConnectivity, complications |
+| `swift-mvvm` | @Observable MVVM patterns |
+| `kotlin-mvi` | Android MVI patterns |
+| `android-material3` | Material 3 components |
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `/ios-ui` | iOS UI with Liquid Glass |
+| `/ipad-ui` | iPadOS UI with Stage Manager |
+| `/macos-ui` | macOS UI with menus |
+| `/watch-ui` | watchOS companion UI |
+| `/android-ui` | Android UI with Material 3 |
+| `/apple-ui` | Cross-platform Apple UI |
+| `/native-check` | Review for unnecessary customization |
+| `/hig` | Apple HIG compliance check |
+
+## Session Prompt
+
+Use this when starting a new session:
+
+```
+I'm working on Onera, a multiplatform SwiftUI app for iOS, iPadOS, macOS, and watchOS.
+
+Key principles:
+1. NATIVE FIRST - Always use standard SwiftUI components
+2. Apple HIG - Follow Human Interface Guidelines strictly
+3. Liquid Glass - iOS 26+ design for navigation chrome only
+4. Minimal customization - Only when Apple has no solution
+5. watchOS is companion-only (syncs from iPhone)
+
+Architecture:
+- MVVM with @Observable
+- Protocol-based services for DI
+- Shared Core module across platforms
+- Platform-specific Features modules
+
+When I ask for UI, ALWAYS:
+1. Start with native SwiftUI components
+2. Explain if/why any customization is needed
+3. Reference Apple HIG for the pattern
+4. Ensure accessibility (Dynamic Type, VoiceOver, keyboard)
+
+Load skills as needed: apple-hig, ios-liquid-glass, macos-native,
+ipados-features, watchos-patterns
+```
 
 ## Development Commands
 
-### iOS / iPadOS
 ```bash
-cd Onera-ios
+# iOS / iPadOS
+cd Onera
 xcodebuild -scheme Onera -destination 'platform=iOS Simulator,name=iPhone 16'
 xcodebuild -scheme Onera -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M4)'
-```
 
-### macOS
-```bash
-cd Onera-macos
+# macOS
 xcodebuild -scheme Onera -destination 'platform=macOS'
-```
 
-### Android
-```bash
+# watchOS
+xcodebuild -scheme Onera-watchOS -destination 'platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)'
+
+# Android
 cd onera-android
 ./gradlew assembleDebug
 ./gradlew test
@@ -244,11 +245,14 @@ cd onera-android
 
 ## Feature Parity Checklist
 
-When implementing features, ensure all platforms support:
-- [ ] Core functionality matches
+When implementing features:
+
+- [ ] Core functionality matches across platforms
+- [ ] Uses native components on each platform
 - [ ] Error handling consistent
 - [ ] Loading states similar
 - [ ] Offline behavior aligned
 - [ ] Accessibility supported
-- [ ] Keyboard shortcuts (iPadOS, macOS)
-- [ ] Multi-window support (iPadOS Stage Manager, macOS)
+- [ ] Keyboard shortcuts (iPad, Mac)
+- [ ] Multi-window support (iPad Stage Manager, Mac)
+- [ ] watchOS shows relevant summary

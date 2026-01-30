@@ -6,11 +6,71 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		B1AE86FA2F2B8AFB004FE3D7 /* Clerk in Frameworks */ = {isa = PBXBuildFile; productRef = CE986D06C5FECA4130B9FBB7 /* Clerk */; };
+		B1AE86FB2F2B8AFB004FE3D7 /* Clibsodium in Frameworks */ = {isa = PBXBuildFile; productRef = 3F6F6E71946C0AABCFF039CC /* Clibsodium */; };
+		B1AE86FC2F2B8AFB004FE3D7 /* Sodium in Frameworks */ = {isa = PBXBuildFile; productRef = CD6C13C6D418524BF1805EE3 /* Sodium */; };
+		B1AE86FD2F2B8AFB004FE3D7 /* BIP39 in Frameworks */ = {isa = PBXBuildFile; productRef = 0216B4EA38EC6BE673DBCDCD /* BIP39 */; };
+		B1AE86FE2F2B8AFB004FE3D7 /* AISDKProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 234F3C7FFA5B6F5BC3A307D6 /* AISDKProvider */; };
+		B1AE86FF2F2B8AFB004FE3D7 /* AISDKProviderUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 2FB16D1C8A0E7F1527F033B8 /* AISDKProviderUtils */; };
+		B1AE87002F2B8AFB004FE3D7 /* AISDKZodAdapter in Frameworks */ = {isa = PBXBuildFile; productRef = 406CCA8D25992A305568194C /* AISDKZodAdapter */; };
+		B1AE87012F2B8AFB004FE3D7 /* AnthropicProvider in Frameworks */ = {isa = PBXBuildFile; productRef = FA582B822D34A9999BB5710A /* AnthropicProvider */; };
+		B1AE87022F2B8AFB004FE3D7 /* AzureProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 181F1DEE3A6C7048C3998079 /* AzureProvider */; };
+		B1AE87032F2B8AFB004FE3D7 /* CohereProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 179D376B88FF6DF4852D5E1D /* CohereProvider */; };
+		B1AE87042F2B8AFB004FE3D7 /* DeepSeekProvider in Frameworks */ = {isa = PBXBuildFile; productRef = FFF531A6201EEA7F630DA683 /* DeepSeekProvider */; };
+		B1AE87052F2B8AFB004FE3D7 /* ElevenLabsProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 62E4753611484A1693A9B00B /* ElevenLabsProvider */; };
+		B1AE87062F2B8AFB004FE3D7 /* GoogleProvider in Frameworks */ = {isa = PBXBuildFile; productRef = B4CC7F5CE75AE58070DAC148 /* GoogleProvider */; };
+		B1AE87072F2B8AFB004FE3D7 /* GoogleVertexProvider in Frameworks */ = {isa = PBXBuildFile; productRef = FBCC7EB1072ED05D71504E8B /* GoogleVertexProvider */; };
+		B1AE87082F2B8AFB004FE3D7 /* GroqProvider in Frameworks */ = {isa = PBXBuildFile; productRef = DDABB9C25A1FFCFA2F307F80 /* GroqProvider */; };
+		B1AE87092F2B8AFB004FE3D7 /* HuggingFaceProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 04A104AD228BBEEB1EAC64A0 /* HuggingFaceProvider */; };
+		B1AE870A2F2B8AFB004FE3D7 /* OpenAICompatibleProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 0D12CA388E64A30961EB8211 /* OpenAICompatibleProvider */; };
+		B1AE870B2F2B8AFB004FE3D7 /* OpenAIProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 3628EA3D6D27287534FACEB4 /* OpenAIProvider */; };
+		B1AE870C2F2B8AFB004FE3D7 /* PerplexityProvider in Frameworks */ = {isa = PBXBuildFile; productRef = F06FB557FB488B06A3EFE1F9 /* PerplexityProvider */; };
+		B1AE870D2F2B8AFB004FE3D7 /* SwiftAISDK in Frameworks */ = {isa = PBXBuildFile; productRef = 69D5571F92D7C3C487E787C8 /* SwiftAISDK */; };
+		B1AE870E2F2B8AFB004FE3D7 /* XAIProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 531D546BE67674E3B633CF82 /* XAIProvider */; };
+		B1AE870F2F2B8AFB004FE3D7 /* Highlightr in Frameworks */ = {isa = PBXBuildFile; productRef = E2E6118F4D3ED82A14A3D312 /* Highlightr */; };
+		B1AE880F2F2B8B5B004FE3D7 /* Onera-watchOS Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = B1AE88052F2B8B5B004FE3D7 /* Onera-watchOS Watch App.app */; platformFilters = (ios, watchos, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B1AE880D2F2B8B5B004FE3D7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EAB5AAF12F2B7F0500C79D0F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B1AE88042F2B8B5B004FE3D7;
+			remoteInfo = "Onera-watchOS Watch App";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B1AE88102F2B8B5B004FE3D7 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				B1AE880F2F2B8B5B004FE3D7 /* Onera-watchOS Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			platformFilters = (
+				ios,
+				watchos,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		B1AE88052F2B8B5B004FE3D7 /* Onera-watchOS Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Onera-watchOS Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		EAB5AAF92F2B7F0500C79D0F /* Onera.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Onera.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		B1AE88062F2B8B5B004FE3D7 /* Onera-watchOS Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Onera-watchOS Watch App";
+			sourceTree = "<group>";
+		};
 		EAB5AAFB2F2B7F0500C79D0F /* Onera */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Onera;
@@ -19,10 +79,39 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		B1AE88022F2B8B5B004FE3D7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EAB5AAF62F2B7F0500C79D0F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B1AE870F2F2B8AFB004FE3D7 /* Highlightr in Frameworks */,
+				B1AE870E2F2B8AFB004FE3D7 /* XAIProvider in Frameworks */,
+				B1AE870D2F2B8AFB004FE3D7 /* SwiftAISDK in Frameworks */,
+				B1AE870C2F2B8AFB004FE3D7 /* PerplexityProvider in Frameworks */,
+				B1AE870B2F2B8AFB004FE3D7 /* OpenAIProvider in Frameworks */,
+				B1AE870A2F2B8AFB004FE3D7 /* OpenAICompatibleProvider in Frameworks */,
+				B1AE87092F2B8AFB004FE3D7 /* HuggingFaceProvider in Frameworks */,
+				B1AE87082F2B8AFB004FE3D7 /* GroqProvider in Frameworks */,
+				B1AE87072F2B8AFB004FE3D7 /* GoogleVertexProvider in Frameworks */,
+				B1AE87062F2B8AFB004FE3D7 /* GoogleProvider in Frameworks */,
+				B1AE87052F2B8AFB004FE3D7 /* ElevenLabsProvider in Frameworks */,
+				B1AE87042F2B8AFB004FE3D7 /* DeepSeekProvider in Frameworks */,
+				B1AE87032F2B8AFB004FE3D7 /* CohereProvider in Frameworks */,
+				B1AE87022F2B8AFB004FE3D7 /* AzureProvider in Frameworks */,
+				B1AE87012F2B8AFB004FE3D7 /* AnthropicProvider in Frameworks */,
+				B1AE87002F2B8AFB004FE3D7 /* AISDKZodAdapter in Frameworks */,
+				B1AE86FF2F2B8AFB004FE3D7 /* AISDKProviderUtils in Frameworks */,
+				B1AE86FE2F2B8AFB004FE3D7 /* AISDKProvider in Frameworks */,
+				B1AE86FD2F2B8AFB004FE3D7 /* BIP39 in Frameworks */,
+				B1AE86FC2F2B8AFB004FE3D7 /* Sodium in Frameworks */,
+				B1AE86FB2F2B8AFB004FE3D7 /* Clibsodium in Frameworks */,
+				B1AE86FA2F2B8AFB004FE3D7 /* Clerk in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -33,6 +122,7 @@
 			isa = PBXGroup;
 			children = (
 				EAB5AAFB2F2B7F0500C79D0F /* Onera */,
+				B1AE88062F2B8B5B004FE3D7 /* Onera-watchOS Watch App */,
 				EAB5AAFA2F2B7F0500C79D0F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +131,7 @@
 			isa = PBXGroup;
 			children = (
 				EAB5AAF92F2B7F0500C79D0F /* Onera.app */,
+				B1AE88052F2B8B5B004FE3D7 /* Onera-watchOS Watch App.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,6 +139,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		B1AE88042F2B8B5B004FE3D7 /* Onera-watchOS Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B1AE88132F2B8B5B004FE3D7 /* Build configuration list for PBXNativeTarget "Onera-watchOS Watch App" */;
+			buildPhases = (
+				B1AE88012F2B8B5B004FE3D7 /* Sources */,
+				B1AE88022F2B8B5B004FE3D7 /* Frameworks */,
+				B1AE88032F2B8B5B004FE3D7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				B1AE88062F2B8B5B004FE3D7 /* Onera-watchOS Watch App */,
+			);
+			name = "Onera-watchOS Watch App";
+			packageProductDependencies = (
+			);
+			productName = "Onera-watchOS Watch App";
+			productReference = B1AE88052F2B8B5B004FE3D7 /* Onera-watchOS Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
 		EAB5AAF82F2B7F0500C79D0F /* Onera */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = EAB5AB042F2B7F0600C79D0F /* Build configuration list for PBXNativeTarget "Onera" */;
@@ -55,16 +168,40 @@
 				EAB5AAF52F2B7F0500C79D0F /* Sources */,
 				EAB5AAF62F2B7F0500C79D0F /* Frameworks */,
 				EAB5AAF72F2B7F0500C79D0F /* Resources */,
+				B1AE88102F2B8B5B004FE3D7 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				B1AE880E2F2B8B5B004FE3D7 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				EAB5AAFB2F2B7F0500C79D0F /* Onera */,
 			);
 			name = Onera;
 			packageProductDependencies = (
+				CE986D06C5FECA4130B9FBB7 /* Clerk */,
+				3F6F6E71946C0AABCFF039CC /* Clibsodium */,
+				CD6C13C6D418524BF1805EE3 /* Sodium */,
+				0216B4EA38EC6BE673DBCDCD /* BIP39 */,
+				234F3C7FFA5B6F5BC3A307D6 /* AISDKProvider */,
+				2FB16D1C8A0E7F1527F033B8 /* AISDKProviderUtils */,
+				406CCA8D25992A305568194C /* AISDKZodAdapter */,
+				FA582B822D34A9999BB5710A /* AnthropicProvider */,
+				181F1DEE3A6C7048C3998079 /* AzureProvider */,
+				179D376B88FF6DF4852D5E1D /* CohereProvider */,
+				FFF531A6201EEA7F630DA683 /* DeepSeekProvider */,
+				62E4753611484A1693A9B00B /* ElevenLabsProvider */,
+				B4CC7F5CE75AE58070DAC148 /* GoogleProvider */,
+				FBCC7EB1072ED05D71504E8B /* GoogleVertexProvider */,
+				DDABB9C25A1FFCFA2F307F80 /* GroqProvider */,
+				04A104AD228BBEEB1EAC64A0 /* HuggingFaceProvider */,
+				0D12CA388E64A30961EB8211 /* OpenAICompatibleProvider */,
+				3628EA3D6D27287534FACEB4 /* OpenAIProvider */,
+				F06FB557FB488B06A3EFE1F9 /* PerplexityProvider */,
+				69D5571F92D7C3C487E787C8 /* SwiftAISDK */,
+				531D546BE67674E3B633CF82 /* XAIProvider */,
+				E2E6118F4D3ED82A14A3D312 /* Highlightr */,
 			);
 			productName = Onera;
 			productReference = EAB5AAF92F2B7F0500C79D0F /* Onera.app */;
@@ -80,6 +217,9 @@
 				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
+					B1AE88042F2B8B5B004FE3D7 = {
+						CreatedOnToolsVersion = 26.2;
+					};
 					EAB5AAF82F2B7F0500C79D0F = {
 						CreatedOnToolsVersion = 26.2;
 					};
@@ -94,17 +234,32 @@
 			);
 			mainGroup = EAB5AAF02F2B7F0500C79D0F;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				DA70DFBD6E55E3A0168E744F /* XCRemoteSwiftPackageReference "clerk-ios" */,
+				FDDBC04EEFA201CB724E38A1 /* XCRemoteSwiftPackageReference "swift-sodium" */,
+				D5F4AB44F79B7E39A87510B9 /* XCRemoteSwiftPackageReference "BIP39" */,
+				470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */,
+				33DC0EB0FDA6FC390D0A8AC1 /* XCRemoteSwiftPackageReference "Highlightr" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = EAB5AAFA2F2B7F0500C79D0F /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				EAB5AAF82F2B7F0500C79D0F /* Onera */,
+				B1AE88042F2B8B5B004FE3D7 /* Onera-watchOS Watch App */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		B1AE88032F2B8B5B004FE3D7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EAB5AAF72F2B7F0500C79D0F /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -115,6 +270,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		B1AE88012F2B8B5B004FE3D7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EAB5AAF52F2B7F0500C79D0F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -124,7 +286,86 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		B1AE880E2F2B8B5B004FE3D7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			platformFilters = (
+				ios,
+				watchos,
+			);
+			target = B1AE88042F2B8B5B004FE3D7 /* Onera-watchOS Watch App */;
+			targetProxy = B1AE880D2F2B8B5B004FE3D7 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		B1AE88112F2B8B5B004FE3D7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = J3LH4H9AA4;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Onera-watchOS";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.beuth.onera.Onera;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.beuth.onera.Onera.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Debug;
+		};
+		B1AE88122F2B8B5B004FE3D7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = J3LH4H9AA4;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Onera-watchOS";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.beuth.onera.Onera;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.beuth.onera.Onera.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Release;
+		};
 		EAB5AB022F2B7F0600C79D0F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -246,6 +487,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = J3LH4H9AA4;
@@ -290,6 +532,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = J3LH4H9AA4;
@@ -332,6 +575,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		B1AE88132F2B8B5B004FE3D7 /* Build configuration list for PBXNativeTarget "Onera-watchOS Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B1AE88112F2B8B5B004FE3D7 /* Debug */,
+				B1AE88122F2B8B5B004FE3D7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		EAB5AAF42F2B7F0500C79D0F /* Build configuration list for PBXProject "Onera" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -351,6 +603,162 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		33DC0EB0FDA6FC390D0A8AC1 /* XCRemoteSwiftPackageReference "Highlightr" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/raspu/Highlightr";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.3.0;
+			};
+		};
+		470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/teunlao/swift-ai-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.5.8;
+			};
+		};
+		D5F4AB44F79B7E39A87510B9 /* XCRemoteSwiftPackageReference "BIP39" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pengpengliu/BIP39";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+		DA70DFBD6E55E3A0168E744F /* XCRemoteSwiftPackageReference "clerk-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/clerk/clerk-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.71.4;
+			};
+		};
+		FDDBC04EEFA201CB724E38A1 /* XCRemoteSwiftPackageReference "swift-sodium" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/jedisct1/swift-sodium";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.10.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0216B4EA38EC6BE673DBCDCD /* BIP39 */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D5F4AB44F79B7E39A87510B9 /* XCRemoteSwiftPackageReference "BIP39" */;
+			productName = BIP39;
+		};
+		04A104AD228BBEEB1EAC64A0 /* HuggingFaceProvider */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			productName = HuggingFaceProvider;
+		};
+		0D12CA388E64A30961EB8211 /* OpenAICompatibleProvider */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			productName = OpenAICompatibleProvider;
+		};
+		179D376B88FF6DF4852D5E1D /* CohereProvider */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			productName = CohereProvider;
+		};
+		181F1DEE3A6C7048C3998079 /* AzureProvider */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			productName = AzureProvider;
+		};
+		234F3C7FFA5B6F5BC3A307D6 /* AISDKProvider */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			productName = AISDKProvider;
+		};
+		2FB16D1C8A0E7F1527F033B8 /* AISDKProviderUtils */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			productName = AISDKProviderUtils;
+		};
+		3628EA3D6D27287534FACEB4 /* OpenAIProvider */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			productName = OpenAIProvider;
+		};
+		3F6F6E71946C0AABCFF039CC /* Clibsodium */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FDDBC04EEFA201CB724E38A1 /* XCRemoteSwiftPackageReference "swift-sodium" */;
+			productName = Clibsodium;
+		};
+		406CCA8D25992A305568194C /* AISDKZodAdapter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			productName = AISDKZodAdapter;
+		};
+		531D546BE67674E3B633CF82 /* XAIProvider */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			productName = XAIProvider;
+		};
+		62E4753611484A1693A9B00B /* ElevenLabsProvider */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			productName = ElevenLabsProvider;
+		};
+		69D5571F92D7C3C487E787C8 /* SwiftAISDK */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			productName = SwiftAISDK;
+		};
+		B4CC7F5CE75AE58070DAC148 /* GoogleProvider */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			productName = GoogleProvider;
+		};
+		CD6C13C6D418524BF1805EE3 /* Sodium */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FDDBC04EEFA201CB724E38A1 /* XCRemoteSwiftPackageReference "swift-sodium" */;
+			productName = Sodium;
+		};
+		CE986D06C5FECA4130B9FBB7 /* Clerk */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DA70DFBD6E55E3A0168E744F /* XCRemoteSwiftPackageReference "clerk-ios" */;
+			productName = Clerk;
+		};
+		DDABB9C25A1FFCFA2F307F80 /* GroqProvider */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			productName = GroqProvider;
+		};
+		E2E6118F4D3ED82A14A3D312 /* Highlightr */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 33DC0EB0FDA6FC390D0A8AC1 /* XCRemoteSwiftPackageReference "Highlightr" */;
+			productName = Highlightr;
+		};
+		F06FB557FB488B06A3EFE1F9 /* PerplexityProvider */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			productName = PerplexityProvider;
+		};
+		FA582B822D34A9999BB5710A /* AnthropicProvider */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			productName = AnthropicProvider;
+		};
+		FBCC7EB1072ED05D71504E8B /* GoogleVertexProvider */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			productName = GoogleVertexProvider;
+		};
+		FFF531A6201EEA7F630DA683 /* DeepSeekProvider */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			productName = DeepSeekProvider;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = EAB5AAF12F2B7F0500C79D0F /* Project object */;
 }

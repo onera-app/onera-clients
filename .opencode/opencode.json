@@ -6,44 +6,64 @@
       "description": "Build and run iOS app",
       "prompt": "Help me build and test the iOS app: $input"
     },
-    "android-build": {
-      "description": "Build and run Android app",
-      "prompt": "Help me build and test the Android app: $input"
+    "ipad-build": {
+      "description": "Build and run iPadOS app",
+      "prompt": "Help me build and test the iPadOS app: $input"
     },
     "macos-build": {
       "description": "Build and run macOS app",
       "prompt": "Help me build and test the macOS app: $input"
     },
-    "ios-ui": {
-      "description": "iOS UI development with Liquid Glass",
-      "prompt": "@ios-dev @ui-ux I need to create iOS UI: $input. Use the Liquid Glass design system and load the ios-liquid-glass skill."
+    "watch-build": {
+      "description": "Build and run watchOS app",
+      "prompt": "Help me build and test the watchOS app: $input"
     },
-    "ipados-ui": {
-      "description": "iPadOS UI with Stage Manager and keyboard support",
-      "prompt": "@ipados-dev @ui-ux I need to create iPadOS UI: $input. Load the ipados-features skill for Stage Manager, keyboard/trackpad, and Apple Pencil patterns."
+    "android-build": {
+      "description": "Build and run Android app",
+      "prompt": "Help me build and test the Android app: $input"
+    },
+    "ios-ui": {
+      "description": "iOS UI with Liquid Glass and native components",
+      "prompt": "@ios-dev @ui-ux I need to create iOS UI: $input. Use NATIVE SwiftUI components. Load the ios-liquid-glass and apple-hig skills. Remember: native first, customize NEVER unless Apple has no solution."
+    },
+    "ipad-ui": {
+      "description": "iPadOS UI with Stage Manager, keyboard, and Pencil",
+      "prompt": "@ipados-dev @ui-ux I need to create iPadOS UI: $input. Use NavigationSplitView, support keyboard shortcuts, trackpad hover, and Apple Pencil. Load the ipados-features and apple-hig skills."
     },
     "macos-ui": {
       "description": "macOS UI with sidebars, menus, and keyboard shortcuts",
-      "prompt": "@macos-dev @ui-ux I need to create macOS UI: $input. Load the macos-swiftui and macos-hig skills for native Mac patterns."
+      "prompt": "@macos-dev @ui-ux I need to create macOS UI: $input. Use NavigationSplitView, Commands for menu bar, keyboard shortcuts for all actions. Load the macos-native and apple-hig skills."
+    },
+    "watch-ui": {
+      "description": "watchOS UI for companion app",
+      "prompt": "@watchos-dev @ui-ux I need to create watchOS UI: $input. Keep it simple, glanceable, quick interactions. Load the watchos-patterns skill. Remember: companion app, syncs from iPhone."
     },
     "android-ui": {
-      "description": "Android UI development with Material 3",
+      "description": "Android UI with Material 3",
       "prompt": "@android-dev @ui-ux I need to create Android UI: $input. Follow Material Design 3 and load the android-material3 skill."
     },
+    "apple-ui": {
+      "description": "Cross-platform Apple UI (iOS, iPadOS, macOS shared code)",
+      "prompt": "@apple-platform @ui-ux I need to create Apple platform UI that works on iOS, iPadOS, and macOS: $input. Use shared SwiftUI code with platform conditionals. Load the apple-hig skill."
+    },
+    "native-check": {
+      "description": "Review code for unnecessary customization",
+      "prompt": "@ui-ux Review this code for unnecessary customization: $input. Check if any custom UI could be replaced with native SwiftUI components. List all violations of the native-first principle."
+    },
     "sync": {
-      "description": "Sync feature implementation across platforms",
-      "prompt": "I need to implement this feature on iOS, iPadOS, macOS, and Android: $input. Ensure consistent behavior across all platforms."
+      "description": "Sync feature across all platforms",
+      "prompt": "I need to implement this feature on iOS, iPadOS, macOS, watchOS, and Android: $input. Ensure consistent behavior. Use native components on each platform."
     },
     "mvvm": {
-      "description": "iOS/macOS MVVM architecture help",
-      "prompt": "@ios-dev Help me with MVVM architecture: $input. Load the swift-mvvm skill for patterns."
+      "description": "Swift MVVM architecture with @Observable",
+      "prompt": "@apple-platform Help me with MVVM architecture: $input. Load the swift-mvvm skill. Use @Observable, protocol-based DI."
     },
     "mvi": {
-      "description": "Android MVI architecture help",
-      "prompt": "@android-dev Help me with MVI architecture: $input. Load the kotlin-mvi skill for patterns."
+      "description": "Android MVI architecture",
+      "prompt": "@android-dev Help me with MVI architecture: $input. Load the kotlin-mvi skill."
     },
     "stage-manager": {
-      "description": "iPadOS Stage Manager and multi-window support",
+      "description": "iPadOS Stage Manager and multi-window",
       "prompt": "@ipados-dev Help me implement Stage Manager and multi-window support: $input. Load the ipados-features skill."
     },
     "pencil": {
@@ -51,8 +71,20 @@
       "prompt": "@ipados-dev Help me implement Apple Pencil support: $input. Load the ipados-features skill for PencilKit patterns."
     },
     "keyboard": {
-      "description": "Keyboard shortcuts and navigation",
-      "prompt": "@ipados-dev @macos-dev Help me implement keyboard shortcuts and navigation: $input. Load the appropriate platform skills."
+      "description": "Keyboard shortcuts (iPad and Mac)",
+      "prompt": "@ipados-dev @macos-dev Help me implement keyboard shortcuts: $input. Use .keyboardShortcut and Commands."
+    },
+    "watch-sync": {
+      "description": "WatchConnectivity sync implementation",
+      "prompt": "@watchos-dev Help me implement WatchConnectivity sync: $input. Load the watchos-patterns skill. Remember: watch is companion, iPhone is source of truth."
+    },
+    "complication": {
+      "description": "watchOS complication",
+      "prompt": "@watchos-dev Help me create a watchOS complication: $input. Load the watchos-patterns skill."
+    },
+    "hig": {
+      "description": "Apple HIG compliance check",
+      "prompt": "@ui-ux Review this for Apple HIG compliance: $input. Load the apple-hig skill. Check accessibility, touch targets, native components."
     }
   }
 }
