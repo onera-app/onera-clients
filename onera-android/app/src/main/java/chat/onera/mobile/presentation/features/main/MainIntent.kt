@@ -56,4 +56,7 @@ sealed interface MainIntent : UiIntent {
     
     // E2EE intents
     data object OnE2EEUnlocked : MainIntent
+    
+    // Error handling
+    data object ClearError : MainIntent
 }

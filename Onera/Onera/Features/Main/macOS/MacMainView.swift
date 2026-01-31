@@ -34,6 +34,9 @@ struct MacMainView: View {
     @State private var notesViewModel: NotesViewModel?
     @State private var promptsViewModel: PromptsViewModel?
     
+    // Scaled metrics for accessibility
+    @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 28
+    
     var body: some View {
         Group {
             switch coordinator.state {
@@ -390,7 +393,7 @@ struct MacMainView: View {
                 // Avatar circle with initials
                 Circle()
                     .fill(Color.accentColor.opacity(0.2))
-                    .frame(width: 28, height: 28)
+                    .frame(width: avatarSize, height: avatarSize)
                     .overlay {
                         Text(currentUserInitials)
                             .font(.system(size: 11, weight: .semibold))

@@ -1,36 +1,29 @@
 package chat.onera.mobile.presentation.features.main
 
-import android.content.Context
-import android.net.Uri
-import android.util.Base64
 import androidx.lifecycle.viewModelScope
-import chat.onera.mobile.data.remote.llm.ImageData
 import chat.onera.mobile.demo.DemoData
 import chat.onera.mobile.demo.DemoModeManager
 import chat.onera.mobile.demo.DemoRepositoryContainer
-import chat.onera.mobile.domain.model.Chat
 import chat.onera.mobile.domain.model.Message
-import chat.onera.mobile.domain.model.User
-import chat.onera.mobile.data.speech.SpeechRecognitionManager
-import chat.onera.mobile.data.speech.TextToSpeechManager
 import chat.onera.mobile.domain.repository.AuthRepository
 import chat.onera.mobile.domain.repository.ChatRepository
 import chat.onera.mobile.domain.repository.CredentialRepository
 import chat.onera.mobile.domain.repository.FoldersRepository
 import chat.onera.mobile.domain.repository.LLMRepository
 import chat.onera.mobile.presentation.base.BaseViewModel
+import chat.onera.mobile.presentation.features.main.handlers.AttachmentProcessor
+import chat.onera.mobile.presentation.features.main.handlers.TTSHandler
+import chat.onera.mobile.presentation.features.main.handlers.VoiceInputEvent
+import chat.onera.mobile.presentation.features.main.handlers.VoiceInputHandler
 import chat.onera.mobile.presentation.features.main.model.ChatGroup
 import chat.onera.mobile.presentation.features.main.model.ChatSummary
 import chat.onera.mobile.presentation.features.main.model.ModelOption
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.time.Instant
 import java.time.LocalDate
@@ -40,14 +33,14 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    @param:ApplicationContext private val context: Context,
     private val authRepository: AuthRepository,
     private val chatRepository: ChatRepository,
     private val credentialRepository: CredentialRepository,
     private val foldersRepository: FoldersRepository,
     private val llmRepository: LLMRepository,
-    private val speechRecognitionManager: SpeechRecognitionManager,
-    private val textToSpeechManager: TextToSpeechManager
+    private val voiceInputHandler: VoiceInputHandler,
+    private val ttsHandler: TTSHandler,
+    private val attachmentProcessor: AttachmentProcessor
 ) : BaseViewModel<MainState, MainIntent, MainEffect>(MainState()) {
 
     private var streamingJob: Job? = null
@@ -66,8 +59,42 @@ class MainViewModel @Inject constructor(
         loadInitialData()
         observeChats()
         observeFolders()
-        observeSpeechRecognition()
-        observeTextToSpeech()
+        setupVoiceInputHandler()
+        setupTTSHandler()
+    }
+    
+    // MARK: - Handler Setup
+    
+    private fun setupVoiceInputHandler() {
+        voiceInputHandler.observeState(viewModelScope) { state ->
+            updateState { 
+                copy(chatState = chatState.copy(
+                    isRecording = state.isRecording,
+                    transcribedText = state.transcribedText
+                ))
+            }
+        }
+        // Observe voice input events (errors)
+        viewModelScope.launch {
+            voiceInputHandler.events.collect { event ->
+                when (event) {
+                    is VoiceInputEvent.Error -> sendEffect(MainEffect.ShowError(event.message))
+                    is VoiceInputEvent.TranscriptionResult -> { /* handled via callback */ }
+                }
+            }
+        }
+    }
+    
+    private fun setupTTSHandler() {
+        ttsHandler.observeState(viewModelScope) { state ->
+            updateState {
+                copy(chatState = chatState.copy(
+                    isSpeaking = state.isSpeaking,
+                    speakingMessageId = state.speakingMessageId,
+                    speakingStartTime = state.speakingStartTime
+                ))
+            }
+        }
     }
 
     override fun handleIntent(intent: MainIntent) {
@@ -103,6 +130,7 @@ class MainViewModel @Inject constructor(
             is MainIntent.SelectFolder -> selectFolder(intent.folderId)
             is MainIntent.MoveChatToFolder -> moveChatToFolder(intent.chatId, intent.folderId)
             is MainIntent.ToggleFolderExpanded -> toggleFolderExpanded(intent.folderId)
+            is MainIntent.ClearError -> updateState { copy(error = null) }
         }
     }
     
@@ -210,59 +238,10 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    private fun observeTextToSpeech() {
-        viewModelScope.launch {
-            textToSpeechManager.isSpeaking.collect { isSpeaking ->
-                updateState { copy(chatState = chatState.copy(isSpeaking = isSpeaking)) }
-            }
-        }
-        viewModelScope.launch {
-            textToSpeechManager.speakingMessageId.collect { messageId ->
-                updateState { copy(chatState = chatState.copy(speakingMessageId = messageId)) }
-            }
-        }
-        viewModelScope.launch {
-            textToSpeechManager.speakingStartTime.collect { startTime ->
-                updateState { copy(chatState = chatState.copy(speakingStartTime = startTime)) }
-            }
-        }
-    }
-
-    private fun speakMessage(text: String, messageId: String) {
-        textToSpeechManager.speak(text, messageId)
-    }
-
-    private fun stopSpeaking() {
-        textToSpeechManager.stop()
-    }
-
-    private fun observeSpeechRecognition() {
-        viewModelScope.launch {
-            speechRecognitionManager.isListening.collect { isRecording ->
-                updateState { copy(chatState = chatState.copy(isRecording = isRecording)) }
-            }
-        }
-        viewModelScope.launch {
-            speechRecognitionManager.transcribedText.collect { text ->
-                updateState { copy(chatState = chatState.copy(transcribedText = text)) }
-            }
-        }
-        // Observe speech recognition errors and show them to the user
-        viewModelScope.launch {
-            speechRecognitionManager.error.collect { error ->
-                if (error != null) {
-                    Timber.e("Speech recognition error: $error")
-                    sendEffect(MainEffect.ShowError(error))
-                }
-            }
-        }
-    }
-
+    // MARK: - Voice Input Methods
+    
     private fun startRecording() {
-        // Clear any previous error before starting
-        speechRecognitionManager.clearError()
-        
-        speechRecognitionManager.startListening { result ->
+        voiceInputHandler.startRecording { result ->
             updateState { 
                 copy(
                     chatState = chatState.copy(
@@ -274,7 +253,7 @@ class MainViewModel @Inject constructor(
     }
 
     private fun stopRecording() {
-        val result = speechRecognitionManager.stopListening()
+        val result = voiceInputHandler.stopRecording()
         if (result.isNotBlank() && result != currentState.chatState.inputText) {
             updateState { 
                 copy(
@@ -284,6 +263,16 @@ class MainViewModel @Inject constructor(
                 ) 
             }
         }
+    }
+    
+    // MARK: - TTS Methods
+
+    private fun speakMessage(text: String, messageId: String) {
+        ttsHandler.speak(text, messageId)
+    }
+
+    private fun stopSpeaking() {
+        ttsHandler.stop()
     }
 
     private fun loadInitialData() {
@@ -581,25 +570,8 @@ class MainViewModel @Inject constructor(
     /**
      * Convert an attachment URI to ImageData (base64)
      */
-    private suspend fun convertAttachmentToImageData(attachment: chat.onera.mobile.domain.model.Attachment): ImageData? {
-        return withContext(Dispatchers.IO) {
-            try {
-                if (attachment.uri == Uri.EMPTY) return@withContext null
-                
-                context.contentResolver.openInputStream(attachment.uri)?.use { inputStream ->
-                    val bytes = inputStream.readBytes()
-                    val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
-                    ImageData(
-                        base64Data = base64,
-                        mimeType = attachment.mimeType
-                    )
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to convert attachment: ${attachment.fileName}")
-                null
-            }
-        }
-    }
+    private suspend fun convertAttachmentToImageData(attachment: chat.onera.mobile.domain.model.Attachment) =
+        attachmentProcessor.convertToImageData(attachment)
 
     private fun sendMessage(content: String, parentMessageId: String? = null, branchIndex: Int = 0, siblingCount: Int = 1) {
         // Allow sending if there's text OR attachments

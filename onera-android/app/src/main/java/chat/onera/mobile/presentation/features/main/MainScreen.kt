@@ -51,7 +51,7 @@ fun MainScreen(
     // Trigger refresh after E2EE unlock
     LaunchedEffect(refreshOnStart) {
         if (refreshOnStart) {
-            android.util.Log.d("MainScreen", "Triggering data refresh after E2EE unlock")
+            timber.log.Timber.d("Triggering data refresh after E2EE unlock")
             viewModel.sendIntent(MainIntent.OnE2EEUnlocked)
         }
     }

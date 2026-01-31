@@ -318,18 +318,18 @@ struct AdaptiveGlassProminentButtonStyle: ButtonStyle {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .glassEffect()
+        .oneraGlass()
         
         // Circle glass effect
         Image(systemName: "plus")
             .font(.system(size: 20, weight: .medium))
             .frame(width: 44, height: 44)
-            .glassCircle()
+            .oneraGlassCircle()
         
         // Rounded glass effect
         Text("Rounded Glass")
             .padding()
-            .glassRounded(16)
+            .oneraGlassRounded(16)
     }
     .padding()
     .background(Color.black)
@@ -345,18 +345,18 @@ struct AdaptiveGlassProminentButtonStyle: ButtonStyle {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .glassEffect()
+        .oneraGlass()
         
         // Circle glass effect
         Image(systemName: "plus")
             .font(.system(size: 20, weight: .medium))
             .frame(width: 44, height: 44)
-            .glassCircle()
+            .oneraGlassCircle()
         
         // Rounded glass effect
         Text("Rounded Glass")
             .padding()
-            .glassRounded(16)
+            .oneraGlassRounded(16)
     }
     .padding()
     .background(Color(red: 0.984, green: 0.976, blue: 0.965)) // Claude light bg

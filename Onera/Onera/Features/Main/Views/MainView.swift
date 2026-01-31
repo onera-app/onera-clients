@@ -23,6 +23,7 @@ struct MainView: View {
     // Interactive drag state
     @GestureState private var dragOffset: CGFloat = 0
     @State private var isDragging = false
+    @State private var containerWidth: CGFloat = 0
     
     @State private var chatListViewModel: ChatListViewModel?
     @State private var chatViewModel: ChatViewModel?
@@ -32,10 +33,10 @@ struct MainView: View {
     
     let onSignOut: () async -> Void
     
-    // Drawer width calculation - 80% of screen width
+    // Drawer width calculation - 80% of container width
     private var drawerWidth: CGFloat {
         #if os(iOS)
-        UIScreen.main.bounds.width * 0.80
+        containerWidth * 0.80
         #elseif os(macOS)
         300 // Fixed width on macOS
         #endif
@@ -64,6 +65,12 @@ struct MainView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
+                Color.clear.onAppear {
+                    containerWidth = geometry.size.width
+                }
+                .onChange(of: geometry.size.width) { _, newWidth in
+                    containerWidth = newWidth
+                }
                 // Sidebar drawer - slides in from the left
                 if let listViewModel = chatListViewModel {
                     SidebarDrawerView(

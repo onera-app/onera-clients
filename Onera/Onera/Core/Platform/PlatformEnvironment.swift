@@ -63,16 +63,23 @@ protocol ScreenServiceProtocol {
 final class ScreenService: ScreenServiceProtocol {
     static let shared = ScreenService()
     
+    private var activeWindowScene: UIWindowScene? {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+        ?? UIApplication.shared.connectedScenes.first as? UIWindowScene
+    }
+    
     var screenWidth: CGFloat {
-        UIScreen.main.bounds.width
+        activeWindowScene?.screen.bounds.width ?? 390 // Default iPhone width
     }
     
     var screenHeight: CGFloat {
-        UIScreen.main.bounds.height
+        activeWindowScene?.screen.bounds.height ?? 844 // Default iPhone height
     }
     
     var safeAreaInsets: EdgeInsets {
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+        guard let windowScene = activeWindowScene,
               let window = windowScene.windows.first else {
             return EdgeInsets()
         }

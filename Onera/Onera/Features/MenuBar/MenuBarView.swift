@@ -306,8 +306,20 @@ struct MacChatView: View {
             ScrollView {
                 LazyVStack(spacing: 16) {
                     ForEach(viewModel.messages) { message in
-                        MacMessageBubble(message: message)
-                            .id(message.id)
+                        MacMessageBubble(
+                            message: message,
+                            onRegenerate: {
+                                Task { await viewModel.regenerateMessage(messageId: message.id) }
+                            },
+                            onSpeak: { text in
+                                Task { await viewModel.speak(text, messageId: message.id) }
+                            },
+                            onStopSpeaking: {
+                                viewModel.stopSpeaking()
+                            },
+                            isSpeaking: viewModel.speakingMessageId == message.id
+                        )
+                        .id(message.id)
                     }
                 }
                 .padding()
@@ -362,42 +374,28 @@ struct MacChatView: View {
 
 struct MacMessageBubble: View {
     let message: Message
+    var onRegenerate: (() -> Void)?
+    var onSpeak: ((String) -> Void)?
+    var onStopSpeaking: (() -> Void)?
+    var isSpeaking: Bool = false
+    
     @Environment(\.theme) private var theme
     @State private var isHovering = false
+    @State private var showCopiedFeedback = false
+    @State private var isRegenerating = false
+    
+    /// Parse the message content for thinking tags
+    private var parsedContent: ParsedMessageContent {
+        parseThinkingContent(message.content)
+    }
     
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             if message.isUser {
                 Spacer(minLength: 60)
-            }
-            
-            VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
-                // Message content
-                Text(message.content)
-                    .font(.body)
-                    .textSelection(.enabled)
-                    .padding(12)
-                    .background(bubbleBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                
-                // Actions on hover
-                if isHovering && !message.isStreaming {
-                    HStack(spacing: 8) {
-                        Button {
-                            NSPasteboard.general.clearContents()
-                            NSPasteboard.general.setString(message.content, forType: .string)
-                        } label: {
-                            Image(systemName: "doc.on.doc")
-                                .font(.caption)
-                        }
-                        .buttonStyle(.plain)
-                        .help("Copy")
-                    }
-                    .foregroundStyle(.secondary)
-                }
-            }
-            
-            if !message.isUser {
+                userMessageView
+            } else {
+                assistantMessageView
                 Spacer(minLength: 60)
             }
         }
@@ -406,12 +404,302 @@ struct MacMessageBubble: View {
         }
     }
     
-    private var bubbleBackground: some View {
-        Group {
-            if message.isUser {
-                theme.userBubble
-            } else {
-                theme.assistantBubble
+    // MARK: - User Message
+    
+    /// Filter attachments to only image types
+    private var imageAttachments: [Attachment] {
+        message.attachments.filter { $0.type == .image }
+    }
+    
+    private var userMessageView: some View {
+        VStack(alignment: .trailing, spacing: 4) {
+            // User message with images if present
+            VStack(alignment: .trailing, spacing: 8) {
+                // Show attached images if any
+                if !imageAttachments.isEmpty {
+                    HStack(spacing: 8) {
+                        ForEach(imageAttachments) { attachment in
+                            if let nsImage = NSImage(data: attachment.data) {
+                                Image(nsImage: nsImage)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: 80, height: 80)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                            }
+                        }
+                    }
+                }
+                
+                Text(message.content)
+                    .font(.body)
+                    .textSelection(.enabled)
+            }
+            .padding(12)
+            .background(theme.userBubble)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            
+            // Actions on hover
+            if isHovering && !message.isStreaming {
+                userActionButtons
+            }
+        }
+    }
+    
+    // MARK: - Assistant Message
+    
+    private var assistantMessageView: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Reasoning view (if available)
+            if let reasoning = parsedContent.thinkingContent, !reasoning.isEmpty {
+                MacReasoningView(reasoning: reasoning, isStreaming: message.isStreaming && parsedContent.displayContent.isEmpty)
+            }
+            
+            // Main content with markdown rendering
+            if !parsedContent.displayContent.isEmpty || message.isStreaming {
+                MarkdownContentView(content: parsedContent.displayContent, isStreaming: message.isStreaming)
+                    .padding(12)
+                    .background(theme.assistantBubble)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            
+            // Actions on hover
+            if isHovering && !message.isStreaming {
+                assistantActionButtons
+            }
+        }
+    }
+    
+    // MARK: - Action Buttons
+    
+    private var userActionButtons: some View {
+        HStack(spacing: 8) {
+            copyButton
+        }
+        .foregroundStyle(.secondary)
+        .transition(.opacity.combined(with: .move(edge: .top)))
+    }
+    
+    private var assistantActionButtons: some View {
+        HStack(spacing: 8) {
+            copyButton
+            
+            if onRegenerate != nil {
+                regenerateButton
+            }
+            
+            if onSpeak != nil {
+                speakButton
+            }
+        }
+        .foregroundStyle(.secondary)
+        .transition(.opacity.combined(with: .move(edge: .top)))
+    }
+    
+    private var copyButton: some View {
+        Button {
+            copyToClipboard()
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: showCopiedFeedback ? "checkmark.circle.fill" : "doc.on.doc")
+                    .font(.caption)
+                if showCopiedFeedback {
+                    Text("Copied!")
+                        .font(.caption)
+                }
+            }
+            .foregroundStyle(showCopiedFeedback ? theme.success : .secondary)
+        }
+        .buttonStyle(.plain)
+        .help(showCopiedFeedback ? "Copied!" : "Copy message")
+    }
+    
+    private var regenerateButton: some View {
+        Button {
+            doRegenerate()
+        } label: {
+            Image(systemName: "arrow.clockwise")
+                .font(.caption)
+                .rotationEffect(.degrees(isRegenerating ? 360 : 0))
+                .animation(isRegenerating ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isRegenerating)
+        }
+        .buttonStyle(.plain)
+        .help("Regenerate response")
+    }
+    
+    private var speakButton: some View {
+        Button {
+            doSpeak()
+        } label: {
+            Image(systemName: isSpeaking ? "stop.fill" : "speaker.wave.2")
+                .font(.caption)
+                .foregroundStyle(isSpeaking ? theme.error : .secondary)
+        }
+        .buttonStyle(.plain)
+        .help(isSpeaking ? "Stop speaking" : "Read aloud")
+    }
+    
+    // MARK: - Actions
+    
+    private func copyToClipboard() {
+        let contentToCopy = message.isUser ? message.content : parsedContent.displayContent
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(contentToCopy, forType: .string)
+        
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            showCopiedFeedback = true
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            withAnimation(.easeOut(duration: 0.2)) {
+                showCopiedFeedback = false
+            }
+        }
+    }
+    
+    private func doRegenerate() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            isRegenerating = true
+        }
+        
+        onRegenerate?()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            withAnimation(.easeOut(duration: 0.2)) {
+                isRegenerating = false
+            }
+        }
+    }
+    
+    private func doSpeak() {
+        if isSpeaking {
+            onStopSpeaking?()
+        } else {
+            onSpeak?(parsedContent.displayContent)
+        }
+    }
+    
+    // MARK: - Thinking Tag Parser
+    
+    /// Supported thinking tags
+    private static let thinkingTags = ["think", "thinking", "reason", "reasoning"]
+    
+    /// Parse content and extract thinking blocks
+    private func parseThinkingContent(_ content: String) -> ParsedMessageContent {
+        guard !content.isEmpty else {
+            return ParsedMessageContent(displayContent: "", thinkingContent: nil, isThinking: false)
+        }
+        
+        var displayContent = content
+        var thinkingBlocks: [String] = []
+        var isThinking = false
+        
+        // Build regex pattern for complete blocks: <tag>content</tag>
+        let tagsPattern = Self.thinkingTags.joined(separator: "|")
+        let completeBlockPattern = "<(\(tagsPattern))>([\\s\\S]*?)</\\1>"
+        
+        // Find and extract complete thinking blocks
+        if let regex = try? NSRegularExpression(pattern: completeBlockPattern, options: [.caseInsensitive]) {
+            let nsContent = content as NSString
+            let matches = regex.matches(in: content, options: [], range: NSRange(location: 0, length: nsContent.length))
+            
+            // Process matches in reverse order to preserve indices
+            for match in matches.reversed() {
+                if match.numberOfRanges >= 3 {
+                    let contentRange = match.range(at: 2)
+                    let thinkingText = nsContent.substring(with: contentRange).trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !thinkingText.isEmpty {
+                        thinkingBlocks.insert(thinkingText, at: 0)
+                    }
+                    // Remove the block from display content
+                    displayContent = (displayContent as NSString).replacingCharacters(in: match.range, with: "")
+                }
+            }
+        }
+        
+        // Check for incomplete (still streaming) thinking block: <tag>content (no closing tag)
+        let openTagPattern = "<(\(tagsPattern))>([\\s\\S]*)$"
+        if let regex = try? NSRegularExpression(pattern: openTagPattern, options: [.caseInsensitive]) {
+            let nsDisplay = displayContent as NSString
+            if let match = regex.firstMatch(in: displayContent, options: [], range: NSRange(location: 0, length: nsDisplay.length)) {
+                if match.numberOfRanges >= 3 {
+                    let contentRange = match.range(at: 2)
+                    let thinkingText = nsDisplay.substring(with: contentRange).trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !thinkingText.isEmpty {
+                        thinkingBlocks.append(thinkingText)
+                    }
+                    // Remove the incomplete block from display content
+                    displayContent = (displayContent as NSString).replacingCharacters(in: match.range, with: "")
+                    isThinking = true
+                }
+            }
+        }
+        
+        // Clean up display content
+        displayContent = displayContent
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "\n{3,}", with: "\n\n", options: .regularExpression)
+        
+        let combinedThinking = thinkingBlocks.isEmpty ? nil : thinkingBlocks.joined(separator: "\n\n")
+        
+        return ParsedMessageContent(
+            displayContent: displayContent,
+            thinkingContent: combinedThinking,
+            isThinking: isThinking
+        )
+    }
+}
+
+// MARK: - Mac Reasoning View
+
+struct MacReasoningView: View {
+    let reasoning: String
+    let isStreaming: Bool
+    
+    @Environment(\.theme) private var theme
+    @State private var isExpanded = false
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Header
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    isExpanded.toggle()
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: isStreaming ? "brain" : "lightbulb")
+                        .font(.caption)
+                        .foregroundStyle(theme.info)
+                    
+                    Text(isStreaming ? "Thinking..." : "Reasoning")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundStyle(theme.textSecondary)
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.caption2)
+                        .foregroundStyle(theme.textSecondary)
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(theme.info.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+            .buttonStyle(.plain)
+            
+            // Expandable content
+            if isExpanded {
+                Text(reasoning)
+                    .font(.callout)
+                    .foregroundStyle(theme.textSecondary)
+                    .textSelection(.enabled)
+                    .padding(12)
+                    .background(theme.secondaryBackground.opacity(0.5))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
     }

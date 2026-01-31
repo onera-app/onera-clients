@@ -17,6 +17,7 @@ data class MainState(
     val searchQuery: String = "",
     val selectedChatId: String? = null,
     val currentUser: User? = null,
+    val error: String? = null,
     
     // Folder state
     val folders: List<Folder> = emptyList(),

@@ -63,7 +63,7 @@ fun AppearanceScreen(
                 
                 ThemeModeSelector(
                     selectedMode = state.themeMode,
-                    onModeSelected = { viewModel.setThemeMode(it) }
+                    onModeSelected = { viewModel.sendIntent(AppearanceIntent.SetThemeMode(it)) }
                 )
             }
             
@@ -78,7 +78,7 @@ fun AppearanceScreen(
                 
                 AppThemeSelector(
                     selectedTheme = state.appTheme,
-                    onThemeSelected = { viewModel.setAppTheme(it) }
+                    onThemeSelected = { viewModel.sendIntent(AppearanceIntent.SetAppTheme(it)) }
                 )
             }
         }

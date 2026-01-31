@@ -1,6 +1,6 @@
 package chat.onera.mobile.presentation.features.settings.credentials
 
-import android.util.Log
+import timber.log.Timber
 import androidx.lifecycle.viewModelScope
 import chat.onera.mobile.domain.model.Credential
 import chat.onera.mobile.domain.repository.CredentialRepository
@@ -20,10 +20,6 @@ class CredentialsViewModel @Inject constructor(
     private val credentialRepository: CredentialRepository,
     private val llmRepository: LLMRepository
 ) : BaseViewModel<CredentialsState, CredentialsIntent, CredentialsEffect>(CredentialsState()) {
-
-    companion object {
-        private const val TAG = "CredentialsViewModel"
-    }
 
     init {
         loadCredentials()
@@ -54,9 +50,9 @@ class CredentialsViewModel @Inject constructor(
                         isLoading = false
                     ) 
                 }
-                Log.d(TAG, "Loaded ${credentials.size} credentials from server")
+                Timber.d("Loaded ${credentials.size} credentials from server")
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to load credentials", e)
+                Timber.e(e, "Failed to load credentials")
                 updateState { copy(isLoading = false) }
                 sendEffect(CredentialsEffect.ShowError(e.message ?: "Failed to load credentials"))
             }
@@ -92,13 +88,13 @@ class CredentialsViewModel @Inject constructor(
                     baseUrl = baseUrl
                 )
                 
-                Log.d(TAG, "Added credential: $credentialId")
+                Timber.d("Added credential: $credentialId")
                 
                 // Optionally validate the credential
                 val isValid = try {
                     llmRepository.validateCredential(credentialId)
                 } catch (e: Exception) {
-                    Log.w(TAG, "Validation failed, but credential saved", e)
+                    Timber.w(e, "Validation failed, but credential saved")
                     // Don't fail the add if validation fails - user might be offline
                     true
                 }
@@ -110,7 +106,7 @@ class CredentialsViewModel @Inject constructor(
                 
                 sendEffect(CredentialsEffect.CredentialAdded)
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to add credential", e)
+                Timber.e(e, "Failed to add credential")
                 updateState { copy(isValidating = false, isKeyValid = false) }
                 sendEffect(CredentialsEffect.ShowError(e.message ?: "Failed to add credential"))
             }
@@ -121,12 +117,12 @@ class CredentialsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 llmRepository.deleteCredential(credentialId)
-                Log.d(TAG, "Deleted credential: $credentialId")
+                Timber.d("Deleted credential: $credentialId")
                 
                 // Reload credentials
                 loadCredentials()
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to delete credential", e)
+                Timber.e(e, "Failed to delete credential")
                 sendEffect(CredentialsEffect.ShowError(e.message ?: "Failed to delete credential"))
             }
         }
@@ -143,7 +139,7 @@ class CredentialsViewModel @Inject constructor(
                     sendEffect(CredentialsEffect.ShowError("Invalid API key"))
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Validation failed", e)
+                Timber.e(e, "Validation failed")
                 updateState { copy(isValidating = false, isKeyValid = false) }
                 sendEffect(CredentialsEffect.ShowError("Validation failed: ${e.message}"))
             }
