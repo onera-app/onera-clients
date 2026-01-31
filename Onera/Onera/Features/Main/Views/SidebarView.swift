@@ -11,57 +11,65 @@ struct SidebarView: View {
     
     @Bindable var folderViewModel: FolderViewModel
     @Binding var selectedChatId: String?
+    @Binding var selectedSection: SidebarSection
     
     let onNewChat: () -> Void
     let onOpenSettings: () -> Void
-    let onOpenNotes: () -> Void
+    let onNewNote: () -> Void
     let user: User?
+    
+    /// Callback when a chat is dropped on a folder (chatId, folderId - nil for "All Chats")
+    var onMoveChat: ((String, String?) -> Void)?
     
     @State private var isExpanded = true
     @State private var searchText = ""
     @Environment(\.theme) private var theme
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    
+    /// iPad uses different toolbar layout
+    private var isRegularWidth: Bool {
+        horizontalSizeClass == .regular
+    }
     
     var body: some View {
         List {
-            // User section
-            if let user = user {
-                userSection(user)
+            // Section selector (Chats / Notes)
+            sectionSelector
+            
+            // Show folders only when Chats is selected
+            if selectedSection == .chats {
+                foldersSection
             }
-            
-            // Quick actions
-            quickActionsSection
-            
-            // Folders section
-            foldersSection
         }
         .listStyle(.sidebar)
         .navigationTitle("Onera")
         .searchable(text: $searchText, prompt: "Search")
         #if os(iOS)
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Menu {
+            // Primary action based on selected section
+            ToolbarItemGroup(placement: .primaryAction) {
+                if selectedSection == .chats {
                     Button {
                         onNewChat()
                     } label: {
-                        Label("New Chat", systemImage: "square.and.pencil")
+                        Image(systemName: "square.and.pencil")
                     }
-                    
+                    .accessibilityLabel("New Chat")
+                } else {
                     Button {
-                        onOpenNotes()
+                        onNewNote()
                     } label: {
-                        Label("Notes", systemImage: "note.text")
+                        Image(systemName: "square.and.pencil")
                     }
-                    
-                    Divider()
-                    
-                    Button {
-                        onOpenSettings()
-                    } label: {
-                        Label("Settings", systemImage: "gearshape")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
+                    .accessibilityLabel("New Note")
+                }
+            }
+            
+            // Account/Settings button - bottom of sidebar on iPad
+            ToolbarItem(placement: .bottomBar) {
+                HStack {
+                    accountButton
+                    Spacer()
                 }
             }
         }
@@ -79,64 +87,86 @@ struct SidebarView: View {
         #endif
     }
     
-    // MARK: - User Section
+    // MARK: - Account Button (HIG: Bottom of sidebar)
     
-    @ViewBuilder
-    private func userSection(_ user: User) -> some View {
-        Section {
-            HStack(spacing: 12) {
-                // Avatar
-                ZStack {
-                    Circle()
-                        .fill(theme.accent.opacity(0.2))
-                        .frame(width: 40, height: 40)
+    private var accountButton: some View {
+        Button {
+            onOpenSettings()
+        } label: {
+            HStack(spacing: 8) {
+                if let user = user {
+                    // User avatar
+                    ZStack {
+                        Circle()
+                            .fill(theme.accent.opacity(0.2))
+                            .frame(width: 32, height: 32)
+                        
+                        Text(user.initials)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(theme.accent)
+                    }
                     
-                    Text(user.initials)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(theme.accent)
-                }
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(user.displayName)
-                        .font(.headline)
-                    
-                    Text(user.email ?? "")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    if isRegularWidth {
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(user.displayName)
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                            Text(user.email ?? "")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                    }
+                } else {
+                    Image(systemName: "person.circle")
+                        .font(.title2)
                 }
                 
                 Spacer()
+                
+                Image(systemName: "gearshape")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 4)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        #if os(iOS)
+        .hoverEffect(.highlight)
+        #endif
+        .accessibilityLabel("Account and Settings")
     }
     
-    // MARK: - Quick Actions Section
+    // MARK: - Section Selector (Chats / Notes)
     
     @ViewBuilder
-    private var quickActionsSection: some View {
+    private var sectionSelector: some View {
         Section {
-            Button {
-                onNewChat()
-            } label: {
-                Label("New Chat", systemImage: "square.and.pencil")
+            ForEach(SidebarSection.allCases) { section in
+                Button {
+                    selectedSection = section
+                } label: {
+                    HStack {
+                        Label(section.rawValue, systemImage: section.icon)
+                        Spacer()
+                        if selectedSection == section {
+                            Image(systemName: "checkmark")
+                                .foregroundStyle(theme.accent)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+                .listRowBackground(
+                    selectedSection == section ? theme.accent.opacity(0.15) : Color.clear
+                )
+                #if os(iOS)
+                .hoverEffect(.highlight)
+                #endif
             }
-            .foregroundStyle(theme.textPrimary)
-            
-            Button {
-                onOpenNotes()
-            } label: {
-                Label("Notes", systemImage: "note.text")
-            }
-            .foregroundStyle(theme.textPrimary)
-            
-            Button {
-                onOpenSettings()
-            } label: {
-                Label("Settings", systemImage: "gearshape")
-            }
-            .foregroundStyle(theme.textPrimary)
+        } header: {
+            Text("Library")
         }
     }
     
@@ -145,42 +175,113 @@ struct SidebarView: View {
     @ViewBuilder
     private var foldersSection: some View {
         Section {
-            DisclosureGroup(isExpanded: $isExpanded) {
-                // All Chats
-                NavigationLink(value: "all") {
-                    Label("All Chats", systemImage: "bubble.left.and.bubble.right")
-                }
-                
-                // Folders
-                ForEach(folderViewModel.folders) { folder in
-                    NavigationLink(value: folder.id) {
-                        Label(folder.name, systemImage: "folder")
+            // Folders list (each is a drop target)
+            ForEach(folderViewModel.folders) { folder in
+                FolderRowView(
+                    folder: folder,
+                    onMoveChat: { chatId in
+                        onMoveChat?(chatId, folder.id)
+                    },
+                    onDelete: {
+                        folderViewModel.confirmDelete(folderId: folder.id)
                     }
-                    .contextMenu {
-                        Button(role: .destructive) {
-                            folderViewModel.confirmDelete(folderId: folder.id)
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-                    }
-                }
-                
-                // Add folder button
-                Button {
-                    folderViewModel.newFolderName = "New Folder"
-                    Task {
-                        await folderViewModel.createFolder()
-                    }
-                } label: {
-                    Label("Add Folder", systemImage: "plus")
-                        .foregroundStyle(theme.accent)
+                )
+            }
+            
+            // Add folder button
+            Button {
+                folderViewModel.newFolderName = "New Folder"
+                Task {
+                    await folderViewModel.createFolder()
                 }
             } label: {
-                Label("Folders", systemImage: "folder")
-                    .font(.headline)
+                Label("Add Folder", systemImage: "folder.badge.plus")
+                    .foregroundStyle(theme.accent)
             }
+            #if os(iOS)
+            .hoverEffect(.highlight)
+            #endif
         } header: {
-            Text("Library")
+            Text("Folders")
+        }
+    }
+}
+
+// MARK: - All Chats Drop Target
+
+private struct AllChatsDropTarget: View {
+    let onMoveChat: (String) -> Void
+    
+    @Environment(\.theme) private var theme
+    @State private var isTargeted = false
+    @State private var isHovered = false
+    
+    var body: some View {
+        NavigationLink(value: "all") {
+            Label("All Chats", systemImage: isTargeted ? "tray.and.arrow.down.fill" : "bubble.left.and.bubble.right")
+                .foregroundStyle(isTargeted ? theme.accent : theme.textPrimary)
+        }
+        #if os(iOS)
+        .hoverEffect(.highlight)
+        #endif
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        .listRowBackground(
+            isTargeted ? theme.accent.opacity(0.2) : (isHovered ? theme.secondaryBackground.opacity(0.5) : Color.clear)
+        )
+        .dropDestination(for: String.self) { chatIds, _ in
+            for chatId in chatIds {
+                onMoveChat(chatId)
+            }
+            return true
+        } isTargeted: { targeted in
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isTargeted = targeted
+            }
+        }
+    }
+}
+
+// MARK: - Folder Row View (with Drop Target)
+
+private struct FolderRowView: View {
+    let folder: Folder
+    let onMoveChat: (String) -> Void
+    let onDelete: () -> Void
+    
+    @Environment(\.theme) private var theme
+    @State private var isTargeted = false
+    @State private var isHovered = false
+    
+    var body: some View {
+        NavigationLink(value: folder.id) {
+            Label(folder.name, systemImage: isTargeted ? "folder.fill.badge.plus" : "folder")
+                .foregroundStyle(isTargeted ? theme.accent : theme.textPrimary)
+        }
+        #if os(iOS)
+        .hoverEffect(.highlight)
+        #endif
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        .listRowBackground(
+            isTargeted ? theme.accent.opacity(0.2) : (isHovered ? theme.secondaryBackground.opacity(0.5) : Color.clear)
+        )
+        .dropDestination(for: String.self) { chatIds, _ in
+            for chatId in chatIds {
+                onMoveChat(chatId)
+            }
+            return true
+        } isTargeted: { targeted in
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isTargeted = targeted
+            }
+        }
+        .contextMenu {
+            Button(role: .destructive, action: onDelete) {
+                Label("Delete", systemImage: "trash")
+            }
         }
     }
 }
@@ -200,10 +301,14 @@ struct SidebarView: View {
                 secureSession: MockSecureSession()
             ),
             selectedChatId: .constant(nil),
+            selectedSection: .constant(.chats),
             onNewChat: {},
             onOpenSettings: {},
-            onOpenNotes: {},
-            user: User.mock()
+            onNewNote: {},
+            user: User.mock(),
+            onMoveChat: { chatId, folderId in
+                print("Move chat \(chatId) to folder \(folderId ?? "none")")
+            }
         )
     } detail: {
         Text("Detail")

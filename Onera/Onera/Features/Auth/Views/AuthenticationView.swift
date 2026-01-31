@@ -13,6 +13,7 @@ struct AuthenticationView: View {
     
     @Bindable var viewModel: AuthViewModel
     @Environment(\.theme) private var theme
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     
     // Animation states
     @State private var titleText = ""
@@ -25,12 +26,75 @@ struct AuthenticationView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
+    /// iPad uses centered card layout
+    private var isRegularWidth: Bool {
+        horizontalSizeClass == .regular
+    }
+    
+    /// Max width for content on iPad
+    private let iPadMaxWidth: CGFloat = 440
+    
     var body: some View {
         ZStack {
             // Background
             theme.background
                 .ignoresSafeArea()
             
+            if isRegularWidth {
+                // iPad: Centered card layout
+                iPadLayout
+            } else {
+                // iPhone: Bottom drawer layout
+                iPhoneLayout
+            }
+        }
+        .accessibilityIdentifier("authenticationView")
+        .onAppear {
+            startAnimations()
+        }
+        .alert("Error", isPresented: $viewModel.showError) {
+            Button("OK") { viewModel.clearError() }
+        } message: {
+            if let error = viewModel.error {
+                Text(error.localizedDescription)
+            }
+        }
+    }
+    
+    // MARK: - iPad Layout (Centered Card)
+    
+    private var iPadLayout: some View {
+        VStack(spacing: OneraSpacing.xxxl) {
+            Spacer()
+            
+            // Header
+            headerView
+            
+            // Centered card with sign-in options
+            if showDrawer {
+                VStack(spacing: OneraSpacing.lg) {
+                    signInButtons
+                    termsAndPrivacyView
+                }
+                .padding(OneraSpacing.xxl)
+                .background(
+                    RoundedRectangle(cornerRadius: OneraRadius.large, style: .continuous)
+                        .fill(theme.secondaryBackground)
+                        .shadow(color: .black.opacity(0.1), radius: 20, x: 0, y: 10)
+                )
+                .frame(maxWidth: iPadMaxWidth)
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
+            }
+            
+            Spacer()
+        }
+        .padding(OneraSpacing.xxl)
+    }
+    
+    // MARK: - iPhone Layout (Bottom Drawer)
+    
+    private var iPhoneLayout: some View {
+        ZStack {
             VStack {
                 Spacer()
                 
@@ -53,17 +117,6 @@ struct AuthenticationView: View {
                 }
             }
             .ignoresSafeArea(edges: .bottom)
-        }
-        .accessibilityIdentifier("authenticationView")
-        .onAppear {
-            startAnimations()
-        }
-        .alert("Error", isPresented: $viewModel.showError) {
-            Button("OK") { viewModel.clearError() }
-        } message: {
-            if let error = viewModel.error {
-                Text(error.localizedDescription)
-            }
         }
     }
     
@@ -107,6 +160,55 @@ struct AuthenticationView: View {
         
         withAnimation(OneraAnimation.springSmooth) {
             showDrawer = true
+        }
+    }
+    
+    // MARK: - Sign In Buttons (shared between layouts)
+    
+    private var signInButtons: some View {
+        VStack(spacing: OneraSpacing.md) {
+            // Continue with Apple - Native system button (Apple HIG compliant)
+            SignInWithAppleButton(.continue) { request in
+                viewModel.configureAppleRequest(request)
+            } onCompletion: { result in
+                Task {
+                    await viewModel.handleAppleSignIn(result: result)
+                }
+            }
+            .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
+            .frame(height: buttonHeight)
+            .clipShape(RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous))
+            .disabled(viewModel.isLoading)
+            .accessibilityIdentifier("signInWithApple")
+            
+            // Continue with Google - styled to match Apple button
+            Button {
+                Task { await viewModel.signInWithGoogle() }
+            } label: {
+                HStack(spacing: 8) {
+                    Image("google")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)
+                    Text("Continue with Google")
+                        .font(.system(size: 19, weight: .medium))
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: buttonHeight)
+                .foregroundStyle(colorScheme == .dark ? .black : .white)
+                .background(colorScheme == .dark ? Color.white : Color.black)
+                .clipShape(RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous))
+            }
+            .disabled(viewModel.isLoading)
+            .accessibilityIdentifier("signInWithGoogle")
+        }
+        .overlay {
+            if viewModel.isLoading {
+                RoundedRectangle(cornerRadius: buttonCornerRadius)
+                    .fill(theme.textPrimary.opacity(0.3))
+                ProgressView()
+                    .tint(theme.textPrimary)
+            }
         }
     }
     
@@ -166,46 +268,11 @@ struct AuthenticationView: View {
     
     private var bottomDrawer: some View {
         VStack(spacing: 0) {
-            // Drawer content
-            VStack(spacing: OneraSpacing.md) {
-                // Continue with Apple - Native system button (Apple HIG compliant)
-                SignInWithAppleButton(.continue) { request in
-                    viewModel.configureAppleRequest(request)
-                } onCompletion: { result in
-                    Task {
-                        await viewModel.handleAppleSignIn(result: result)
-                    }
-                }
-                .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-                .frame(height: buttonHeight)
-                .clipShape(RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous))
-                .disabled(viewModel.isLoading)
-                .accessibilityIdentifier("signInWithApple")
-                
-                // Continue with Google - styled to match Apple button
-                Button {
-                    Task { await viewModel.signInWithGoogle() }
-                } label: {
-                    HStack(spacing: 8) {
-                        Image("google")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 20, height: 20)
-                        Text("Continue with Google")
-                            .font(.system(size: 19, weight: .medium))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: buttonHeight)
-                    .foregroundStyle(colorScheme == .dark ? .black : .white)
-                    .background(colorScheme == .dark ? Color.white : Color.black)
-                    .clipShape(RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous))
-                }
-                .disabled(viewModel.isLoading)
-                .accessibilityIdentifier("signInWithGoogle")
-            }
-            .padding(.horizontal, OneraSpacing.xxl)
-            .padding(.top, OneraSpacing.xxl)
-            .padding(.bottom, OneraSpacing.lg)
+            // Drawer content - reuse signInButtons
+            signInButtons
+                .padding(.horizontal, OneraSpacing.xxl)
+                .padding(.top, OneraSpacing.xxl)
+                .padding(.bottom, OneraSpacing.lg)
             
             // Terms text with tappable links
             termsAndPrivacyView
@@ -217,15 +284,6 @@ struct AuthenticationView: View {
                 .fill(theme.secondaryBackground)
                 .ignoresSafeArea(edges: .bottom)
         )
-        .overlay {
-            if viewModel.isLoading {
-                RoundedRectangle(cornerRadius: OneraRadius.sheet)
-                    .fill(theme.textPrimary.opacity(0.3))
-                    .ignoresSafeArea(edges: .bottom)
-                ProgressView()
-                    .tint(theme.textPrimary)
-            }
-        }
     }
 }
 

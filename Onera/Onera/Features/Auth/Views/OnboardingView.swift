@@ -22,14 +22,23 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
 struct OnboardingView: View {
     
     @State private var currentStep: OnboardingStep = .welcome
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     
     let onComplete: () -> Void
+    
+    /// iPad uses constrained width
+    private var isRegularWidth: Bool {
+        horizontalSizeClass == .regular
+    }
+    
+    /// Max width for content on iPad
+    private let iPadMaxWidth: CGFloat = 600
     
     var body: some View {
         VStack(spacing: 0) {
             TabView(selection: $currentStep) {
                 ForEach(OnboardingStep.allCases) { step in
-                    OnboardingPageView(step: step)
+                    OnboardingPageView(step: step, maxWidth: isRegularWidth ? iPadMaxWidth : nil)
                         .tag(step)
                 }
             }
@@ -38,7 +47,7 @@ struct OnboardingView: View {
             .indexViewStyle(.page(backgroundDisplayMode: .always))
             #endif
             
-            // Bottom buttons
+            // Bottom buttons - constrained on iPad
             VStack(spacing: 12) {
                 Button {
                     if currentStep == .ready {
@@ -50,7 +59,7 @@ struct OnboardingView: View {
                     }
                 } label: {
                     Text(currentStep == .ready ? "Get Started" : "Continue")
-                        .frame(maxWidth: .infinity)
+                        .frame(maxWidth: isRegularWidth ? 300 : .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
@@ -64,8 +73,9 @@ struct OnboardingView: View {
                     .foregroundStyle(.secondary)
                 }
             }
+            .frame(maxWidth: isRegularWidth ? iPadMaxWidth : .infinity)
             .padding(.horizontal, 24)
-            .padding(.bottom, 16)
+            .padding(.bottom, isRegularWidth ? 32 : 16)
         }
         .background(OneraColors.background)
     }
@@ -75,6 +85,7 @@ struct OnboardingView: View {
 
 private struct OnboardingPageView: View {
     let step: OnboardingStep
+    var maxWidth: CGFloat? = nil
     
     var body: some View {
         ScrollView {
@@ -92,6 +103,8 @@ private struct OnboardingPageView: View {
                 
                 Spacer(minLength: 100)
             }
+            .frame(maxWidth: maxWidth)
+            .frame(maxWidth: .infinity) // Center if constrained
             .padding(.horizontal, 24)
         }
         .scrollIndicators(.hidden)

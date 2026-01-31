@@ -17,6 +17,7 @@ import AppKit
 struct MessageInputView: View {
     
     @Environment(\.theme) private var theme
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Binding var text: String
     @Binding var attachments: [Attachment]
     let isSending: Bool
@@ -39,6 +40,16 @@ struct MessageInputView: View {
     @State private var showingCamera = false
     @State private var showingPhotosPicker = false
     @State private var showingAttachmentOptions = false
+    
+    /// Max width for input area on iPad (matches message content width)
+    private var maxInputWidth: CGFloat? {
+        horizontalSizeClass == .regular ? 800 : nil
+    }
+    
+    /// iPad uses slightly larger touch targets
+    private var touchTargetSize: CGFloat {
+        horizontalSizeClass == .regular ? 48 : AccessibilitySize.minTouchTarget
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -66,7 +77,7 @@ struct MessageInputView: View {
                         .foregroundStyle(theme.textPrimary)
                         .tint(theme.textPrimary)
                         .padding(.horizontal, OneraSpacing.lg)
-                        .padding(.vertical, OneraSpacing.md)
+                        .padding(.vertical, horizontalSizeClass == .regular ? OneraSpacing.lg : OneraSpacing.md)
                         .accessibilityIdentifier("messageInput")
                         .accessibilityLabel("Message input")
                         .accessibilityHint("Type your message here")
@@ -82,9 +93,9 @@ struct MessageInputView: View {
                         // Send button when text present
                         Button(action: onSend) {
                             Image(systemName: "arrow.up")
-                                .font(.system(size: 16, weight: .bold))
+                                .font(.system(size: horizontalSizeClass == .regular ? 18 : 16, weight: .bold))
                                 .foregroundStyle(theme.background)
-                                .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
+                                .frame(width: touchTargetSize, height: touchTargetSize)
                                 .background(theme.textPrimary)
                                 .clipShape(Circle())
                         }
@@ -104,8 +115,11 @@ struct MessageInputView: View {
                     micButton
                 }
             }
+            // iPad: Constrain input width and center it
+            .frame(maxWidth: maxInputWidth)
+            .frame(maxWidth: .infinity)
             .padding(.horizontal, OneraSpacing.lg)
-            .padding(.vertical, OneraSpacing.md)
+            .padding(.vertical, horizontalSizeClass == .regular ? OneraSpacing.lg : OneraSpacing.md)
         }
         .onChange(of: selectedPhotos) { _, newPhotos in
             Task {
@@ -127,9 +141,9 @@ struct MessageInputView: View {
             showingAttachmentOptions = true
         } label: {
             Image(systemName: "plus")
-                .font(OneraTypography.iconXLarge)
+                .font(horizontalSizeClass == .regular ? .system(size: 24, weight: .medium) : OneraTypography.iconXLarge)
                 .foregroundStyle(theme.textPrimary)
-                .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
+                .frame(width: touchTargetSize, height: touchTargetSize)
                 .oneraGlassCircle()
         }
         .sensoryFeedback(.impact(weight: .light), trigger: showingAttachmentOptions)
@@ -324,9 +338,9 @@ struct MessageInputView: View {
             }
         } label: {
             Image(systemName: isRecording ? "stop.fill" : "mic.fill")
-                .font(OneraTypography.iconLarge)
+                .font(horizontalSizeClass == .regular ? OneraTypography.iconXLarge : OneraTypography.iconLarge)
                 .foregroundStyle(isRecording ? theme.error : theme.textPrimary)
-                .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
+                .frame(width: touchTargetSize, height: touchTargetSize)
                 .oneraGlassCircle()
         }
         .buttonStyle(.plain)

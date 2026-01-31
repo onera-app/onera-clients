@@ -772,15 +772,21 @@ final class SyntaxHighlighter: @unchecked Sendable {
     }
 }
 
-// MARK: - Action Button Style (Visual Feedback on Press)
+// MARK: - Action Button Style (Visual Feedback on Press + Hover)
 
 struct ActionButtonStyle: ButtonStyle {
+    @State private var isHovered = false
+    
     func makeBody(configuration: ButtonStyleConfiguration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.9 : 1.0)
+            .scaleEffect(configuration.isPressed ? 0.9 : (isHovered ? 1.05 : 1.0))
             .opacity(configuration.isPressed ? 0.6 : 1.0)
-            .brightness(configuration.isPressed ? -0.1 : 0)
+            .brightness(configuration.isPressed ? -0.1 : (isHovered ? 0.05 : 0))
             .animation(OneraAnimation.quick, value: configuration.isPressed)
+            .animation(OneraAnimation.quick, value: isHovered)
+            .onHover { hovering in
+                isHovered = hovering
+            }
     }
 }
 

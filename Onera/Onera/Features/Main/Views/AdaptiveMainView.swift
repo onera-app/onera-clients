@@ -7,6 +7,21 @@
 
 import SwiftUI
 
+/// Navigation mode for iPad sidebar
+enum SidebarSection: String, CaseIterable, Identifiable {
+    case chats = "Chats"
+    case notes = "Notes"
+    
+    var id: String { rawValue }
+    
+    var icon: String {
+        switch self {
+        case .chats: return "bubble.left.and.bubble.right"
+        case .notes: return "note.text"
+        }
+    }
+}
+
 struct AdaptiveMainView: View {
     
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -14,9 +29,13 @@ struct AdaptiveMainView: View {
     
     // Shared state across both navigation modes
     @State private var selectedChatId: String?
+    @State private var selectedNoteId: String?
     @State private var showSettings = false
-    @State private var showNotes = false
+    @State private var showNotes = false // Only used for iPhone
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    
+    // iPad: Track which section is active (Chats or Notes)
+    @State private var selectedSection: SidebarSection = .chats
     
     // View models (shared)
     @State private var chatListViewModel: ChatListViewModel?
@@ -26,6 +45,15 @@ struct AdaptiveMainView: View {
     @State private var settingsViewModel: SettingsViewModel?
     
     let onSignOut: () async -> Void
+    
+    /// Detect if running on iPad
+    private var isIPad: Bool {
+        #if os(iOS)
+        UIDevice.current.userInterfaceIdiom == .pad
+        #else
+        false
+        #endif
+    }
     
     var body: some View {
         Group {
@@ -43,14 +71,36 @@ struct AdaptiveMainView: View {
             }
             #endif
         }
+        // iPad: Use popover for Settings (per Apple HIG)
+        // iPhone/macOS: Use sheet
+        #if os(iOS)
+        .popover(isPresented: $showSettings, arrowEdge: .leading) {
+            if let viewModel = settingsViewModel {
+                if isIPad {
+                    SettingsView(viewModel: viewModel)
+                        .frame(minWidth: 400, idealWidth: 450, minHeight: 600, idealHeight: 700)
+                } else {
+                    SettingsView(viewModel: viewModel)
+                }
+            }
+        }
+        #else
         .sheet(isPresented: $showSettings) {
             if let viewModel = settingsViewModel {
                 SettingsView(viewModel: viewModel)
             }
         }
+        #endif
+        // iPhone only: Use sheet for Notes (iPad uses integrated navigation)
+        #if os(iOS)
         .sheet(isPresented: $showNotes) {
             notesSheet
         }
+        #else
+        .sheet(isPresented: $showNotes) {
+            notesSheet
+        }
+        #endif
         .task {
             setupViewModels()
             await chatListViewModel?.loadChats()
@@ -69,18 +119,30 @@ struct AdaptiveMainView: View {
     @ViewBuilder
     private var splitNavigationView: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            // Sidebar - Folders and Chat List
+            // Sidebar - Section selector and folders
             sidebarContent
-                .navigationSplitViewColumnWidth(min: 250, ideal: 280, max: 350)
+                .navigationSplitViewColumnWidth(min: 220, ideal: 250, max: 300)
         } content: {
-            // Content - Chat list within selected folder (optional middle column)
-            if let listViewModel = chatListViewModel {
-                chatListContent(listViewModel)
-                    .navigationSplitViewColumnWidth(min: 280, ideal: 320, max: 400)
+            // Content - Chat list or Notes list based on selection
+            Group {
+                if selectedSection == .chats {
+                    if let listViewModel = chatListViewModel {
+                        chatListContent(listViewModel)
+                    }
+                } else {
+                    if let notesVM = notesViewModel {
+                        notesListContent(notesVM)
+                    }
+                }
             }
+            .navigationSplitViewColumnWidth(min: 280, ideal: 320, max: 400)
         } detail: {
-            // Detail - Active chat
-            chatDetailContent
+            // Detail - Active chat or note based on selection
+            if selectedSection == .chats {
+                chatDetailContent
+            } else {
+                noteDetailContent
+            }
         }
         .navigationSplitViewStyle(.balanced)
         #if os(iOS)
@@ -100,20 +162,30 @@ struct AdaptiveMainView: View {
             SidebarView(
                 folderViewModel: folderVM,
                 selectedChatId: $selectedChatId,
+                selectedSection: $selectedSection,
                 onNewChat: createNewChat,
                 onOpenSettings: { showSettings = true },
-                onOpenNotes: { showNotes = true },
-                user: dependencies.authService.currentUser
+                onNewNote: { notesViewModel?.createNote() },
+                user: dependencies.authService.currentUser,
+                onMoveChat: { chatId, folderId in
+                    Task {
+                        await moveChatToFolder(chatId: chatId, folderId: folderId)
+                    }
+                }
             )
             #if os(macOS)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        createNewChat()
+                        if selectedSection == .chats {
+                            createNewChat()
+                        } else {
+                            notesViewModel?.createNote()
+                        }
                     } label: {
                         Image(systemName: "square.and.pencil")
                     }
-                    .help("New Chat")
+                    .help(selectedSection == .chats ? "New Chat" : "New Note")
                     .oneraShortcut(.newChat)
                 }
             }
@@ -135,21 +207,72 @@ struct AdaptiveMainView: View {
                             .tag(chat.id)
                             .contextMenu {
                                 chatContextMenu(for: chat, listViewModel: listViewModel)
+                            } preview: {
+                                // iPad: Context menu preview
+                                ChatPreviewView(chat: chat)
                             }
                     }
                 }
             }
         }
-        .listStyle(.sidebar)
+        .listStyle(.plain) // HIG: Middle column uses plain style, not sidebar
         .navigationTitle("Chats")
         .refreshable {
             await listViewModel.loadChats()
         }
+        #if os(iOS)
+        .searchable(text: .constant(""), placement: .navigationBarDrawer(displayMode: .always), prompt: "Search chats")
+        #else
         .searchable(text: .constant(""), prompt: "Search chats")
+        #endif
         .onChange(of: selectedChatId) { _, newId in
             if let id = newId {
                 selectChat(id)
             }
+        }
+        // iPad/macOS: Keyboard navigation
+        #if os(iOS)
+        .focusable()
+        .onKeyPress(.upArrow) {
+            navigateToPreviousChat(in: listViewModel)
+            return .handled
+        }
+        .onKeyPress(.downArrow) {
+            navigateToNextChat(in: listViewModel)
+            return .handled
+        }
+        .onKeyPress(.return) {
+            // Enter key opens selected chat (already handled by selection)
+            return .handled
+        }
+        #endif
+    }
+    
+    /// Navigate to previous chat in the list
+    private func navigateToPreviousChat(in listViewModel: ChatListViewModel) {
+        let allChats = listViewModel.groupedChats.flatMap { $0.1 }
+        guard !allChats.isEmpty else { return }
+        
+        if let currentId = selectedChatId,
+           let currentIndex = allChats.firstIndex(where: { $0.id == currentId }),
+           currentIndex > 0 {
+            selectedChatId = allChats[currentIndex - 1].id
+        } else if selectedChatId == nil {
+            selectedChatId = allChats.first?.id
+        }
+    }
+    
+    /// Navigate to next chat in the list
+    private func navigateToNextChat(in listViewModel: ChatListViewModel) {
+        let allChats = listViewModel.groupedChats.flatMap { $0.1 }
+        guard !allChats.isEmpty else { return }
+        
+        if let currentId = selectedChatId,
+           let currentIndex = allChats.firstIndex(where: { $0.id == currentId }),
+           currentIndex < allChats.count - 1 {
+            selectedChatId = allChats[currentIndex + 1].id
+        } else if selectedChatId == nil {
+            selectedChatId = allChats.first?.id
         }
     }
     
@@ -171,9 +294,24 @@ struct AdaptiveMainView: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                // Leading: Toggle sidebar/columns button
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        withAnimation {
+                            toggleColumnVisibility()
+                        }
+                    } label: {
+                        Image(systemName: columnVisibility == .detailOnly ? "sidebar.left" : "sidebar.squares.left")
+                    }
+                    .accessibilityLabel(columnVisibility == .detailOnly ? "Show sidebar" : "Hide sidebar")
+                }
+                
+                // Center: Model selector
                 ToolbarItem(placement: .principal) {
                     modelSelectorButton
                 }
+                
+                // Trailing: New chat
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         createNewChat()
@@ -185,6 +323,15 @@ struct AdaptiveMainView: View {
             #endif
         } else {
             emptyDetailView
+        }
+    }
+    
+    /// Toggle between showing all columns and detail-only
+    private func toggleColumnVisibility() {
+        if columnVisibility == .detailOnly {
+            columnVisibility = .all
+        } else {
+            columnVisibility = .detailOnly
         }
     }
     
@@ -241,7 +388,47 @@ struct AdaptiveMainView: View {
         }
     }
     
-    // MARK: - Notes Sheet
+    // MARK: - Notes List Content (iPad - middle column)
+    
+    @ViewBuilder
+    private func notesListContent(_ notesVM: NotesViewModel) -> some View {
+        NotesListView(
+            viewModel: notesVM,
+            folderViewModel: folderViewModel,
+            showEditorInSheet: false // iPad uses detail column for note editor
+        )
+        .navigationTitle("Notes")
+    }
+    
+    // MARK: - Note Detail Content (iPad - detail column)
+    
+    @ViewBuilder
+    private var noteDetailContent: some View {
+        if let notesVM = notesViewModel, notesVM.showNoteEditor {
+            NoteEditorView(viewModel: notesVM, folderViewModel: folderViewModel)
+        } else {
+            // Empty state for notes
+            VStack(spacing: 16) {
+                Image(systemName: "note.text")
+                    .font(.system(size: 56, weight: .light))
+                    .foregroundStyle(.secondary.opacity(0.5))
+                
+                Text("Select a note or create a new one")
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
+                
+                Button {
+                    notesViewModel?.createNote()
+                } label: {
+                    Label("New Note", systemImage: "plus")
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+    
+    // MARK: - Notes Sheet (iPhone only)
     
     @ViewBuilder
     private var notesSheet: some View {
@@ -372,6 +559,7 @@ struct ChatRowView: View {
     let isSelected: Bool
     
     @Environment(\.theme) private var theme
+    @State private var isHovered = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -385,6 +573,81 @@ struct ChatRowView: View {
         }
         .padding(.vertical, 4)
         .contentShape(Rectangle())
+        // iPad/macOS: Hover effect for trackpad/mouse users
+        #if os(iOS)
+        .hoverEffect(.highlight)
+        #endif
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(isHovered && !isSelected ? theme.secondaryBackground.opacity(0.5) : Color.clear)
+        )
+        // iPad/macOS: Drag and drop support
+        .draggable(chat.id) {
+            // Drag preview
+            HStack {
+                Image(systemName: "bubble.left.fill")
+                    .foregroundStyle(.secondary)
+                Text(chat.title)
+                    .font(.headline)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(.regularMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+    }
+}
+
+// MARK: - Chat Preview View (Context Menu Preview)
+
+/// Preview view shown when long-pressing a chat on iPad (context menu preview)
+struct ChatPreviewView: View {
+    let chat: ChatSummary
+    
+    @Environment(\.theme) private var theme
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header
+            HStack {
+                Image(systemName: "bubble.left.fill")
+                    .foregroundStyle(theme.accent)
+                Text(chat.title)
+                    .font(.headline)
+                    .lineLimit(2)
+                Spacer()
+            }
+            
+            Divider()
+            
+            // Metadata
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: "clock")
+                        .foregroundStyle(.secondary)
+                    Text("Updated \(chat.updatedAt, style: .relative)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                
+                HStack {
+                    Image(systemName: "calendar")
+                        .foregroundStyle(.secondary)
+                    Text("Created \(chat.createdAt, style: .date)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            
+            Spacer()
+        }
+        .padding()
+        .frame(width: 280, height: 160)
+        .background(theme.background)
     }
 }
 

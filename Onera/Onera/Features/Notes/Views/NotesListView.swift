@@ -12,11 +12,21 @@ struct NotesListView: View {
     @Bindable var viewModel: NotesViewModel
     var folderViewModel: FolderViewModel?
     
+    /// When true, note editor opens in a sheet. When false, parent handles editor display (e.g., iPad detail column).
+    var showEditorInSheet: Bool = true
+    
     @State private var showFolderFilter = false
     @State private var selectedFilterFolderId: String?
+    @State private var selectedNoteId: String?
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    
+    /// iPad uses NavigationLink, iPhone uses sheet
+    private var isRegularWidth: Bool {
+        horizontalSizeClass == .regular
+    }
     
     var body: some View {
-        List {
+        List(selection: $selectedNoteId) {
             // Folder filter header
             if folderViewModel != nil {
                 folderFilterSection
@@ -73,19 +83,25 @@ struct NotesListView: View {
         .refreshable {
             await viewModel.refreshNotes()
         }
-        .sheet(isPresented: $viewModel.showNoteEditor) {
-            NoteEditorView(viewModel: viewModel, folderViewModel: folderViewModel)
-        }
-        .sheet(isPresented: $showFolderFilter) {
-            if let folderVM = folderViewModel {
-                FolderPickerSheet(
-                    viewModel: folderVM,
-                    selectedFolderId: $selectedFilterFolderId,
-                    title: "Filter by Folder"
-                )
-                .presentationDetents([.medium, .large])
+        // Sheet for note editor - only when showEditorInSheet is true (iPad detail column handles it otherwise)
+        .sheet(isPresented: Binding(
+            get: { showEditorInSheet && viewModel.showNoteEditor },
+            set: { if !$0 { viewModel.showNoteEditor = false } }
+        )) {
+            NavigationStack {
+                NoteEditorView(viewModel: viewModel, folderViewModel: folderViewModel)
             }
         }
+        // Folder filter: Popover on iPad, sheet on iPhone
+        #if os(iOS)
+        .popover(isPresented: $showFolderFilter, arrowEdge: .top) {
+            folderPickerContent
+        }
+        #else
+        .sheet(isPresented: $showFolderFilter) {
+            folderPickerContent
+        }
+        #endif
         .onChange(of: selectedFilterFolderId) { _, newValue in
             viewModel.selectedFolderId = newValue
             Task {
@@ -94,6 +110,24 @@ struct NotesListView: View {
         }
         .task {
             await viewModel.loadNotes()
+        }
+    }
+    
+    // MARK: - Folder Picker Content
+    
+    @ViewBuilder
+    private var folderPickerContent: some View {
+        if let folderVM = folderViewModel {
+            FolderPickerSheet(
+                viewModel: folderVM,
+                selectedFolderId: $selectedFilterFolderId,
+                title: "Filter by Folder"
+            )
+            .frame(minWidth: isRegularWidth ? 300 : nil, 
+                   idealWidth: isRegularWidth ? 350 : nil,
+                   minHeight: isRegularWidth ? 300 : nil,
+                   idealHeight: isRegularWidth ? 400 : nil)
+            .presentationDetents(isRegularWidth ? [] : [.medium, .large])
         }
     }
     
@@ -178,7 +212,11 @@ struct NotesListView: View {
         ForEach(viewModel.filteredGroupedNotes, id: \.0) { group, notes in
             Section(group.displayName) {
                 ForEach(notes) { note in
-                    NoteRowView(note: note) {
+                    // Both iPad and iPhone use the same tap behavior
+                    // iPad: Opens in detail column (via showNoteEditor)
+                    // iPhone: Opens in sheet (via showNoteEditor)
+                    NoteRowView(note: note, isSelected: selectedNoteId == note.id) {
+                        selectedNoteId = note.id
                         Task { await viewModel.editNote(note) }
                     }
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -199,7 +237,16 @@ struct NotesListView: View {
 private struct NoteRowView: View {
     
     let note: NoteSummary
+    var isSelected: Bool = false
     let onTap: () -> Void
+    
+    @Environment(\.theme) private var theme
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @State private var isHovered = false
+    
+    private var isRegularWidth: Bool {
+        horizontalSizeClass == .regular
+    }
     
     var body: some View {
         Button(action: onTap) {
@@ -224,8 +271,20 @@ private struct NoteRowView: View {
                     .foregroundStyle(.secondary)
             }
             .padding(.vertical, 4)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        #if os(iOS)
+        .hoverEffect(.highlight)
+        #endif
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        .listRowBackground(
+            isSelected && isRegularWidth
+                ? theme.accent.opacity(0.15)
+                : (isHovered ? theme.secondaryBackground.opacity(0.5) : Color.clear)
+        )
         .accessibilityIdentifier("noteRow_\(note.id)")
     }
     

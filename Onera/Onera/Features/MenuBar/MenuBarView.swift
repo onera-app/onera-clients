@@ -715,7 +715,7 @@ struct MacSettingsView: View {
     var body: some View {
         // HIG: Use sidebar style for settings with many categories
         TabView(selection: $selectedTab) {
-            GeneralSettingsView()
+            MenuBarGeneralSettingsView()
                 .tabItem {
                     Label(MacSettingsTab.general.rawValue, systemImage: MacSettingsTab.general.icon)
                 }
@@ -772,7 +772,7 @@ struct AdvancedSettingsView: View {
     }
 }
 
-struct GeneralSettingsView: View {
+struct MenuBarGeneralSettingsView: View {
     var body: some View {
         Form {
             Section("Startup") {

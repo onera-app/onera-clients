@@ -52,10 +52,6 @@
 				B1AE880F2F2B8B5B004FE3D7 /* Onera-watchOS Watch App.app in Embed Watch Content */,
 			);
 			name = "Embed Watch Content";
-			platformFilters = (
-				ios,
-				watchos,
-			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -65,6 +61,16 @@
 		EAB5AAF92F2B7F0500C79D0F /* Onera.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Onera.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		B15BB2442F2DCDD700AF1FF8 /* Exceptions for "Onera" folder in "Onera-watchOS Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Onera.icon,
+			);
+			target = B1AE88042F2B8B5B004FE3D7 /* Onera-watchOS Watch App */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		B1AE88062F2B8B5B004FE3D7 /* Onera-watchOS Watch App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -73,6 +79,9 @@
 		};
 		EAB5AAFB2F2B7F0500C79D0F /* Onera */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				B15BB2442F2DCDD700AF1FF8 /* Exceptions for "Onera" folder in "Onera-watchOS Watch App" target */,
+			);
 			path = Onera;
 			sourceTree = "<group>";
 		};
@@ -485,7 +494,7 @@
 		EAB5AB052F2B7F0600C79D0F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Onera;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
@@ -530,7 +539,7 @@
 		EAB5AB062F2B7F0600C79D0F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Onera;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;

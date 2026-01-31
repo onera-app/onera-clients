@@ -21,15 +21,18 @@ struct MacMainView: View {
     @State private var selectedFolder: String? = "all"
     @State private var selectedChatId: String?
     @State private var selectedNoteId: String?
+    @State private var selectedPromptId: String?
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var searchText = ""
     @State private var showSignOutConfirmation = false
+    @State private var showGlobalSearch = false
     
     // View models
     @State private var chatListViewModel: ChatListViewModel?
     @State private var chatViewModel: ChatViewModel?
     @State private var folderViewModel: FolderViewModel?
     @State private var notesViewModel: NotesViewModel?
+    @State private var promptsViewModel: PromptsViewModel?
     
     var body: some View {
         Group {
@@ -76,6 +79,7 @@ struct MacMainView: View {
             await chatListViewModel?.loadChats()
             await folderViewModel?.loadFolders()
             await notesViewModel?.loadNotes()
+            await promptsViewModel?.loadPrompts()
         }
         .onReceive(NotificationCenter.default.publisher(for: WindowManager.toggleSidebarNotification)) { _ in
             withAnimation {
@@ -87,6 +91,36 @@ struct MacMainView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: WindowManager.quickMessageNotification)) { notification in
             handleQuickMessage(notification)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: WindowManager.focusSearchNotification)) { _ in
+            showGlobalSearch = true
+        }
+        .sheet(isPresented: $showGlobalSearch) {
+            GlobalSearchView(
+                onSelectChat: { chatId in
+                    selectedFolder = "all"
+                    selectedChatId = chatId
+                    selectChat(chatId)
+                },
+                onSelectNote: { noteId in
+                    selectedFolder = "notes"
+                    selectedNoteId = noteId
+                    Task {
+                        if let note = notesViewModel?.filteredNotes.first(where: { $0.id == noteId }) {
+                            await notesViewModel?.editNote(note)
+                        }
+                    }
+                },
+                onSelectPrompt: { promptId in
+                    selectedFolder = "prompts"
+                    selectedPromptId = promptId
+                    Task {
+                        if let prompt = promptsViewModel?.filteredPrompts.first(where: { $0.id == promptId }) {
+                            await promptsViewModel?.editPrompt(prompt)
+                        }
+                    }
+                }
+            )
         }
         .confirmationDialog(
             "Sign Out",
@@ -127,11 +161,16 @@ struct MacMainView: View {
                 
                 Label("Notes", systemImage: "note.text")
                     .tag(SidebarItem.notes)
+                
+                Label("Prompts", systemImage: "text.quote")
+                    .tag(SidebarItem.prompts)
             }
             
             // Items section based on current view
             if showingNotes {
                 notesListSection
+            } else if showingPrompts {
+                promptsListSection
             } else {
                 chatsListSection
             }
@@ -152,12 +191,18 @@ struct MacMainView: View {
     private enum SidebarItem: Hashable {
         case chats
         case notes
+        case prompts
         case chat(String)
         case note(String)
+        case prompt(String)
     }
     
     private var showingNotes: Bool {
         selectedFolder == "notes"
+    }
+    
+    private var showingPrompts: Bool {
+        selectedFolder == "prompts"
     }
     
     private var currentListSelection: Binding<SidebarItem?> {
@@ -168,6 +213,11 @@ struct MacMainView: View {
                         return .note(noteId)
                     }
                     return .notes
+                } else if showingPrompts {
+                    if let promptId = selectedPromptId {
+                        return .prompt(promptId)
+                    }
+                    return .prompts
                 } else {
                     if let chatId = selectedChatId {
                         return .chat(chatId)
@@ -183,6 +233,9 @@ struct MacMainView: View {
                 case .notes:
                     selectedFolder = "notes"
                     selectedNoteId = nil
+                case .prompts:
+                    selectedFolder = "prompts"
+                    selectedPromptId = nil
                 case .chat(let id):
                     selectedFolder = "all"
                     selectedChatId = id
@@ -193,6 +246,14 @@ struct MacMainView: View {
                     Task {
                         if let note = notesViewModel?.filteredNotes.first(where: { $0.id == id }) {
                             await notesViewModel?.editNote(note)
+                        }
+                    }
+                case .prompt(let id):
+                    selectedFolder = "prompts"
+                    selectedPromptId = id
+                    Task {
+                        if let prompt = promptsViewModel?.filteredPrompts.first(where: { $0.id == id }) {
+                            await promptsViewModel?.editPrompt(prompt)
                         }
                     }
                 case .none:
@@ -250,6 +311,51 @@ struct MacMainView: View {
                             .contextMenu {
                                 Button(role: .destructive) {
                                     Task { await notesVM.deleteNote(note) }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                    }
+                }
+            }
+        }
+    }
+    
+    // MARK: - Prompts List Section
+    
+    @ViewBuilder
+    private var promptsListSection: some View {
+        if let promptsVM = promptsViewModel {
+            let prompts = promptsVM.filteredPrompts
+            if prompts.isEmpty {
+                Section {
+                    Text("No prompts yet")
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.vertical, 20)
+                }
+            } else {
+                Section("Prompts") {
+                    ForEach(prompts) { prompt in
+                        MacPromptListRow(prompt: prompt)
+                            .tag(SidebarItem.prompt(prompt.id))
+                            .contextMenu {
+                                Button {
+                                    Task { await promptsVM.editPrompt(prompt) }
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+                                
+                                Button {
+                                    Task { await promptsVM.duplicatePrompt(prompt) }
+                                } label: {
+                                    Label("Duplicate", systemImage: "doc.on.doc")
+                                }
+                                
+                                Divider()
+                                
+                                Button(role: .destructive) {
+                                    Task { await promptsVM.deletePrompt(prompt) }
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }
@@ -322,9 +428,48 @@ struct MacMainView: View {
     private var detailColumn: some View {
         if showingNotes {
             notesDetailColumn
+        } else if showingPrompts {
+            promptsDetailColumn
         } else {
             chatsDetailColumn
         }
+    }
+    
+    @ViewBuilder
+    private var promptsDetailColumn: some View {
+        if let promptsVM = promptsViewModel, promptsVM.editingPrompt != nil {
+            PromptEditorView(viewModel: promptsVM)
+        } else {
+            promptsEmptyDetailView
+        }
+    }
+    
+    private var promptsEmptyDetailView: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            
+            Image(systemName: "text.quote")
+                .font(.system(size: 48, weight: .light))
+                .foregroundStyle(.tertiary)
+            
+            Text("Select a prompt")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+            
+            Text("or create a new one")
+                .font(.callout)
+                .foregroundStyle(.tertiary)
+            
+            Button {
+                promptsViewModel?.createPrompt()
+            } label: {
+                Label("New Prompt", systemImage: "plus")
+            }
+            .buttonStyle(.borderedProminent)
+            
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     @ViewBuilder
@@ -402,23 +547,25 @@ struct MacMainView: View {
     
     @ToolbarContentBuilder
     private var macToolbar: some ToolbarContent {
-        // New chat/note button
+        // New chat/note/prompt button
         ToolbarItem(placement: .navigation) {
             Button {
                 if showingNotes {
                     notesViewModel?.createNote()
+                } else if showingPrompts {
+                    promptsViewModel?.createPrompt()
                 } else {
                     createNewChat()
                 }
             } label: {
                 Image(systemName: "square.and.pencil")
             }
-            .help(showingNotes ? "New Note (⌘N)" : "New Chat (⌘N)")
+            .help(showingNotes ? "New Note (⌘N)" : showingPrompts ? "New Prompt (⌘N)" : "New Chat (⌘N)")
         }
         
         // Model selector (only for chats)
         ToolbarItem(placement: .principal) {
-            if !showingNotes, let chatVM = chatViewModel {
+            if !showingNotes && !showingPrompts, let chatVM = chatViewModel {
                 MacModelSelectorButton(viewModel: chatVM.modelSelector)
             }
         }
@@ -579,6 +726,11 @@ struct MacMainView: View {
             noteRepository: dependencies.noteRepository,
             authService: dependencies.authService
         )
+        
+        promptsViewModel = PromptsViewModel(
+            promptRepository: dependencies.promptRepository,
+            authService: dependencies.authService
+        )
     }
     
     private func selectChat(_ id: String) {
@@ -651,6 +803,30 @@ struct MacNoteListRow: View {
                 Image(systemName: "pin.fill")
                     .font(.caption2)
                     .foregroundStyle(.orange)
+            }
+        }
+    }
+}
+
+// MARK: - Mac Prompt List Row
+
+struct MacPromptListRow: View {
+    let prompt: PromptSummary
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(prompt.name)
+                .lineLimit(1)
+            
+            if let description = prompt.description, !description.isEmpty {
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            } else {
+                Text(prompt.updatedAt, style: .relative)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }

@@ -212,6 +212,24 @@ struct SettingsView: View {
     
     private var appSection: some View {
         Section("App") {
+            NavigationLink {
+                GeneralSettingsView()
+            } label: {
+                Label("General", systemImage: "slider.horizontal.3")
+            }
+            
+            NavigationLink {
+                DataSettingsView()
+            } label: {
+                Label("Data", systemImage: "externaldrive")
+            }
+            
+            NavigationLink {
+                ToolsSettingsView()
+            } label: {
+                Label("Tools", systemImage: "wrench.and.screwdriver")
+            }
+            
             // Theme selection
             Picker(selection: Binding(
                 get: { themeManager.currentTheme },
@@ -416,35 +434,315 @@ struct RecoveryPhraseDisplayView: View {
 
 struct DeviceManagementView: View {
     @Environment(\.theme) private var theme
+    @Environment(\.dependencies) private var dependencies
+    
+    @State private var devices: [DecryptedDevice] = []
+    @State private var isLoading = true
+    @State private var error: Error?
+    @State private var deviceToRevoke: DecryptedDevice?
+    @State private var showRevokeConfirmation = false
+    
+    private var currentDeviceId: String? {
+        try? KeychainService().getOrCreateDeviceId()
+    }
+    
+    private var currentDevice: DecryptedDevice? {
+        devices.first { $0.deviceId == currentDeviceId }
+    }
+    
+    private var otherDevices: [DecryptedDevice] {
+        devices.filter { $0.deviceId != currentDeviceId }
+    }
     
     var body: some View {
         List {
-            Section("Current Device") {
-                HStack {
-                    Image(systemName: "iphone")
-                        .font(OneraTypography.title2)
-                    
-                    VStack(alignment: .leading) {
-                        #if os(iOS)
-                        Text(UIDevice.current.name)
+            if isLoading {
+                Section {
+                    HStack {
+                        Spacer()
+                        ProgressView()
+                        Spacer()
+                    }
+                    .padding()
+                }
+            } else if let error = error {
+                Section {
+                    VStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.title2)
+                            .foregroundStyle(.orange)
+                        Text("Failed to load devices")
                             .font(OneraTypography.headline)
-                        #elseif os(macOS)
-                        Text(Host.current().localizedName ?? "Mac")
-                            .font(OneraTypography.headline)
-                        #endif
-                        Text("This device")
+                        Text(error.localizedDescription)
                             .font(OneraTypography.caption)
                             .foregroundStyle(theme.textSecondary)
+                            .multilineTextAlignment(.center)
+                        Button("Retry") {
+                            Task { await loadDevices() }
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                }
+            } else {
+                // Current Device Section
+                if let current = currentDevice {
+                    Section("Current Device") {
+                        DeviceRow(device: current, isCurrentDevice: true)
                     }
                 }
-            }
-            
-            Section("Other Devices") {
-                Text("No other devices")
-                    .foregroundStyle(theme.textSecondary)
+                
+                // Other Devices Section
+                Section("Other Devices") {
+                    if otherDevices.isEmpty {
+                        Text("No other devices")
+                            .foregroundStyle(theme.textSecondary)
+                    } else {
+                        ForEach(otherDevices) { device in
+                            DeviceRow(device: device, isCurrentDevice: false)
+                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                    Button(role: .destructive) {
+                                        deviceToRevoke = device
+                                        showRevokeConfirmation = true
+                                    } label: {
+                                        Label("Revoke", systemImage: "xmark.circle")
+                                    }
+                                }
+                        }
+                    }
+                }
+                
+                // Info Section
+                Section {
+                    HStack(spacing: 12) {
+                        Image(systemName: "lock.shield")
+                            .foregroundStyle(.green)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("End-to-End Encrypted")
+                                .font(OneraTypography.subheadline)
+                            Text("Device names are encrypted and only visible to you")
+                                .font(OneraTypography.caption)
+                                .foregroundStyle(theme.textSecondary)
+                        }
+                    }
+                } footer: {
+                    Text("Revoking a device will sign it out and require re-authentication to access your encrypted data.")
+                        .font(OneraTypography.caption)
+                }
             }
         }
         .navigationTitle("Devices")
+        .refreshable {
+            await loadDevices()
+        }
+        .task {
+            await loadDevices()
+        }
+        .confirmationDialog(
+            "Revoke Device",
+            isPresented: $showRevokeConfirmation,
+            titleVisibility: .visible,
+            presenting: deviceToRevoke
+        ) { device in
+            Button("Revoke \(device.deviceName ?? "Device")", role: .destructive) {
+                Task { await revokeDevice(device) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { device in
+            Text("This will sign out \"\(device.deviceName ?? "this device")\" and require re-authentication to access your encrypted data.")
+        }
+    }
+    
+    private func loadDevices() async {
+        isLoading = true
+        error = nil
+        
+        do {
+            let token = try await dependencies.authService.getToken()
+            let response: [DeviceResponse] = try await dependencies.networkService.call(
+                procedure: APIEndpoint.Devices.list,
+                token: token
+            )
+            
+            // Decrypt device names
+            devices = response.compactMap { deviceResponse in
+                var deviceName: String? = nil
+                
+                if let encryptedName = deviceResponse.encryptedDeviceName,
+                   let nonce = deviceResponse.deviceNameNonce {
+                    // TODO: Decrypt using E2EE service when master key is available
+                    // For now, use a placeholder or attempt decryption
+                    deviceName = "Encrypted Device" // Placeholder until decryption is wired up
+                }
+                
+                return DecryptedDevice(
+                    id: deviceResponse.id,
+                    deviceId: deviceResponse.deviceId,
+                    deviceName: deviceName ?? parseDeviceNameFromUserAgent(deviceResponse.userAgent),
+                    userAgent: deviceResponse.userAgent,
+                    trusted: deviceResponse.trusted,
+                    lastSeenAt: deviceResponse.lastSeenAt,
+                    createdAt: deviceResponse.createdAt
+                )
+            }
+        } catch {
+            self.error = error
+        }
+        
+        isLoading = false
+    }
+    
+    private func revokeDevice(_ device: DecryptedDevice) async {
+        do {
+            let token = try await dependencies.authService.getToken()
+            let _: EmptyResponse = try await dependencies.networkService.call(
+                procedure: APIEndpoint.Devices.revoke,
+                input: RevokeDeviceRequest(deviceId: device.deviceId),
+                token: token
+            )
+            
+            // Remove from local list
+            devices.removeAll { $0.id == device.id }
+        } catch {
+            print("Failed to revoke device: \(error)")
+        }
+    }
+    
+    private func parseDeviceNameFromUserAgent(_ userAgent: String?) -> String {
+        guard let ua = userAgent else { return "Unknown Device" }
+        
+        if ua.contains("iOS") {
+            return "iPhone"
+        } else if ua.contains("macOS") {
+            return "Mac"
+        } else if ua.contains("Android") {
+            return "Android Device"
+        } else if ua.contains("Windows") {
+            return "Windows PC"
+        }
+        return "Unknown Device"
+    }
+}
+
+// MARK: - Device Models
+
+private struct DeviceResponse: Codable {
+    let id: String
+    let userId: String
+    let deviceId: String
+    let encryptedDeviceName: String?
+    let deviceNameNonce: String?
+    let userAgent: String?
+    let trusted: Bool
+    let lastSeenAt: Date
+    let createdAt: Date
+}
+
+private struct DecryptedDevice: Identifiable {
+    let id: String
+    let deviceId: String
+    let deviceName: String?
+    let userAgent: String?
+    let trusted: Bool
+    let lastSeenAt: Date
+    let createdAt: Date
+}
+
+private struct RevokeDeviceRequest: Codable {
+    let deviceId: String
+}
+
+private struct EmptyResponse: Codable {}
+
+// MARK: - Device Row
+
+private struct DeviceRow: View {
+    let device: DecryptedDevice
+    let isCurrentDevice: Bool
+    
+    @Environment(\.theme) private var theme
+    
+    private var deviceIcon: String {
+        guard let ua = device.userAgent else { return "desktopcomputer" }
+        
+        if ua.contains("iOS") || ua.contains("iPhone") {
+            return "iphone"
+        } else if ua.contains("iPad") {
+            return "ipad"
+        } else if ua.contains("macOS") || ua.contains("Mac") {
+            return "laptopcomputer"
+        } else if ua.contains("Android") {
+            return "candybarphone"
+        } else if ua.contains("Windows") {
+            return "pc"
+        }
+        return "desktopcomputer"
+    }
+    
+    private var platformName: String {
+        guard let ua = device.userAgent else { return "" }
+        
+        if ua.contains("iOS") {
+            // Extract version: "Onera iOS/1.0 (iPhone; iOS 17.0)"
+            if let range = ua.range(of: "iOS \\d+\\.\\d+", options: .regularExpression) {
+                return String(ua[range])
+            }
+            return "iOS"
+        } else if ua.contains("macOS") {
+            if let range = ua.range(of: "macOS \\d+\\.\\d+", options: .regularExpression) {
+                return String(ua[range])
+            }
+            return "macOS"
+        }
+        return ""
+    }
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            // Device icon
+            Image(systemName: deviceIcon)
+                .font(.title2)
+                .foregroundStyle(isCurrentDevice ? .green : .primary)
+                .frame(width: 32)
+            
+            // Device info
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text(device.deviceName ?? "Unknown Device")
+                        .font(OneraTypography.headline)
+                    
+                    if isCurrentDevice {
+                        Text("This device")
+                            .font(OneraTypography.caption2)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.green)
+                            .clipShape(Capsule())
+                    }
+                    
+                    if device.trusted {
+                        Image(systemName: "checkmark.shield.fill")
+                            .font(.caption)
+                            .foregroundStyle(.green)
+                    }
+                }
+                
+                HStack(spacing: 4) {
+                    if !platformName.isEmpty {
+                        Text(platformName)
+                    }
+                    Text("•")
+                    Text("Last seen \(device.lastSeenAt, style: .relative)")
+                }
+                .font(OneraTypography.caption)
+                .foregroundStyle(theme.textSecondary)
+            }
+            
+            Spacer()
+        }
+        .padding(.vertical, 4)
     }
 }
 

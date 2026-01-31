@@ -16,6 +16,7 @@ struct ChatView: View {
     
     @Bindable var viewModel: ChatViewModel
     @Environment(\.theme) private var theme
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @FocusState private var isInputFocused: Bool
     @State private var showingError = false
     @State private var ttsStartTime: Date?
@@ -23,6 +24,16 @@ struct ChatView: View {
     var onMenuTap: (() -> Void)?
     var onNewConversation: (() -> Void)?
     var showCustomNavBar: Bool = false
+    
+    /// Max width for message content on larger screens (iPad)
+    private var maxMessageWidth: CGFloat? {
+        horizontalSizeClass == .regular ? 720 : nil
+    }
+    
+    /// Max width for the entire content area on iPad
+    private var maxContentWidth: CGFloat? {
+        horizontalSizeClass == .regular ? 800 : nil
+    }
     
     var body: some View {
         ZStack {
@@ -91,6 +102,7 @@ struct ChatView: View {
                 LazyVStack(spacing: 16) {
                     ForEach(viewModel.messages) { message in
                         messageBubble(for: message)
+                            .frame(maxWidth: maxMessageWidth)
                             .id(message.id)
                     }
                     
@@ -103,6 +115,8 @@ struct ChatView: View {
                             dismissSelection()
                         }
                 }
+                .frame(maxWidth: maxContentWidth)
+                .frame(maxWidth: .infinity) // Center the constrained content
                 .padding()
             }
             .scrollDismissesKeyboard(.interactively)

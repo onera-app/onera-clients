@@ -19,6 +19,7 @@ struct E2EEUnlockView: View {
     
     @Bindable var viewModel: E2EEUnlockViewModel
     @Bindable var passwordViewModel: PasswordUnlockViewModel
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     
     @State private var currentMethod: UnlockMethod = .options
     @State private var hasPassword = false
@@ -30,6 +31,14 @@ struct E2EEUnlockView: View {
     private let onSignOut: (() -> Void)?
     
     @State private var showingSignOutConfirmation = false
+    
+    /// iPad uses constrained width
+    private var isRegularWidth: Bool {
+        horizontalSizeClass == .regular
+    }
+    
+    /// Max width for content on iPad
+    private let iPadMaxWidth: CGFloat = 500
     
     /// Simplified initializer - services are obtained from the viewModel
     /// This eliminates the redundant parameter passing pattern
@@ -68,6 +77,9 @@ struct E2EEUnlockView: View {
                     }
                 }
             }
+            // iPad: Constrain content width and center
+            .frame(maxWidth: isRegularWidth ? iPadMaxWidth : .infinity)
+            .frame(maxWidth: .infinity)
             .navigationTitle("Unlock")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

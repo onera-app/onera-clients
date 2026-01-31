@@ -17,6 +17,15 @@ struct E2EESetupView: View {
     
     @Bindable var viewModel: E2EESetupViewModel
     @FocusState private var passwordFieldFocused: Bool
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    
+    /// iPad uses constrained width
+    private var isRegularWidth: Bool {
+        horizontalSizeClass == .regular
+    }
+    
+    /// Max width for content on iPad
+    private let iPadMaxWidth: CGFloat = 500
     
     var body: some View {
         NavigationStack {
@@ -44,6 +53,9 @@ struct E2EESetupView: View {
                     errorView(message: message)
                 }
             }
+            // iPad: Constrain content width and center
+            .frame(maxWidth: isRegularWidth ? iPadMaxWidth : .infinity)
+            .frame(maxWidth: .infinity)
             .navigationTitle(navigationTitle)
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
