@@ -1,0 +1,387 @@
+//
+//  ToolInvocationView.swift
+//  Onera
+//
+//  Displays tool/function calls and their results from AI responses
+//
+
+import SwiftUI
+
+// MARK: - Tool State
+
+enum ToolState: String, Codable, Sendable {
+    case inputStreaming = "input-streaming"
+    case inputAvailable = "input-available"
+    case approvalRequested = "approval-requested"
+    case approvalResponded = "approval-responded"
+    case outputAvailable = "output-available"
+    case outputError = "output-error"
+    case outputDenied = "output-denied"
+    
+    var label: String {
+        switch self {
+        case .inputStreaming: return "Preparing..."
+        case .inputAvailable: return "Running..."
+        case .approvalRequested: return "Awaiting Approval"
+        case .approvalResponded: return "Approved"
+        case .outputAvailable: return "Completed"
+        case .outputError: return "Failed"
+        case .outputDenied: return "Denied"
+        }
+    }
+    
+    var iconName: String {
+        switch self {
+        case .inputStreaming, .inputAvailable: return "arrow.triangle.2.circlepath"
+        case .approvalRequested: return "exclamationmark.circle"
+        case .approvalResponded: return "checkmark.circle"
+        case .outputAvailable: return "checkmark.circle.fill"
+        case .outputError: return "xmark.circle.fill"
+        case .outputDenied: return "xmark.circle"
+        }
+    }
+    
+    var iconColor: Color {
+        switch self {
+        case .inputStreaming, .inputAvailable: return .blue
+        case .approvalRequested: return .yellow
+        case .approvalResponded: return .blue
+        case .outputAvailable: return .green
+        case .outputError: return .red
+        case .outputDenied: return .orange
+        }
+    }
+    
+    var isLoading: Bool {
+        self == .inputStreaming || self == .inputAvailable
+    }
+}
+
+// MARK: - Tool Invocation Data
+
+struct ToolInvocationData: Identifiable, Codable, Sendable {
+    let id: String
+    let toolName: String
+    var arguments: String?
+    var result: String?
+    var state: ToolState
+    var errorText: String?
+    
+    init(
+        id: String = UUID().uuidString,
+        toolName: String,
+        arguments: String? = nil,
+        result: String? = nil,
+        state: ToolState = .inputStreaming,
+        errorText: String? = nil
+    ) {
+        self.id = id
+        self.toolName = toolName
+        self.arguments = arguments
+        self.result = result
+        self.state = state
+        self.errorText = errorText
+    }
+    
+    var displayName: String {
+        // Convert camelCase/snake_case to readable name
+        let name = toolName
+            .replacingOccurrences(of: "_", with: " ")
+            .replacingOccurrences(of: "([A-Z])", with: " $1", options: .regularExpression)
+            .trimmingCharacters(in: .whitespaces)
+        
+        return name.split(separator: " ")
+            .map { $0.capitalized }
+            .joined(separator: " ")
+    }
+}
+
+// MARK: - Tool Invocation View
+
+struct ToolInvocationView: View {
+    
+    let tool: ToolInvocationData
+    var onApprove: ((String) -> Void)?
+    var onDeny: ((String) -> Void)?
+    
+    @State private var isExpanded = false
+    @Environment(\.colorScheme) private var colorScheme
+    
+    private var needsApproval: Bool { tool.state == .approvalRequested }
+    private var hasError: Bool { tool.state == .outputError }
+    private var wasDenied: Bool { tool.state == .outputDenied }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isExpanded.toggle()
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    Image(systemName: "wrench")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    
+                    Text(tool.displayName)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+                    
+                    Spacer()
+                    
+                    // State indicator
+                    HStack(spacing: 4) {
+                        if tool.state.isLoading {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Image(systemName: tool.state.iconName)
+                                .foregroundStyle(tool.state.iconColor)
+                        }
+                        
+                        Text(tool.state.label)
+                            .font(.caption)
+                            .foregroundStyle(hasError ? .red : .secondary)
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            
+            // Expanded content
+            if isExpanded {
+                Divider()
+                    .padding(.horizontal, 12)
+                
+                VStack(alignment: .leading, spacing: 12) {
+                    // Arguments
+                    if let args = tool.arguments, !args.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Input")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundStyle(.secondary)
+                            
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                Text(formatJSON(args))
+                                    .font(.system(.caption, design: .monospaced))
+                                    .padding(8)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .background(Color.secondary.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                        }
+                    }
+                    
+                    // Result
+                    if tool.state == .outputAvailable, let result = tool.result, !result.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Output")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundStyle(.secondary)
+                            
+                            ScrollView {
+                                Text(formatJSON(result))
+                                    .font(.system(.caption, design: .monospaced))
+                                    .padding(8)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .frame(maxHeight: 150)
+                            .background(Color.secondary.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                        }
+                    }
+                    
+                    // Error
+                    if tool.state == .outputError, let errorText = tool.errorText {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Error")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundStyle(.red)
+                            
+                            Text(errorText)
+                                .font(.system(.caption, design: .monospaced))
+                                .foregroundStyle(.red)
+                                .padding(8)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Color.red.opacity(0.1))
+                                .clipShape(RoundedRectangle(cornerRadius: 6))
+                        }
+                    }
+                    
+                    // Loading state
+                    if tool.state.isLoading {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Executing tool...")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    
+                    // Denied message
+                    if wasDenied {
+                        Text("Tool execution was denied by the user.")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                    
+                    // Approval buttons
+                    if needsApproval {
+                        HStack {
+                            Spacer()
+                            
+                            Button("Deny") {
+                                onDeny?(tool.id)
+                            }
+                            .buttonStyle(.bordered)
+                            
+                            Button("Allow") {
+                                onApprove?(tool.id)
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
+                        .padding(.top, 8)
+                    }
+                }
+                .padding(12)
+            }
+        }
+        .background(backgroundColor)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(borderColor, lineWidth: 1)
+        )
+        .onAppear {
+            // Auto-expand if needs approval
+            if needsApproval {
+                isExpanded = true
+            }
+        }
+    }
+    
+    private var backgroundColor: Color {
+        if hasError {
+            return Color.red.opacity(0.05)
+        } else if wasDenied {
+            return Color.orange.opacity(0.05)
+        } else if needsApproval {
+            return Color.yellow.opacity(0.05)
+        } else {
+            return Color.secondary.opacity(0.08)
+        }
+    }
+    
+    private var borderColor: Color {
+        if hasError {
+            return Color.red.opacity(0.3)
+        } else if wasDenied {
+            return Color.orange.opacity(0.3)
+        } else if needsApproval {
+            return Color.yellow.opacity(0.3)
+        } else {
+            return Color.secondary.opacity(0.2)
+        }
+    }
+    
+    private func formatJSON(_ string: String) -> String {
+        // Try to pretty-print JSON
+        guard let data = string.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data),
+              let prettyData = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]),
+              let pretty = String(data: prettyData, encoding: .utf8) else {
+            return string
+        }
+        return pretty
+    }
+}
+
+// MARK: - Tool Invocations List View
+
+struct ToolInvocationsView: View {
+    
+    let tools: [ToolInvocationData]
+    var onApprove: ((String) -> Void)?
+    var onDeny: ((String) -> Void)?
+    
+    var body: some View {
+        if !tools.isEmpty {
+            VStack(spacing: 8) {
+                ForEach(tools) { tool in
+                    ToolInvocationView(
+                        tool: tool,
+                        onApprove: onApprove,
+                        onDeny: onDeny
+                    )
+                }
+            }
+            .padding(.bottom, 8)
+        }
+    }
+}
+
+// MARK: - Preview
+
+#if DEBUG
+#Preview("Tool States") {
+    ScrollView {
+        VStack(spacing: 16) {
+            ToolInvocationView(
+                tool: ToolInvocationData(
+                    toolName: "web_search",
+                    arguments: "{\"query\": \"SwiftUI best practices\"}",
+                    state: .inputStreaming
+                )
+            )
+            
+            ToolInvocationView(
+                tool: ToolInvocationData(
+                    toolName: "get_weather",
+                    arguments: "{\"location\": \"San Francisco\"}",
+                    result: "{\"temperature\": 72, \"condition\": \"sunny\"}",
+                    state: .outputAvailable
+                )
+            )
+            
+            ToolInvocationView(
+                tool: ToolInvocationData(
+                    toolName: "execute_code",
+                    arguments: "print('Hello, World!')",
+                    state: .approvalRequested
+                ),
+                onApprove: { _ in },
+                onDeny: { _ in }
+            )
+            
+            ToolInvocationView(
+                tool: ToolInvocationData(
+                    toolName: "file_read",
+                    arguments: "{\"path\": \"/etc/passwd\"}",
+                    state: .outputError,
+                    errorText: "Permission denied: Cannot access system files"
+                )
+            )
+            
+            ToolInvocationView(
+                tool: ToolInvocationData(
+                    toolName: "dangerous_operation",
+                    arguments: "{}",
+                    state: .outputDenied
+                )
+            )
+        }
+        .padding()
+    }
+}
+#endif
