@@ -119,6 +119,19 @@ enum APIEndpoint {
         static let delete = "folders.remove"
     }
     
+    // MARK: - Prompts
+    
+    enum Prompts {
+        // Queries (GET)
+        static let list = "prompts.list"
+        static let get = "prompts.get"
+        
+        // Mutations (POST)
+        static let create = "prompts.create"
+        static let update = "prompts.update"
+        static let delete = "prompts.remove"
+    }
+    
     // MARK: - WebAuthn (Passkeys)
     
     enum WebAuthn {
