@@ -92,6 +92,7 @@ final class TestDependencyContainer: DependencyContaining, @unchecked Sendable {
     let mockSpeechRecognitionService = MockSpeechRecognitionService()
     let mockFileProcessingService = MockFileProcessingService()
     let mockPasskeyService = MockPasskeyService()
+    let mockPromptRepository = MockPromptRepository()
     
     // MARK: - Protocol Conformance
     
@@ -112,6 +113,7 @@ final class TestDependencyContainer: DependencyContaining, @unchecked Sendable {
     var speechRecognitionService: SpeechRecognitionServiceProtocol { mockSpeechRecognitionService }
     var fileProcessingService: FileProcessingServiceProtocol { mockFileProcessingService }
     var passkeyService: PasskeyServiceProtocol { mockPasskeyService }
+    var promptRepository: PromptRepositoryProtocol { mockPromptRepository }
     
     // MARK: - Initialization
     

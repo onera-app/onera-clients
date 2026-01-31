@@ -19,6 +19,7 @@ protocol DependencyContaining: Sendable {
     var passkeyService: PasskeyServiceProtocol { get }
     var chatRepository: ChatRepositoryProtocol { get }
     var noteRepository: NoteRepositoryProtocol { get }
+    var promptRepository: PromptRepositoryProtocol { get }
     var folderRepository: FolderRepositoryProtocol { get }
     var secureSession: SecureSessionProtocol { get }
     var credentialService: CredentialServiceProtocol { get }
@@ -72,6 +73,11 @@ final class DependencyContainer: DependencyContaining, @unchecked Sendable {
         cryptoService: _cryptoService,
         secureSession: _secureSession
     )
+    private lazy var _promptRepository: PromptRepositoryProtocol = PromptRepository(
+        networkService: _networkService,
+        cryptoService: _cryptoService,
+        secureSession: _secureSession
+    )
     private lazy var _folderRepository: FolderRepositoryProtocol = FolderRepository(
         networkService: _networkService
     )
@@ -96,6 +102,7 @@ final class DependencyContainer: DependencyContaining, @unchecked Sendable {
     var passkeyService: PasskeyServiceProtocol { _passkeyService }
     var chatRepository: ChatRepositoryProtocol { _chatRepository }
     var noteRepository: NoteRepositoryProtocol { _noteRepository }
+    var promptRepository: PromptRepositoryProtocol { _promptRepository }
     var folderRepository: FolderRepositoryProtocol { _folderRepository }
     var secureSession: SecureSessionProtocol { _secureSession }
     var credentialService: CredentialServiceProtocol { _credentialService }
@@ -141,6 +148,7 @@ final class MockDependencyContainer: DependencyContaining, @unchecked Sendable {
     var passkeyService: PasskeyServiceProtocol
     var chatRepository: ChatRepositoryProtocol
     var noteRepository: NoteRepositoryProtocol
+    var promptRepository: PromptRepositoryProtocol
     var folderRepository: FolderRepositoryProtocol
     var secureSession: SecureSessionProtocol
     var credentialService: CredentialServiceProtocol
@@ -159,6 +167,7 @@ final class MockDependencyContainer: DependencyContaining, @unchecked Sendable {
         passkeyService: PasskeyServiceProtocol? = nil,
         chatRepository: ChatRepositoryProtocol? = nil,
         noteRepository: NoteRepositoryProtocol? = nil,
+        promptRepository: PromptRepositoryProtocol? = nil,
         folderRepository: FolderRepositoryProtocol? = nil,
         secureSession: SecureSessionProtocol? = nil,
         credentialService: CredentialServiceProtocol? = nil,
@@ -185,6 +194,7 @@ final class MockDependencyContainer: DependencyContaining, @unchecked Sendable {
         self.passkeyService = passkeyService ?? MockPasskeyService()
         self.chatRepository = chatRepository ?? MockChatRepository()
         self.noteRepository = noteRepository ?? MockNoteRepository()
+        self.promptRepository = promptRepository ?? MockPromptRepository()
         self.folderRepository = folderRepository ?? MockFolderRepository()
         self.credentialService = credentialService ?? MockCredentialService()
         self.llmService = llmService ?? MockLLMService()

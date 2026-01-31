@@ -40,6 +40,7 @@ final class DemoDependencyContainer: DependencyContaining, @unchecked Sendable {
     let demoSpeechRecognitionService = DemoSpeechRecognitionService()
     let demoFileProcessingService = DemoFileProcessingService()
     let demoPasskeyService = DemoPasskeyService()
+    let demoPromptRepository = DemoPromptRepository()
     
     // MARK: - Protocol Conformance
     
@@ -60,6 +61,7 @@ final class DemoDependencyContainer: DependencyContaining, @unchecked Sendable {
     var speechRecognitionService: SpeechRecognitionServiceProtocol { demoSpeechRecognitionService }
     var fileProcessingService: FileProcessingServiceProtocol { demoFileProcessingService }
     var passkeyService: PasskeyServiceProtocol { demoPasskeyService }
+    var promptRepository: PromptRepositoryProtocol { demoPromptRepository }
     
     // MARK: - Initialization
     
@@ -684,5 +686,80 @@ final class DemoFileProcessingService: FileProcessingServiceProtocol, @unchecked
     
     func validateFile(_ data: Data, mimeType: String) -> FileValidationResult {
         FileValidationResult(isValid: true, error: nil)
+    }
+}
+
+// MARK: - Demo Prompt Repository
+
+final class DemoPromptRepository: PromptRepositoryProtocol, @unchecked Sendable {
+    
+    private var prompts: [String: Prompt] = [:]
+    
+    init() {
+        // Pre-populate with demo prompts
+        let demoPrompt1 = Prompt(
+            id: "demo-prompt-1",
+            name: "Code Review",
+            description: "Analyze code for bugs and improvements",
+            content: "Please review this code and suggest improvements:\n\n{code}",
+            createdAt: Date().addingTimeInterval(-86400),
+            updatedAt: Date().addingTimeInterval(-86400)
+        )
+        let demoPrompt2 = Prompt(
+            id: "demo-prompt-2",
+            name: "Explain Concept",
+            description: "Explain a concept in simple terms",
+            content: "Explain {concept} in simple terms that a beginner would understand. Use examples where helpful.",
+            createdAt: Date().addingTimeInterval(-172800),
+            updatedAt: Date().addingTimeInterval(-172800)
+        )
+        prompts[demoPrompt1.id] = demoPrompt1
+        prompts[demoPrompt2.id] = demoPrompt2
+    }
+    
+    func fetchPrompts(token: String) async throws -> [PromptSummary] {
+        try await Task.sleep(for: .milliseconds(200))
+        return prompts.values.map { prompt in
+            PromptSummary(
+                id: prompt.id,
+                name: prompt.name,
+                description: prompt.description,
+                createdAt: prompt.createdAt,
+                updatedAt: prompt.updatedAt
+            )
+        }.sorted { $0.updatedAt > $1.updatedAt }
+    }
+    
+    func fetchPrompt(id: String, token: String) async throws -> Prompt {
+        try await Task.sleep(for: .milliseconds(100))
+        guard let prompt = prompts[id] else {
+            throw PromptError.promptNotFound
+        }
+        return prompt
+    }
+    
+    func createPrompt(_ prompt: Prompt, token: String) async throws -> String {
+        try await Task.sleep(for: .milliseconds(200))
+        let newId = "demo-prompt-\(UUID().uuidString)"
+        let newPrompt = Prompt(
+            id: newId,
+            name: prompt.name,
+            description: prompt.description,
+            content: prompt.content,
+            createdAt: prompt.createdAt,
+            updatedAt: prompt.updatedAt
+        )
+        prompts[newId] = newPrompt
+        return newId
+    }
+    
+    func updatePrompt(_ prompt: Prompt, token: String) async throws {
+        try await Task.sleep(for: .milliseconds(100))
+        prompts[prompt.id] = prompt
+    }
+    
+    func deletePrompt(id: String, token: String) async throws {
+        try await Task.sleep(for: .milliseconds(100))
+        prompts.removeValue(forKey: id)
     }
 }
