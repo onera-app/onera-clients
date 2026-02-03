@@ -24,7 +24,7 @@ enum LLMProvider: String, Codable, CaseIterable, Sendable {
     case lmstudio
     case custom
     
-    var displayName: String {
+    nonisolated var displayName: String {
         switch self {
         case .openai: return "OpenAI"
         case .anthropic: return "Anthropic"
@@ -42,7 +42,7 @@ enum LLMProvider: String, Codable, CaseIterable, Sendable {
         }
     }
     
-    var baseURL: String {
+    nonisolated var baseURL: String {
         switch self {
         case .openai: return "https://api.openai.com/v1"
         case .anthropic: return "https://api.anthropic.com"
@@ -61,7 +61,7 @@ enum LLMProvider: String, Codable, CaseIterable, Sendable {
     }
     
     /// Whether this provider uses OpenAI-compatible API format
-    var isOpenAICompatible: Bool {
+    nonisolated var isOpenAICompatible: Bool {
         switch self {
         case .openai, .groq, .deepseek, .openrouter, .together, .fireworks, .ollama, .lmstudio, .xai, .mistral, .custom:
             return true
@@ -135,7 +135,7 @@ struct DecryptedCredential: Identifiable, Equatable, Sendable {
     let config: [String: String]?
     
     /// Returns the effective base URL (credential-specific or provider default)
-    var effectiveBaseURL: String {
+    nonisolated var effectiveBaseURL: String {
         baseUrl ?? provider.baseURL
     }
     

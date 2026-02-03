@@ -350,7 +350,7 @@ actor LLMService: LLMServiceProtocol {
     
     // MARK: - Cancel
     
-    func cancelStream() {
+    func cancelStream() async {
         currentTask?.cancel()
         currentTask = nil
     }
@@ -443,7 +443,7 @@ actor MockLLMService: LLMServiceProtocol {
         }
     }
     
-    func cancelStream() {
+    func cancelStream() async {
         // No-op for mock
     }
 }

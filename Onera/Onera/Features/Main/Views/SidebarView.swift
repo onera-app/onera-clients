@@ -111,7 +111,7 @@ struct SidebarView: View {
                             Text(user.displayName)
                                 .font(.subheadline)
                                 .fontWeight(.medium)
-                            Text(user.email ?? "")
+                            Text(user.email)
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)

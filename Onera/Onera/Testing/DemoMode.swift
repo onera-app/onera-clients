@@ -372,7 +372,7 @@ enum DemoData {
     // MARK: - Demo Responses
     
     /// Smart demo responses based on user input
-    static func generateResponse(for userMessage: String) -> String {
+    nonisolated static func generateResponse(for userMessage: String) -> String {
         let lowercased = userMessage.lowercased()
         
         // Programming topics

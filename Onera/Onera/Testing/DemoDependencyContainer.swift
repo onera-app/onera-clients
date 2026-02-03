@@ -306,7 +306,6 @@ final class DemoCredentialService: CredentialServiceProtocol {
 
 actor DemoLLMService: LLMServiceProtocol {
     
-    var mockModels: [ModelOption] = DemoData.demoModels
     private var isCancelled = false
     
     func streamChat(
@@ -342,10 +341,12 @@ actor DemoLLMService: LLMServiceProtocol {
     
     func fetchModels(credential: DecryptedCredential) async throws -> [ModelOption] {
         try await Task.sleep(for: .milliseconds(200))
-        return mockModels.filter { $0.credentialId == credential.id }
+        // Get demo models from MainActor context
+        let allModels = await MainActor.run { DemoData.demoModels }
+        return allModels.filter { $0.credentialId == credential.id }
     }
     
-    func cancelStream() {
+    func cancelStream() async {
         isCancelled = true
     }
 }

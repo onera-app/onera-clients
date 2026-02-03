@@ -338,8 +338,9 @@ struct WatchChatSummary: Codable, Identifiable {
 }
 
 /// Message sent from Watch to iPhone
-struct WatchOutgoingMessage: Codable {
-    enum MessageType: String, Codable {
+/// Using nonisolated since this needs to be decoded in nonisolated WCSession delegate callbacks
+nonisolated struct WatchOutgoingMessage: Codable, Sendable {
+    nonisolated enum MessageType: String, Codable, Sendable {
         case newMessage
         case quickReply
         case requestSync
@@ -353,8 +354,9 @@ struct WatchOutgoingMessage: Codable {
 }
 
 /// Response from iPhone to Watch
-struct WatchIncomingMessage: Codable {
-    enum ResponseType: String, Codable {
+/// Using nonisolated since this needs to be encoded in nonisolated WCSession delegate callbacks
+nonisolated struct WatchIncomingMessage: Codable, Sendable {
+    nonisolated enum ResponseType: String, Codable, Sendable {
         case chatUpdate
         case syncComplete
         case error
@@ -367,7 +369,7 @@ struct WatchIncomingMessage: Codable {
 }
 
 /// Simplified message for Watch display
-struct WatchMessage: Codable, Identifiable {
+nonisolated struct WatchMessage: Codable, Identifiable, Sendable {
     let id: String
     let content: String
     let isUser: Bool

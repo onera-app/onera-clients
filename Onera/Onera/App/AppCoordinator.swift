@@ -40,10 +40,16 @@ final class AppCoordinator {
     
     // MARK: - Initialization
     
-    init(dependencies: DependencyContaining = DependencyContainer.shared) {
+    /// Initialize with explicit dependencies (for testing)
+    init(dependencies: DependencyContaining) {
         self.authService = dependencies.authService
         self.e2eeService = dependencies.e2eeService
         self.secureSession = dependencies.secureSession
+    }
+    
+    /// Convenience initializer using shared container
+    convenience init() {
+        self.init(dependencies: DependencyContainer.shared)
     }
     
     // MARK: - State Management
@@ -77,7 +83,7 @@ final class AppCoordinator {
             }
             
             // Attempt to unlock session - but ONLY if master key is valid
-            if await secureSession.isUnlocked, secureSession.masterKey != nil {
+            if secureSession.isUnlocked, secureSession.masterKey != nil {
                 print("[AppCoordinator] Session already unlocked, master key size: \(secureSession.masterKey?.count ?? 0)")
                 // Verify the key actually works by checking if we can use it
                 if await verifyMasterKeyWorks(token: token) {
@@ -85,7 +91,7 @@ final class AppCoordinator {
                     return
                 } else {
                     print("[AppCoordinator] Stored session has invalid master key, locking and trying other methods...")
-                    await secureSession.lock()
+                    secureSession.lock()
                 }
             }
             
@@ -99,7 +105,7 @@ final class AppCoordinator {
                     return
                 } else {
                     print("[AppCoordinator] Biometric-restored key is stale/invalid, clearing and trying other methods...")
-                    await secureSession.lock()
+                    secureSession.lock()
                     secureSession.clearPersistedSession()
                 }
             }
@@ -251,7 +257,7 @@ final class AppCoordinator {
     
     func handleSignOut() async {
         await authService.signOut()
-        await secureSession.lock()
+        secureSession.lock()
         
         // Deactivate demo mode on sign out
         if DemoModeManager.shared.isActive {

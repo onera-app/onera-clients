@@ -1,6 +1,7 @@
 package chat.onera.mobile.data.security
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
@@ -8,6 +9,7 @@ import androidx.biometric.BiometricManager as AndroidBiometricManager
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
+import timber.log.Timber
 import java.security.KeyStore
 import java.security.SecureRandom
 import javax.crypto.KeyGenerator
@@ -83,6 +85,9 @@ class KeyManager @Inject constructor(
             ANDROID_KEYSTORE
         )
         
+        // Check if StrongBox is available for maximum hardware security
+        val hasStrongBox = context.packageManager.hasSystemFeature(PackageManager.FEATURE_STRONGBOX_KEYSTORE)
+        
         val keyGenParameterSpec = KeyGenParameterSpec.Builder(
             KEY_ALIAS,
             KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
@@ -91,6 +96,19 @@ class KeyManager @Inject constructor(
             .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
             .setKeySize(256)
             .setUserAuthenticationRequired(false) // Enable for biometric protection
+            .apply {
+                // Try StrongBox first, fall back to standard TEE with warning
+                if (hasStrongBox) {
+                    try {
+                        setIsStrongBoxBacked(true)
+                        Timber.i("KeyManager: Using StrongBox hardware security module")
+                    } catch (e: Exception) {
+                        Timber.w("KeyManager: StrongBox failed, falling back to standard TEE: ${e.message}")
+                    }
+                } else {
+                    Timber.w("KeyManager: StrongBox not available, using standard TEE")
+                }
+            }
             .build()
         
         keyGenerator.init(keyGenParameterSpec)

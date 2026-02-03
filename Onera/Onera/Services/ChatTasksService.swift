@@ -26,7 +26,7 @@ actor ChatTasksService: ChatTasksServiceProtocol {
     
     // MARK: - Prompts
     
-    private static let titleGenerationPrompt = """
+    private nonisolated static let titleGenerationPrompt = """
         ### Task:
         Generate a concise, 3-5 word title summarizing the chat conversation.
         
@@ -48,7 +48,7 @@ actor ChatTasksService: ChatTasksServiceProtocol {
         ### Chat History:
         """
     
-    private static let followUpGenerationPrompt = """
+    private nonisolated static let followUpGenerationPrompt = """
         ### Task:
         Suggest 3 relevant follow-up questions that the user might naturally ask next, based on the chat history.
         

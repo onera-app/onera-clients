@@ -659,7 +659,7 @@ private fun SectionHeader(title: String) {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 private fun ChatHistoryRow(
     chat: ChatSummary,

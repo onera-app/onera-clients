@@ -314,7 +314,8 @@ final class SecureSession: SecureSessionProtocol {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in
+            guard let self else { return }
+            Task { @MainActor [weak self] in
                 self?.handleBackgrounding()
             }
         }
@@ -324,7 +325,8 @@ final class SecureSession: SecureSessionProtocol {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in
+            guard let self else { return }
+            Task { @MainActor [weak self] in
                 self?.handleForegrounding()
             }
         }
@@ -334,7 +336,8 @@ final class SecureSession: SecureSessionProtocol {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in
+            guard let self else { return }
+            Task { @MainActor [weak self] in
                 self?.handleBackgrounding()
             }
         }
@@ -344,7 +347,8 @@ final class SecureSession: SecureSessionProtocol {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in
+            guard let self else { return }
+            Task { @MainActor [weak self] in
                 self?.handleForegrounding()
             }
         }
@@ -365,7 +369,8 @@ final class SecureSession: SecureSessionProtocol {
         
         let timeout = interval ?? timeoutInterval
         lockTimer = Timer.scheduledTimer(withTimeInterval: timeout, repeats: false) { [weak self] _ in
-            Task { @MainActor in
+            guard let self else { return }
+            Task { @MainActor [weak self] in
                 self?.lock()
             }
         }

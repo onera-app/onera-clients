@@ -23,7 +23,8 @@ enum AIProviderFactory {
     // MARK: - Provider Cache
     
     /// Cache provider instances by credential ID for reuse
-    private static var providerCache: [String: Any] = [:]
+    /// Using nonisolated(unsafe) since access is protected by cacheLock
+    private nonisolated(unsafe) static var providerCache: [String: Any] = [:]
     private static let cacheLock = NSLock()
     
     // MARK: - Public API
@@ -33,8 +34,7 @@ enum AIProviderFactory {
     ///   - credential: The decrypted credential with API key and settings
     ///   - modelName: The name of the model to use (e.g., "gpt-4o", "claude-3-opus")
     /// - Returns: A LanguageModelV3 instance ready for use with streamText/generateText
-    @Sendable
-    static func getModel(credential: DecryptedCredential, modelName: String) throws -> any LanguageModelV3 {
+    nonisolated static func getModel(credential: DecryptedCredential, modelName: String) throws -> any LanguageModelV3 {
         cacheLock.lock()
         defer { cacheLock.unlock() }
         
@@ -72,7 +72,7 @@ enum AIProviderFactory {
     
     /// Clear the provider cache
     /// Call on logout, lock, or credential changes
-    static func clearCache() {
+    nonisolated static func clearCache() {
         cacheLock.lock()
         defer { cacheLock.unlock() }
         providerCache.removeAll()
@@ -80,7 +80,7 @@ enum AIProviderFactory {
     
     // MARK: - Provider Creation Methods
     
-    private static func getOrCreateOpenAIProvider(credential: DecryptedCredential) -> OpenAIProvider {
+    private nonisolated static func getOrCreateOpenAIProvider(credential: DecryptedCredential) -> OpenAIProvider {
         if let cached = providerCache[credential.id] as? OpenAIProvider {
             return cached
         }
@@ -96,7 +96,7 @@ enum AIProviderFactory {
         return provider
     }
     
-    private static func getOrCreateAnthropicProvider(credential: DecryptedCredential) -> AnthropicProvider {
+    private nonisolated static func getOrCreateAnthropicProvider(credential: DecryptedCredential) -> AnthropicProvider {
         if let cached = providerCache[credential.id] as? AnthropicProvider {
             return cached
         }
@@ -116,7 +116,7 @@ enum AIProviderFactory {
         return provider
     }
     
-    private static func getOrCreateGoogleProvider(credential: DecryptedCredential) -> GoogleProvider {
+    private nonisolated static func getOrCreateGoogleProvider(credential: DecryptedCredential) -> GoogleProvider {
         if let cached = providerCache[credential.id] as? GoogleProvider {
             return cached
         }
@@ -131,7 +131,7 @@ enum AIProviderFactory {
         return provider
     }
     
-    private static func getOrCreateGroqProvider(credential: DecryptedCredential) -> GroqProvider {
+    private nonisolated static func getOrCreateGroqProvider(credential: DecryptedCredential) -> GroqProvider {
         if let cached = providerCache[credential.id] as? GroqProvider {
             return cached
         }
@@ -146,7 +146,7 @@ enum AIProviderFactory {
         return provider
     }
     
-    private static func getOrCreateXAIProvider(credential: DecryptedCredential) -> XAIProvider {
+    private nonisolated static func getOrCreateXAIProvider(credential: DecryptedCredential) -> XAIProvider {
         if let cached = providerCache[credential.id] as? XAIProvider {
             return cached
         }
@@ -161,7 +161,7 @@ enum AIProviderFactory {
         return provider
     }
     
-    private static func getOrCreateDeepSeekProvider(credential: DecryptedCredential) -> DeepSeekProvider {
+    private nonisolated static func getOrCreateDeepSeekProvider(credential: DecryptedCredential) -> DeepSeekProvider {
         if let cached = providerCache[credential.id] as? DeepSeekProvider {
             return cached
         }
@@ -176,7 +176,7 @@ enum AIProviderFactory {
         return provider
     }
     
-    private static func getOrCreateOpenAICompatibleProvider(credential: DecryptedCredential) -> OpenAICompatibleProvider {
+    private nonisolated static func getOrCreateOpenAICompatibleProvider(credential: DecryptedCredential) -> OpenAICompatibleProvider {
         if let cached = providerCache[credential.id] as? OpenAICompatibleProvider {
             return cached
         }

@@ -569,8 +569,8 @@ struct DeviceManagementView: View {
             devices = response.compactMap { deviceResponse in
                 var deviceName: String? = nil
                 
-                if let encryptedName = deviceResponse.encryptedDeviceName,
-                   let nonce = deviceResponse.deviceNameNonce {
+                if let _ = deviceResponse.encryptedDeviceName,
+                   let _ = deviceResponse.deviceNameNonce {
                     // TODO: Decrypt using E2EE service when master key is available
                     // For now, use a placeholder or attempt decryption
                     deviceName = "Encrypted Device" // Placeholder until decryption is wired up

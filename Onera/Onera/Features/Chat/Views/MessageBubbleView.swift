@@ -699,8 +699,13 @@ struct CodeBlockView: View {
     }
     
     private func highlightCode() async {
+        // Capture values before entering detached task to avoid MainActor isolation issues
+        let codeText = code
+        let lang = language
+        let isDark = colorScheme == .dark
+        
         let highlighted = await Task.detached(priority: .userInitiated) {
-            SyntaxHighlighter.shared.highlight(code: code, language: language, isDark: colorScheme == .dark)
+            SyntaxHighlighter.shared.highlight(code: codeText, language: lang, isDark: isDark)
         }.value
         
         await MainActor.run {
@@ -733,21 +738,23 @@ struct CodeBlockView: View {
 
 // MARK: - Syntax Highlighter
 
+/// Thread-safe syntax highlighter - explicitly nonisolated since it uses NSLock for thread safety
 final class SyntaxHighlighter: @unchecked Sendable {
-    static let shared = SyntaxHighlighter()
+    nonisolated(unsafe) static let shared = SyntaxHighlighter()
     
-    private let highlightr: Highlightr?
+    /// Using nonisolated(unsafe) since access is protected by lock
+    private nonisolated(unsafe) let highlightr: Highlightr?
     private let lock = NSLock()
     
     private init() {
         highlightr = Highlightr()
     }
     
-    func highlight(code: String, language: String?, isDark: Bool) -> AttributedString? {
+    nonisolated func highlight(code: String, language: String?, isDark: Bool) -> AttributedString? {
         lock.lock()
         defer { lock.unlock() }
         
-        guard let highlightr = highlightr else { return nil }
+        guard let highlightr else { return nil }
         
         // Set theme based on color scheme
         let theme = isDark ? "atom-one-dark" : "atom-one-light"

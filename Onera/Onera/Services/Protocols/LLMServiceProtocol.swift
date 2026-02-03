@@ -20,7 +20,7 @@ struct ModelOption: Identifiable, Equatable, Sendable {
     }
     
     /// Parses a model ID into credential ID and model name
-    static func parseModelId(_ modelId: String) -> (credentialId: String, modelName: String) {
+    nonisolated static func parseModelId(_ modelId: String) -> (credentialId: String, modelName: String) {
         guard let colonIndex = modelId.firstIndex(of: ":") else {
             return ("", modelId)
         }
@@ -30,7 +30,7 @@ struct ModelOption: Identifiable, Equatable, Sendable {
     }
     
     /// Creates a model ID from components
-    static func createModelId(credentialId: String, modelName: String) -> String {
+    nonisolated static func createModelId(credentialId: String, modelName: String) -> String {
         "\(credentialId):\(modelName)"
     }
 }
@@ -130,7 +130,7 @@ protocol LLMServiceProtocol: Sendable {
     func fetchModels(credential: DecryptedCredential) async throws -> [ModelOption]
     
     /// Cancels any ongoing stream
-    func cancelStream()
+    func cancelStream() async
 }
 
 // MARK: - LLM Error
