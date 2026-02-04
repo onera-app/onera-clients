@@ -16,10 +16,35 @@ actor LLMService: LLMServiceProtocol {
     private var currentTask: Task<Void, Error>?
     private let session: URLSession
     
+    // MARK: - Model Cache
+    
+    /// Cache entry for models with TTL
+    private struct ModelCacheEntry {
+        let models: [ModelOption]
+        let fetchedAt: Date
+    }
+    
+    /// Cache TTL: 5 minutes (matches web implementation)
+    private static let modelCacheTTL: TimeInterval = 5 * 60
+    
+    /// Model cache keyed by credential ID
+    private var modelCache: [String: ModelCacheEntry] = [:]
+    
     // MARK: - Initialization
     
     init(session: URLSession = .shared) {
         self.session = session
+    }
+    
+    // MARK: - Cache Management
+    
+    /// Invalidates model cache for a specific credential or all credentials
+    func invalidateModelCache(credentialId: String? = nil) {
+        if let id = credentialId {
+            modelCache.removeValue(forKey: id)
+        } else {
+            modelCache.removeAll()
+        }
     }
     
     // MARK: - Streaming Chat (Swift AI SDK)
@@ -157,15 +182,38 @@ actor LLMService: LLMServiceProtocol {
     // MARK: - Fetch Models
     
     func fetchModels(credential: DecryptedCredential) async throws -> [ModelOption] {
-        switch credential.provider {
-        case .anthropic:
-            return try await fetchAnthropicModels(credential: credential)
-        case .google:
-            return try await fetchGoogleModels(credential: credential)
-        case .ollama:
-            return try await fetchOllamaModels(credential: credential)
-        default:
-            return try await fetchOpenAICompatibleModels(credential: credential)
+        // Check cache first
+        if let cached = modelCache[credential.id] {
+            let age = Date().timeIntervalSince(cached.fetchedAt)
+            if age < Self.modelCacheTTL {
+                return cached.models
+            }
+        }
+        
+        // Fetch from provider
+        let models: [ModelOption]
+        do {
+            switch credential.provider {
+            case .anthropic:
+                models = try await fetchAnthropicModels(credential: credential)
+            case .google:
+                models = try await fetchGoogleModels(credential: credential)
+            case .ollama:
+                models = try await fetchOllamaModels(credential: credential)
+            default:
+                models = try await fetchOpenAICompatibleModels(credential: credential)
+            }
+            
+            // Cache the results
+            modelCache[credential.id] = ModelCacheEntry(models: models, fetchedAt: Date())
+            return models
+            
+        } catch {
+            // On error, return stale cache if available (better UX)
+            if let cached = modelCache[credential.id] {
+                return cached.models
+            }
+            throw error
         }
     }
     

@@ -21,7 +21,13 @@ actor PrivateInferenceClient: Sendable {
     private var webSocketTask: URLSessionWebSocketTask?
     private var noiseSession: NoiseSession?
     private var isConnected = false
+    private var _isClosed = false
     private var connectionContinuation: CheckedContinuation<Void, Error>?
+    
+    /// Whether the client is closed and cannot be reused
+    var isClosed: Bool {
+        _isClosed
+    }
     
     // Message handling
     private var messageQueue: [Data] = []
@@ -72,6 +78,12 @@ actor PrivateInferenceClient: Sendable {
                         return
                     }
                     
+                    // Check if session is closed (e.g., server closed connection)
+                    if await session.isClosed {
+                        continuation.finish(throwing: PrivateInferenceError.connectionClosed)
+                        return
+                    }
+                    
                     // Encrypt and send request
                     let encryptedRequest = try await session.encrypt(request)
                     try await sendWebSocketMessage(encryptedRequest)
@@ -114,6 +126,7 @@ actor PrivateInferenceClient: Sendable {
         logger.info("Closing private inference client")
         
         isConnected = false
+        _isClosed = true
         
         // Close WebSocket
         webSocketTask?.cancel(with: .goingAway, reason: nil)

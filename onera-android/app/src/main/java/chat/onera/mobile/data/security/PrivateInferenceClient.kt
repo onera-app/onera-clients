@@ -44,6 +44,10 @@ class PrivateInferenceClient @Inject constructor(
     private var webSocket: WebSocket? = null
     private var handshakeResult: NoiseProtocol.HandshakeResult? = null
     private var isConnected = false
+    private var _isClosed = false
+    
+    /** Whether the client is closed and cannot be reused */
+    val isClosed: Boolean get() = _isClosed
     
     // Message handling
     private val messageChannel = Channel<ByteArray>(Channel.UNLIMITED)
@@ -61,6 +65,9 @@ class PrivateInferenceClient @Inject constructor(
             Timber.w("$TAG: Already connected, closing existing connection")
             closeInternal()
         }
+        
+        // Reset closed state for new connection
+        _isClosed = false
         
         Timber.i("$TAG: Connecting to TEE endpoint: $endpoint")
         
@@ -104,6 +111,10 @@ class PrivateInferenceClient @Inject constructor(
      * @throws SecurityException if encryption/decryption fails
      */
     fun sendAndStream(request: ByteArray): Flow<ByteArray> = flow {
+        if (_isClosed) {
+            throw IllegalStateException("Client is closed")
+        }
+        
         if (!isConnected) {
             throw IllegalStateException("Not connected to TEE endpoint")
         }
@@ -255,6 +266,7 @@ class PrivateInferenceClient @Inject constructor(
      */
     private fun closeInternal() {
         isConnected = false
+        _isClosed = true
         
         webSocket?.let { ws ->
             try {

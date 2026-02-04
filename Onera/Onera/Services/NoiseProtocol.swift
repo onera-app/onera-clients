@@ -47,17 +47,27 @@ struct HandshakeResult: Sendable {
 actor NoiseSession: Sendable {
     private var sendCipher: CipherState?
     private var recvCipher: CipherState?
+    private var _isClosed = false
     private let logger = Logger(subsystem: "chat.onera", category: "NoiseProtocol")
+    
+    /// Whether the session is closed and cannot be reused
+    var isClosed: Bool {
+        _isClosed
+    }
     
     /// Initializes session with handshake result
     func initialize(with result: HandshakeResult) {
         self.sendCipher = result.sendCipher
         self.recvCipher = result.recvCipher
+        self._isClosed = false
         logger.info("Noise session initialized")
     }
     
     /// Encrypts a message for sending
     func encrypt(_ plaintext: Data) throws -> Data {
+        guard !_isClosed else {
+            throw NoiseError.sessionClosed
+        }
         guard var cipher = sendCipher else {
             throw NoiseError.sessionNotInitialized
         }
@@ -69,6 +79,9 @@ actor NoiseSession: Sendable {
     
     /// Decrypts a received message
     func decrypt(_ ciphertext: Data) throws -> Data {
+        guard !_isClosed else {
+            throw NoiseError.sessionClosed
+        }
         guard var cipher = recvCipher else {
             throw NoiseError.sessionNotInitialized
         }
@@ -80,6 +93,7 @@ actor NoiseSession: Sendable {
     
     /// Clears session state
     func close() {
+        _isClosed = true
         sendCipher = nil
         recvCipher = nil
         logger.info("Noise session closed")
@@ -381,6 +395,7 @@ enum NoiseError: Error, LocalizedError {
     case encryptionFailed
     case decryptionFailed
     case sessionNotInitialized
+    case sessionClosed
     case keyAgreementFailed
     
     var errorDescription: String? {
@@ -395,6 +410,8 @@ enum NoiseError: Error, LocalizedError {
             return "Decryption failed"
         case .sessionNotInitialized:
             return "Noise session not initialized"
+        case .sessionClosed:
+            return "Noise session is closed"
         case .keyAgreementFailed:
             return "Key agreement failed"
         }

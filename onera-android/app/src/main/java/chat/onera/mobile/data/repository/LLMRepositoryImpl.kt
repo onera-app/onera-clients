@@ -46,12 +46,22 @@ class LLMRepositoryImpl @Inject constructor(
         private const val TAG = "LLMRepository"
         private const val PREFS_NAME = "llm_credentials"
         private const val KEY_CREDENTIALS = "credentials"
+        
+        /** Model cache TTL: 5 minutes (matches web implementation) */
+        private const val MODEL_CACHE_TTL_MS = 5 * 60 * 1000L
     }
     
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
     }
+    
+    // Model cache keyed by credential ID
+    private data class ModelCacheEntry(
+        val models: List<ModelInfo>,
+        val fetchedAt: Long
+    )
+    private val modelCache = mutableMapOf<String, ModelCacheEntry>()
     
     // Lazy-init encrypted prefs to avoid blocking main thread
     private val encryptedPrefs by lazy {
@@ -100,10 +110,35 @@ class LLMRepositoryImpl @Inject constructor(
     }
     
     override suspend fun fetchModels(credentialId: String): List<ModelInfo> {
+        // Check cache first
+        val now = System.currentTimeMillis()
+        modelCache[credentialId]?.let { cached ->
+            if (now - cached.fetchedAt < MODEL_CACHE_TTL_MS) {
+                return cached.models
+            }
+        }
+        
         val credential = getDecryptedCredential(credentialId)
             ?: throw LLMException.AuthenticationFailed("Credential not found: $credentialId")
         
-        return llmClient.fetchModels(credential)
+        return try {
+            val models = llmClient.fetchModels(credential)
+            // Cache the results
+            modelCache[credentialId] = ModelCacheEntry(models, now)
+            models
+        } catch (e: Exception) {
+            // On error, return stale cache if available (better UX)
+            modelCache[credentialId]?.models ?: throw e
+        }
+    }
+    
+    /** Invalidate model cache for a specific credential or all credentials */
+    fun invalidateModelCache(credentialId: String? = null) {
+        if (credentialId != null) {
+            modelCache.remove(credentialId)
+        } else {
+            modelCache.clear()
+        }
     }
     
     override fun cancelStream() {
