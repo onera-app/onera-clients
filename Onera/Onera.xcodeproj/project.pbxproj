@@ -58,8 +58,8 @@
 
 /* Begin PBXFileReference section */
 		B1AE88052F2B8B5B004FE3D7 /* Onera-watchOS Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Onera-watchOS Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		CFGPROD0000000000000001 /* Production.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Onera/Production.xcconfig; sourceTree = SOURCE_ROOT; };
-		CFGSTAG0000000000000001 /* Staging.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Onera/Staging.xcconfig; sourceTree = SOURCE_ROOT; };
+		CFGPROD0000000000000001 /* Onera/Production.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Onera/Production.xcconfig; sourceTree = SOURCE_ROOT; };
+		CFGSTAG0000000000000001 /* Onera/Staging.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Onera/Staging.xcconfig; sourceTree = SOURCE_ROOT; };
 		EAB5AAF92F2B7F0500C79D0F /* Onera.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Onera.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -131,12 +131,22 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		B12C86982F3300CB00A1DA3E /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				CFGSTAG0000000000000001 /* Onera/Staging.xcconfig */,
+				CFGPROD0000000000000001 /* Onera/Production.xcconfig */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		EAB5AAF02F2B7F0500C79D0F = {
 			isa = PBXGroup;
 			children = (
 				EAB5AAFB2F2B7F0500C79D0F /* Onera */,
 				B1AE88062F2B8B5B004FE3D7 /* Onera-watchOS Watch App */,
 				EAB5AAFA2F2B7F0500C79D0F /* Products */,
+				B12C86982F3300CB00A1DA3E /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -319,7 +329,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = J4J5Y4K647;
+				DEVELOPMENT_TEAM = FYS9RNAGTV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Onera-watchOS";
@@ -352,7 +362,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = J4J5Y4K647;
+				DEVELOPMENT_TEAM = FYS9RNAGTV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Onera-watchOS";
@@ -381,7 +391,7 @@
 		};
 		EAB5AB022F2B7F0600C79D0F /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = CFGSTAG0000000000000001 /* Staging.xcconfig */;
+			baseConfigurationReference = CFGSTAG0000000000000001 /* Onera/Staging.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -444,7 +454,7 @@
 		};
 		EAB5AB032F2B7F0600C79D0F /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = CFGPROD0000000000000001 /* Production.xcconfig */;
+			baseConfigurationReference = CFGPROD0000000000000001 /* Onera/Production.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -512,6 +522,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Onera Staging";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -528,6 +539,9 @@
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(inherited)";
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = chat.onera;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]" = chat.onera;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=xros*]" = chat.onera;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -558,6 +572,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Onera Staging";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
