@@ -12,6 +12,12 @@ import chat.onera.mobile.data.remote.llm.LLMException
 import chat.onera.mobile.data.remote.llm.LLMProvider
 import chat.onera.mobile.data.remote.llm.ModelInfo
 import chat.onera.mobile.data.remote.llm.StreamEvent
+import chat.onera.mobile.data.remote.private_inference.EnclaveService
+import chat.onera.mobile.data.remote.private_inference.PrivateInferenceClient
+import chat.onera.mobile.data.remote.private_inference.PrivateInferenceEvent
+import chat.onera.mobile.data.remote.private_inference.PrivateInferenceException
+import chat.onera.mobile.data.remote.private_inference.isPrivateModel
+import chat.onera.mobile.data.remote.private_inference.parsePrivateModelId
 import chat.onera.mobile.domain.repository.CredentialRepository
 import chat.onera.mobile.domain.repository.LLMRepository
 import chat.onera.mobile.domain.repository.StoredCredential
@@ -35,7 +41,9 @@ import javax.inject.Singleton
 class LLMRepositoryImpl @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val llmClient: LLMClient,
-    private val credentialRepositoryLazy: Lazy<CredentialRepository>
+    private val credentialRepositoryLazy: Lazy<CredentialRepository>,
+    private val privateInferenceClient: PrivateInferenceClient,
+    private val enclaveService: EnclaveService
 ) : LLMRepository {
     
     // Use lazy to avoid circular dependency
@@ -143,6 +151,65 @@ class LLMRepositoryImpl @Inject constructor(
     
     override fun cancelStream() {
         llmClient.cancelStream()
+        privateInferenceClient.close()
+    }
+    
+    override fun streamPrivateChat(
+        modelId: String,
+        messages: List<ChatMessage>,
+        systemPrompt: String?,
+        maxTokens: Int
+    ): Flow<PrivateInferenceEvent> = flow {
+        Log.d(TAG, "Starting private chat stream for model: $modelId")
+        
+        // Get enclave config
+        val config = enclaveService.requestEnclave(modelId)
+            ?: throw PrivateInferenceException.AttestationFailed("Failed to get enclave assignment")
+        
+        try {
+            // Convert messages to the format expected by private inference
+            val formattedMessages = buildPrivateMessages(messages, systemPrompt)
+            
+            // Stream through encrypted channel
+            privateInferenceClient.streamChat(
+                config = config,
+                modelId = parsePrivateModelId(modelId),
+                messages = formattedMessages,
+                maxTokens = maxTokens
+            ).collect { event ->
+                emit(event)
+            }
+        } finally {
+            // Release enclave when done
+            enclaveService.releaseEnclave(modelId)
+        }
+    }
+    
+    override fun isPrivateModel(modelId: String): Boolean = isPrivateModel(modelId)
+    
+    /**
+     * Convert ChatMessage list to private inference format
+     */
+    private fun buildPrivateMessages(
+        messages: List<ChatMessage>,
+        systemPrompt: String?
+    ): List<Map<String, Any>> {
+        val result = mutableListOf<Map<String, Any>>()
+        
+        // Add system prompt if present
+        if (!systemPrompt.isNullOrBlank()) {
+            result.add(mapOf("role" to "system", "content" to systemPrompt))
+        }
+        
+        // Add conversation messages
+        messages.forEach { msg ->
+            result.add(mapOf(
+                "role" to msg.role.lowercase(),
+                "content" to msg.content
+            ))
+        }
+        
+        return result
     }
     
     override suspend fun getCredentials(): List<StoredCredential> {

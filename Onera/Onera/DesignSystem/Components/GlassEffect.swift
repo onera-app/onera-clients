@@ -152,36 +152,6 @@ extension View {
         modifier(OneraGlassEffect(shape: shape, showBorder: showBorder, showShadow: showShadow))
     }
     
-    // MARK: - Legacy Aliases (Deprecated)
-    // These maintain backwards compatibility but will show deprecation warnings
-    
-    /// Apply glass effect with a capsule shape
-    /// - Note: Renamed to `oneraGlass()` to avoid conflict with iOS 26 native API
-    @available(*, deprecated, renamed: "oneraGlass", message: "Use oneraGlass() to avoid iOS 26 API conflict")
-    func glassEffect(showBorder: Bool = true, showShadow: Bool = true) -> some View {
-        modifier(OneraGlassEffect(shape: Capsule(), showBorder: showBorder, showShadow: showShadow))
-    }
-    
-    /// Apply glass effect with a circle shape
-    /// - Note: Renamed to `oneraGlassCircle()` to avoid conflict with iOS 26 native API
-    @available(*, deprecated, renamed: "oneraGlassCircle", message: "Use oneraGlassCircle() to avoid iOS 26 API conflict")
-    func glassCircle(showBorder: Bool = true, showShadow: Bool = true) -> some View {
-        modifier(OneraGlassEffect(shape: Circle(), showBorder: showBorder, showShadow: showShadow))
-    }
-    
-    /// Apply glass effect with a rounded rectangle shape
-    /// - Note: Renamed to `oneraGlassRounded()` to avoid conflict with iOS 26 native API
-    @available(*, deprecated, renamed: "oneraGlassRounded", message: "Use oneraGlassRounded() to avoid iOS 26 API conflict")
-    func glassRounded(_ cornerRadius: CGFloat = OneraRadius.medium, showBorder: Bool = true, showShadow: Bool = true) -> some View {
-        modifier(OneraGlassEffect(shape: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous), showBorder: showBorder, showShadow: showShadow))
-    }
-    
-    /// Apply glass effect with a custom shape
-    /// - Note: Renamed to `oneraGlass(shape:)` to avoid conflict with iOS 26 native API
-    @available(*, deprecated, renamed: "oneraGlass(shape:showBorder:showShadow:)", message: "Use oneraGlass(shape:) to avoid iOS 26 API conflict")
-    func glass<S: InsettableShape>(shape: S, showBorder: Bool = true, showShadow: Bool = true) -> some View {
-        modifier(OneraGlassEffect(shape: shape, showBorder: showBorder, showShadow: showShadow))
-    }
 }
 
 // MARK: - Glass Button Styles

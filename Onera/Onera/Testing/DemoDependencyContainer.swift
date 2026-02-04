@@ -349,6 +349,41 @@ actor DemoLLMService: LLMServiceProtocol {
     func cancelStream() async {
         isCancelled = true
     }
+    
+    func streamChat(
+        messages: [ChatMessage],
+        credential: DecryptedCredential?,
+        model: String,
+        systemPrompt: String?,
+        maxTokens: Int,
+        enclaveConfig: EnclaveConfig?,
+        onEvent: @escaping @Sendable (StreamEvent) -> Void
+    ) async throws {
+        // For demo, just delegate to regular streamChat if we have a credential
+        // Private inference models in demo mode just show a placeholder response
+        if isPrivateModel(model) {
+            isCancelled = false
+            let response = "[Private Inference Demo] This would be an encrypted response from a TEE."
+            for char in response {
+                if isCancelled { break }
+                try? await Task.sleep(nanoseconds: 15_000_000)
+                if isCancelled { break }
+                onEvent(.text(String(char)))
+            }
+            onEvent(.done)
+        } else if let credential = credential {
+            try await streamChat(
+                messages: messages,
+                credential: credential,
+                model: model,
+                systemPrompt: systemPrompt,
+                maxTokens: maxTokens,
+                onEvent: onEvent
+            )
+        } else {
+            throw LLMError.invalidCredential
+        }
+    }
 }
 
 // MARK: - Demo Note Repository

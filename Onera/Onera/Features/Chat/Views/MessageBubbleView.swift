@@ -740,7 +740,7 @@ struct CodeBlockView: View {
 
 /// Thread-safe syntax highlighter - explicitly nonisolated since it uses NSLock for thread safety
 final class SyntaxHighlighter: @unchecked Sendable {
-    nonisolated(unsafe) static let shared = SyntaxHighlighter()
+    nonisolated static let shared = SyntaxHighlighter()
     
     /// Using nonisolated(unsafe) since access is protected by lock
     private nonisolated(unsafe) let highlightr: Highlightr?

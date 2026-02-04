@@ -129,7 +129,7 @@ struct WebAuthnVerifyRegistrationResponse: Codable {
 
 struct WebAuthnAuthOptionsResponse: Codable {
     let options: WebAuthnRequestOptions
-    let prfSalts: [String: String]
+    let prfSalts: [String: String]?
 }
 
 struct WebAuthnRequestOptions: Codable {
@@ -184,7 +184,7 @@ struct WebAuthnVerifyAuthResponse: Codable {
     let verified: Bool
     let encryptedMasterKey: String
     let masterKeyNonce: String
-    let prfSalt: String
+    let prfSalt: String?
 }
 
 // MARK: - Has Passkeys

@@ -82,8 +82,8 @@ final class SettingsViewModel {
         isLoadingRecoveryPhrase = false
     }
     
-    func lockSession() async {
-        await secureSession.lock()
+    func lockSession() {
+        secureSession.lock()
         isSessionUnlocked = false
     }
     

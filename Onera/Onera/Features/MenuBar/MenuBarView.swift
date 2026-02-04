@@ -734,6 +734,7 @@ struct DetachedChatView: View {
             chatRepository: dependencies.chatRepository,
             credentialService: dependencies.credentialService,
             llmService: dependencies.llmService,
+            networkService: dependencies.networkService,
             speechService: dependencies.speechService,
             speechRecognitionService: dependencies.speechRecognitionService,
             onChatUpdated: { _ in }

@@ -32,12 +32,12 @@ enum AppEnvironment: String {
 
 // MARK: - Info.plist Helper
 
-private enum InfoPlist {
-    static func string(forKey key: String) -> String? {
+private enum InfoPlist: Sendable {
+    nonisolated static func string(forKey key: String) -> String? {
         Bundle.main.object(forInfoDictionaryKey: key) as? String
     }
     
-    static func string(forKey key: String, default defaultValue: String) -> String {
+    nonisolated static func string(forKey key: String, default defaultValue: String) -> String {
         string(forKey: key) ?? defaultValue
     }
 }

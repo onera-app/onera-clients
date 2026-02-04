@@ -254,13 +254,12 @@ final class SecureSession: SecureSessionProtocol {
     /// Retrieves biometric-protected data using provided LAContext
     /// The context allows reusing a single biometric authentication
     private func getBiometricProtected(forKey key: String, context: LAContext) throws -> Data {
-        var query: [String: Any] = [
+        let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: Configuration.Keychain.serviceName,
             kSecAttrAccount as String: key,
             kSecReturnData as String: true,
-            kSecUseAuthenticationContext as String: context,
-            kSecUseAuthenticationUI as String: kSecUseAuthenticationUIAllow
+            kSecUseAuthenticationContext as String: context
         ]
         
         var result: AnyObject?
@@ -288,7 +287,7 @@ final class SecureSession: SecureSessionProtocol {
             throw KeychainError.accessControlFailed
         }
         
-        var query: [String: Any] = [
+        let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: Configuration.Keychain.serviceName,
             kSecAttrAccount as String: key,

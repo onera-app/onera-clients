@@ -4,22 +4,31 @@
 //
 //  Implementation of passkey (WebAuthn) operations using iOS AuthenticationServices
 //
-//  Security Model:
-//  - iOS doesn't support WebAuthn PRF extension
-//  - We generate a device-bound KEK (Key Encryption Key) stored in keychain with biometric protection
-//  - The passkey authenticates the user, then keychain releases the KEK for master key decryption
-//  - Server stores encrypted master key per credential (same as web)
+//  Security Model (PRF-based, cross-platform compatible):
+//  - Uses WebAuthn PRF extension (iOS 17+) for cross-platform key derivation
+//  - PRF output + salt → HKDF → KEK (Key Encryption Key)
+//  - KEK encrypts/decrypts the master key
+//  - Same passkey works on iOS, macOS, and web
+//
+//  Flow:
+//  1. Registration: User creates passkey → PRF output → encrypt master key → store on server
+//  2. Authentication: User signs with passkey → PRF output → decrypt master key → unlock
 //
 
 import Foundation
 import AuthenticationServices
 import LocalAuthentication
-import Security
+import CryptoKit
 #if os(iOS)
 import UIKit
 #elseif os(macOS)
 import AppKit
 #endif
+
+// MARK: - HKDF Constants (must match web implementation)
+
+private let HKDF_INFO = "onera-webauthn-prf-kek-v1"
+private let KEK_BYTES = 32
 
 final class PasskeyService: NSObject, PasskeyServiceProtocol, @unchecked Sendable {
     
@@ -49,6 +58,11 @@ final class PasskeyService: NSObject, PasskeyServiceProtocol, @unchecked Sendabl
     // MARK: - Support Check
     
     func isPasskeySupported() -> Bool {
+        // PRF requires iOS 18+
+        guard #available(iOS 18.0, macOS 15.0, *) else {
+            return false
+        }
+        
         let context = LAContext()
         var error: NSError?
         
@@ -63,36 +77,42 @@ final class PasskeyService: NSObject, PasskeyServiceProtocol, @unchecked Sendabl
     
     // MARK: - Registration
     
+    @available(iOS 18.0, macOS 15.0, *)
     func registerPasskey(masterKey: Data, name: String?, token: String) async throws -> String {
         guard isPasskeySupported() else {
             throw PasskeyError.notSupported
         }
         
-        // Step 1: Get registration options from server
+        // Step 1: Get registration options from server (includes prfSalt)
         let optionsResponse: WebAuthnRegistrationOptionsResponse = try await networkService.call(
             procedure: APIEndpoint.WebAuthn.generateRegistrationOptions,
             input: WebAuthnRegistrationOptionsRequest(name: name),
             token: token
         )
         
-        // Step 2: Create passkey credential using AuthenticationServices
-        let credential = try await createPlatformCredential(options: optionsResponse.options)
+        print("[PasskeyService] Registration options received, prfSalt: \(optionsResponse.prfSalt.prefix(20))...")
+        
+        // Step 2: Create passkey credential with PRF extension
+        let (credential, prfOutput) = try await createPlatformCredentialWithPRF(
+            options: optionsResponse.options,
+            prfSalt: optionsResponse.prfSalt
+        )
         
         guard let registrationCredential = credential.credential as? ASAuthorizationPlatformPublicKeyCredentialRegistration else {
             throw PasskeyError.registrationFailed("Invalid credential type")
         }
         
-        // Step 3: Generate device-bound KEK for encrypting master key
-        // This replaces the WebAuthn PRF extension used on web
-        let kek = try generateKEK()
+        // Step 3: Derive KEK from PRF output using HKDF (matches web implementation)
+        let kek = try derivePRFKEK(prfOutput: prfOutput, salt: optionsResponse.prfSalt)
+        print("[PasskeyService] KEK derived from PRF output")
         
-        // Step 4: Encrypt master key with KEK
+        // Step 4: Encrypt master key with PRF-derived KEK
         let (encryptedMasterKey, nonce) = try cryptoService.encrypt(plaintext: masterKey, key: kek)
         
-        // Step 5: Build registration response for server
-        let credentialId = registrationCredential.credentialID.base64EncodedString()
-        let clientDataJSON = registrationCredential.rawClientDataJSON.base64EncodedString()
-        let attestationObject = registrationCredential.rawAttestationObject?.base64EncodedString() ?? ""
+        // Step 5: Build registration response for server (using base64url encoding per WebAuthn spec)
+        let credentialId = base64URLEncode(registrationCredential.credentialID)
+        let clientDataJSON = base64URLEncode(registrationCredential.rawClientDataJSON)
+        let attestationObject = registrationCredential.rawAttestationObject.map { base64URLEncode($0) } ?? ""
         
         let registrationResponse = WebAuthnRegistrationResponse(
             id: credentialId,
@@ -103,7 +123,7 @@ final class PasskeyService: NSObject, PasskeyServiceProtocol, @unchecked Sendabl
                 attestationObject: attestationObject
             ),
             clientExtensionResults: WebAuthnClientExtensionResults(
-                prf: WebAuthnPRFExtensionResult(enabled: true) // Simulate PRF enabled for server compatibility
+                prf: WebAuthnPRFExtensionResult(enabled: true)
             )
         )
         
@@ -122,8 +142,7 @@ final class PasskeyService: NSObject, PasskeyServiceProtocol, @unchecked Sendabl
             token: token
         )
         
-        // Step 7: Save KEK to keychain with biometric protection
-        try saveKEKToKeychain(kek, credentialId: credentialId)
+        print("[PasskeyService] Registration verified with server")
         
         // Secure cleanup
         var mutableKEK = kek
@@ -134,34 +153,37 @@ final class PasskeyService: NSObject, PasskeyServiceProtocol, @unchecked Sendabl
     
     // MARK: - Authentication
     
+    @available(iOS 18.0, macOS 15.0, *)
     func authenticateWithPasskey(token: String) async throws -> Data {
         guard isPasskeySupported() else {
             throw PasskeyError.notSupported
         }
         
-        // Step 1: Get authentication options from server (mutation/POST, not query/GET)
+        // Step 1: Get authentication options from server (includes prfSalts per credential)
         let optionsResponse: WebAuthnAuthOptionsResponse = try await networkService.call(
             procedure: APIEndpoint.WebAuthn.generateAuthenticationOptions,
             input: EmptyInput(),
             token: token
         )
         
-        // Step 2: Authenticate with passkey
-        let credential = try await authenticateWithPlatformCredential(options: optionsResponse.options)
+        print("[PasskeyService] Auth options received, prfSalts count: \(optionsResponse.prfSalts?.count ?? 0)")
+        
+        // Step 2: Authenticate with passkey and get PRF output
+        let (credential, prfOutput, _) = try await authenticateWithPlatformCredentialAndPRF(
+            options: optionsResponse.options,
+            prfSalts: optionsResponse.prfSalts ?? [:]
+        )
         
         guard let assertionCredential = credential.credential as? ASAuthorizationPlatformPublicKeyCredentialAssertion else {
             throw PasskeyError.authenticationFailed("Invalid credential type")
         }
         
-        // Step 3: Retrieve KEK from keychain (requires biometric)
-        let kek = try getKEKFromKeychain()
-        
-        // Step 4: Build authentication response for server
-        let credentialId = assertionCredential.credentialID.base64EncodedString()
-        let clientDataJSON = assertionCredential.rawClientDataJSON.base64EncodedString()
-        let authenticatorData = assertionCredential.rawAuthenticatorData.base64EncodedString()
-        let signature = assertionCredential.signature.base64EncodedString()
-        let userHandle = assertionCredential.userID?.base64EncodedString()
+        // Step 3: Build authentication response for server (using base64url encoding per WebAuthn spec)
+        let credentialId = base64URLEncode(assertionCredential.credentialID)
+        let clientDataJSON = base64URLEncode(assertionCredential.rawClientDataJSON)
+        let authenticatorData = base64URLEncode(assertionCredential.rawAuthenticatorData)
+        let signature = base64URLEncode(assertionCredential.signature)
+        let userHandle = assertionCredential.userID.map { base64URLEncode($0) }
         
         let authResponse = WebAuthnAuthenticationResponse(
             id: credentialId,
@@ -176,7 +198,7 @@ final class PasskeyService: NSObject, PasskeyServiceProtocol, @unchecked Sendabl
             clientExtensionResults: [:]
         )
         
-        // Step 5: Verify authentication with server and get encrypted master key
+        // Step 4: Verify authentication with server and get encrypted master key
         let verifyRequest = WebAuthnVerifyAuthRequest(response: authResponse)
         let verifyResponse: WebAuthnVerifyAuthResponse = try await networkService.call(
             procedure: APIEndpoint.WebAuthn.verifyAuthentication,
@@ -184,7 +206,16 @@ final class PasskeyService: NSObject, PasskeyServiceProtocol, @unchecked Sendabl
             token: token
         )
         
-        // Step 6: Decrypt master key with KEK
+        print("[PasskeyService] Auth verified, decrypting master key...")
+        
+        // Step 5: Derive KEK from PRF output using the credential's salt
+        guard let prfSalt = verifyResponse.prfSalt else {
+            throw PasskeyError.invalidResponse
+        }
+        
+        let kek = try derivePRFKEK(prfOutput: prfOutput, salt: prfSalt)
+        
+        // Step 6: Decrypt master key with PRF-derived KEK
         guard let encryptedMasterKey = Data(base64Encoded: verifyResponse.encryptedMasterKey),
               let masterKeyNonce = Data(base64Encoded: verifyResponse.masterKeyNonce) else {
             throw PasskeyError.invalidResponse
@@ -195,6 +226,8 @@ final class PasskeyService: NSObject, PasskeyServiceProtocol, @unchecked Sendabl
             nonce: masterKeyNonce,
             key: kek
         )
+        
+        print("[PasskeyService] Master key decrypted successfully")
         
         // Secure cleanup
         var mutableKEK = kek
@@ -214,23 +247,47 @@ final class PasskeyService: NSObject, PasskeyServiceProtocol, @unchecked Sendabl
     }
     
     func hasLocalPasskeyKEK() -> Bool {
-        do {
-            _ = try keychainService.get(forKey: Configuration.Keychain.Keys.passkeyKEK)
-            return true
-        } catch {
-            return false
-        }
+        // With PRF, we no longer store local KEK
+        // Return true if PRF is supported (passkeys can work)
+        return isPasskeySupported()
     }
     
     func removeLocalPasskeyKEK() throws {
-        try keychainService.delete(forKey: Configuration.Keychain.Keys.passkeyKEK)
-        try? keychainService.delete(forKey: Configuration.Keychain.Keys.passkeyCredentialId)
+        // No-op with PRF - there's no local KEK to remove
+        // KEK is derived from PRF output each time
     }
     
-    // MARK: - Private Methods - Credential Creation
+    // MARK: - Private Methods - PRF Key Derivation
     
+    /// Derive KEK from PRF output using HKDF-SHA256 (matches web implementation)
+    private func derivePRFKEK(prfOutput: Data, salt: String) throws -> Data {
+        guard let saltData = Data(base64Encoded: salt) else {
+            throw PasskeyError.invalidResponse
+        }
+        
+        let infoData = Data(HKDF_INFO.utf8)
+        
+        // Use CryptoKit HKDF-SHA256
+        let symmetricKey = SymmetricKey(data: prfOutput)
+        let derivedKey = HKDF<SHA256>.deriveKey(
+            inputKeyMaterial: symmetricKey,
+            salt: saltData,
+            info: infoData,
+            outputByteCount: KEK_BYTES
+        )
+        
+        // Convert SymmetricKey to Data
+        return derivedKey.withUnsafeBytes { Data($0) }
+    }
+    
+    // MARK: - Private Methods - Credential Creation with PRF
+    
+    @available(iOS 18.0, macOS 15.0, *)
     @MainActor
-    private func createPlatformCredential(options: WebAuthnCreationOptions) async throws -> ASAuthorization {
+    private func createPlatformCredentialWithPRF(
+        options: WebAuthnCreationOptions,
+        prfSalt: String
+    ) async throws -> (ASAuthorization, Data) {
         let rpId = Configuration.WebAuthn.rpID
         let provider = ASAuthorizationPlatformPublicKeyCredentialProvider(relyingPartyIdentifier: rpId)
         
@@ -246,26 +303,69 @@ final class PasskeyService: NSObject, PasskeyServiceProtocol, @unchecked Sendabl
             userID: userIdData
         )
         
-        return try await performAuthorization(requests: [request])
+        // Configure PRF extension
+        guard let saltData = Data(base64Encoded: prfSalt) else {
+            throw PasskeyError.invalidResponse
+        }
+        
+        // Set up PRF input for registration using Swift static factory methods
+        let inputValues = ASAuthorizationPublicKeyCredentialPRFAssertionInput.InputValues.saltInput1(saltData)
+        request.prf = ASAuthorizationPublicKeyCredentialPRFRegistrationInput.inputValues(inputValues)
+        
+        print("[PasskeyService] PRF registration input configured")
+        
+        let authorization = try await performAuthorization(requests: [request])
+        
+        // Extract PRF output from registration result
+        guard let registrationCredential = authorization.credential as? ASAuthorizationPlatformPublicKeyCredentialRegistration else {
+            throw PasskeyError.registrationFailed("Invalid credential type")
+        }
+        
+        // Get PRF output from registration result
+        guard let prfResult = registrationCredential.prf else {
+            print("[PasskeyService] PRF extension not available on credential")
+            throw PasskeyError.prfNotSupported
+        }
+        
+        // Check if PRF is supported and we got output
+        guard prfResult.isSupported, let prfOutputKey = prfResult.first else {
+            print("[PasskeyService] PRF extension not supported by this authenticator")
+            throw PasskeyError.prfNotSupported
+        }
+        
+        // Convert SymmetricKey to Data
+        let prfOutput = prfOutputKey.withUnsafeBytes { Data($0) }
+        print("[PasskeyService] PRF output received: \(prfOutput.count) bytes")
+        
+        return (authorization, prfOutput)
     }
     
+    @available(iOS 18.0, macOS 15.0, *)
     @MainActor
-    private func authenticateWithPlatformCredential(options: WebAuthnRequestOptions) async throws -> ASAuthorization {
+    private func authenticateWithPlatformCredentialAndPRF(
+        options: WebAuthnRequestOptions,
+        prfSalts: [String: String]
+    ) async throws -> (ASAuthorization, Data, String) {
         let rpId = Configuration.WebAuthn.rpID
         let provider = ASAuthorizationPlatformPublicKeyCredentialProvider(relyingPartyIdentifier: rpId)
         
         // Convert challenge from base64url to Data
         let challengeData = try base64URLDecode(options.challenge)
         
-        // Build allowed credentials list if provided
-        let allowedCredentials: [ASAuthorizationPlatformPublicKeyCredentialDescriptor]
+        // Build allowed credentials list and PRF inputs
+        var allowedCredentials: [ASAuthorizationPlatformPublicKeyCredentialDescriptor] = []
+        var prfInputsByCredential: [Data: Data] = [:] // credentialID -> saltData
+        
         if let allowCreds = options.allowCredentials {
-            allowedCredentials = try allowCreds.map { cred in
+            for cred in allowCreds {
                 let credentialId = try base64URLDecode(cred.id)
-                return ASAuthorizationPlatformPublicKeyCredentialDescriptor(credentialID: credentialId)
+                allowedCredentials.append(ASAuthorizationPlatformPublicKeyCredentialDescriptor(credentialID: credentialId))
+                
+                // Map PRF salt for this credential
+                if let salt = prfSalts[cred.id], let saltData = Data(base64Encoded: salt) {
+                    prfInputsByCredential[credentialId] = saltData
+                }
             }
-        } else {
-            allowedCredentials = []
         }
         
         let request = provider.createCredentialAssertionRequest(challenge: challengeData)
@@ -273,7 +373,46 @@ final class PasskeyService: NSObject, PasskeyServiceProtocol, @unchecked Sendabl
             request.allowedCredentials = allowedCredentials
         }
         
-        return try await performAuthorization(requests: [request])
+        // Configure PRF extension for assertion
+        // For assertion, we provide salt inputs per credential since each credential has its own prfSalt
+        if !prfInputsByCredential.isEmpty {
+            // Build per-credential inputs as dictionary [credentialID: inputValues] using Swift static factory methods
+            var perCredentialDict: [Data: ASAuthorizationPublicKeyCredentialPRFAssertionInput.InputValues] = [:]
+            
+            for (credentialID, saltData) in prfInputsByCredential {
+                let inputValues = ASAuthorizationPublicKeyCredentialPRFAssertionInput.InputValues.saltInput1(saltData)
+                perCredentialDict[credentialID] = inputValues
+            }
+            
+            // Create PRF input with per-credential values
+            request.prf = ASAuthorizationPublicKeyCredentialPRFAssertionInput.perCredentialInputValues(perCredentialDict)
+            
+            print("[PasskeyService] PRF assertion input configured for \(prfInputsByCredential.count) credentials")
+        }
+        
+        let authorization = try await performAuthorization(requests: [request])
+        
+        // Extract PRF output from assertion result
+        guard let assertionCredential = authorization.credential as? ASAuthorizationPlatformPublicKeyCredentialAssertion else {
+            throw PasskeyError.authenticationFailed("Invalid credential type")
+        }
+        
+        // Get PRF output from assertion result
+        guard let prfResult = assertionCredential.prf else {
+            print("[PasskeyService] PRF extension not available in assertion")
+            throw PasskeyError.prfNotSupported
+        }
+        
+        // For assertion, 'first' is non-optional when prf is present
+        let prfOutputKey = prfResult.first
+        
+        // Convert SymmetricKey to Data
+        let prfOutput = prfOutputKey.withUnsafeBytes { Data($0) }
+        
+        let usedCredentialId = assertionCredential.credentialID.base64EncodedString()
+        print("[PasskeyService] PRF output received for credential: \(usedCredentialId.prefix(20))...")
+        
+        return (authorization, prfOutput, usedCredentialId)
     }
     
     @MainActor
@@ -285,84 +424,6 @@ final class PasskeyService: NSObject, PasskeyServiceProtocol, @unchecked Sendabl
             controller.delegate = self
             controller.presentationContextProvider = self
             controller.performRequests()
-        }
-    }
-    
-    // MARK: - Private Methods - KEK Management
-    
-    private func generateKEK() throws -> Data {
-        // Generate 32-byte random KEK
-        return try cryptoService.generateRandomBytes(count: Configuration.Security.masterKeyLength)
-    }
-    
-    private func saveKEKToKeychain(_ kek: Data, credentialId: String) throws {
-        // Build query with biometric access control
-        let accessControl = SecAccessControlCreateWithFlags(
-            kCFAllocatorDefault,
-            kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
-            [.biometryCurrentSet, .or, .devicePasscode],
-            nil
-        )
-        
-        // Delete existing KEK first
-        try? keychainService.delete(forKey: Configuration.Keychain.Keys.passkeyKEK)
-        try? keychainService.delete(forKey: Configuration.Keychain.Keys.passkeyCredentialId)
-        
-        // Save KEK with biometric protection
-        var query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: Configuration.Keychain.serviceName,
-            kSecAttrAccount as String: Configuration.Keychain.Keys.passkeyKEK,
-            kSecValueData as String: kek
-        ]
-        
-        if let accessControl = accessControl {
-            query[kSecAttrAccessControl as String] = accessControl
-        } else {
-            query[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
-        }
-        
-        let status = SecItemAdd(query as CFDictionary, nil)
-        guard status == errSecSuccess else {
-            throw PasskeyError.kekGenerationFailed
-        }
-        
-        // Save credential ID for reference
-        if let credentialIdData = credentialId.data(using: .utf8) {
-            try keychainService.save(credentialIdData, forKey: Configuration.Keychain.Keys.passkeyCredentialId)
-        }
-    }
-    
-    private func getKEKFromKeychain() throws -> Data {
-        let context = LAContext()
-        context.localizedReason = "Unlock your encrypted data"
-        
-        var query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: Configuration.Keychain.serviceName,
-            kSecAttrAccount as String: Configuration.Keychain.Keys.passkeyKEK,
-            kSecReturnData as String: true,
-            kSecUseAuthenticationContext as String: context
-        ]
-        
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-        
-        switch status {
-        case errSecSuccess:
-            guard let kekData = result as? Data else {
-                throw PasskeyError.kekRetrievalFailed
-            }
-            return kekData
-            
-        case errSecItemNotFound:
-            throw PasskeyError.kekNotFound
-            
-        case errSecUserCanceled, errSecAuthFailed:
-            throw PasskeyError.cancelled
-            
-        default:
-            throw PasskeyError.kekRetrievalFailed
         }
     }
     
@@ -382,6 +443,14 @@ final class PasskeyService: NSObject, PasskeyServiceProtocol, @unchecked Sendabl
         }
         
         return data
+    }
+    
+    /// Encode Data to base64url (WebAuthn standard encoding)
+    private func base64URLEncode(_ data: Data) -> String {
+        data.base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "") // Remove padding
     }
 }
 
@@ -453,7 +522,6 @@ final class MockPasskeyService: PasskeyServiceProtocol, @unchecked Sendable {
     var shouldFail = false
     var isSupported = true
     var hasPasskey = false
-    var hasLocalKEK = false
     var mockMasterKey = Data(repeating: 0xAB, count: 32)
     
     func isPasskeySupported() -> Bool {
@@ -463,7 +531,6 @@ final class MockPasskeyService: PasskeyServiceProtocol, @unchecked Sendable {
     func registerPasskey(masterKey: Data, name: String?, token: String) async throws -> String {
         if shouldFail { throw PasskeyError.registrationFailed("Mock error") }
         hasPasskey = true
-        hasLocalKEK = true
         return "mock-credential-id"
     }
     
@@ -479,11 +546,12 @@ final class MockPasskeyService: PasskeyServiceProtocol, @unchecked Sendable {
     }
     
     func hasLocalPasskeyKEK() -> Bool {
-        hasLocalKEK
+        // With PRF, always return true if supported
+        return isSupported
     }
     
     func removeLocalPasskeyKEK() throws {
-        hasLocalKEK = false
+        // No-op with PRF
     }
 }
 #endif

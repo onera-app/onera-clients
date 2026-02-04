@@ -25,7 +25,7 @@ enum AIProviderFactory {
     /// Cache provider instances by credential ID for reuse
     /// Using nonisolated(unsafe) since access is protected by cacheLock
     private nonisolated(unsafe) static var providerCache: [String: Any] = [:]
-    private static let cacheLock = NSLock()
+    private nonisolated static let cacheLock = NSLock()
     
     // MARK: - Public API
     
@@ -67,6 +67,10 @@ enum AIProviderFactory {
             // Use OpenAI-compatible provider for these
             let provider = getOrCreateOpenAICompatibleProvider(credential: credential)
             return try provider.chatModel(modelId: modelName)
+            
+        case .private:
+            // Private models use PrivateInferenceProvider, not AIProviderFactory
+            throw LLMError.unsupportedProvider("Private models should use PrivateInferenceProvider")
         }
     }
     
@@ -246,6 +250,8 @@ extension AIProviderFactory {
             return "http://localhost:1234/v1"
         case .custom:
             return ""
+        case .private:
+            return "" // Private models don't use base URLs
         }
     }
 }

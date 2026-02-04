@@ -23,6 +23,7 @@ enum LLMProvider: String, Codable, CaseIterable, Sendable {
     case ollama
     case lmstudio
     case custom
+    case `private`  // Private inference through TEE
     
     nonisolated var displayName: String {
         switch self {
@@ -39,6 +40,7 @@ enum LLMProvider: String, Codable, CaseIterable, Sendable {
         case .ollama: return "Ollama"
         case .lmstudio: return "LM Studio"
         case .custom: return "Custom"
+        case .private: return "Private (E2EE)"
         }
     }
     
@@ -57,6 +59,7 @@ enum LLMProvider: String, Codable, CaseIterable, Sendable {
         case .ollama: return "http://localhost:11434"
         case .lmstudio: return "http://localhost:1234/v1"
         case .custom: return ""
+        case .private: return ""  // Private models use enclave endpoints
         }
     }
     
@@ -67,6 +70,8 @@ enum LLMProvider: String, Codable, CaseIterable, Sendable {
             return true
         case .anthropic, .google:
             return false
+        case .private:
+            return false  // Private uses custom TEE protocol
         }
     }
 }

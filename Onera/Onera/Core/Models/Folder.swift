@@ -61,7 +61,6 @@ struct FolderTree: Identifiable, Equatable, Sendable {
     
     /// Build a tree from a flat list of folders
     static func buildTree(from folders: [Folder]) -> [FolderTree] {
-        let folderDict = Dictionary(uniqueKeysWithValues: folders.map { ($0.id, $0) })
         var childrenMap: [String?: [Folder]] = [:]
         
         for folder in folders {

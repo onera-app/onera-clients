@@ -52,7 +52,7 @@ final class ChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
     // MARK: - Chat List
     
     func fetchChats(token: String) async throws -> [ChatSummary] {
-        guard let masterKey = await secureSession.masterKey else {
+        guard let masterKey = secureSession.masterKey else {
             print("[ChatRepository] Session locked - no master key available")
             throw E2EEError.sessionLocked
         }
@@ -82,7 +82,7 @@ final class ChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
     // MARK: - Single Chat
     
     func fetchChat(id: String, token: String) async throws -> Chat {
-        guard let masterKey = await secureSession.masterKey else {
+        guard let masterKey = secureSession.masterKey else {
             print("[ChatRepository] fetchChat: Session locked - no master key")
             throw E2EEError.sessionLocked
         }
@@ -106,7 +106,7 @@ final class ChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
     }
     
     func createChat(_ chat: Chat, token: String) async throws -> String {
-        guard let masterKey = await secureSession.masterKey else {
+        guard let masterKey = secureSession.masterKey else {
             throw E2EEError.sessionLocked
         }
         
@@ -127,7 +127,7 @@ final class ChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
     }
     
     func updateChat(_ chat: Chat, token: String) async throws {
-        guard let masterKey = await secureSession.masterKey else {
+        guard secureSession.masterKey != nil else {
             throw E2EEError.sessionLocked
         }
         

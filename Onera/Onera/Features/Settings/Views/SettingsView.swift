@@ -182,7 +182,7 @@ struct SettingsView: View {
             
             if viewModel.isSessionUnlocked {
                 Button {
-                    Task { await viewModel.lockSession() }
+                    viewModel.lockSession()
                 } label: {
                     HStack {
                         Label("Lock Session", systemImage: "lock.fill")

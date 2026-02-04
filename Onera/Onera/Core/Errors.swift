@@ -16,6 +16,7 @@ enum AuthError: LocalizedError {
     case signInFailed(underlying: Error? = nil)
     case signUpFailed(underlying: Error? = nil)
     case oauthFailed(provider: String)
+    case oauthFailedWithDetails(provider: String, details: String)
     case invalidCredentials
     case accountNotFound
     case emailNotVerified
@@ -34,6 +35,8 @@ enum AuthError: LocalizedError {
             return "Sign up failed. Please try again."
         case .oauthFailed(let provider):
             return "Failed to sign in with \(provider)"
+        case .oauthFailedWithDetails(let provider, let details):
+            return "Failed to sign in with \(provider): \(details)"
         case .invalidCredentials:
             return "Invalid email or password"
         case .accountNotFound:

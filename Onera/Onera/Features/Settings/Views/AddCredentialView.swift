@@ -274,6 +274,7 @@ struct AddCredentialView: View {
         case .ollama: return "Run models locally"
         case .lmstudio: return "Local LM Studio server"
         case .custom: return "OpenAI-compatible endpoint"
+        case .private: return "End-to-end encrypted inference"
         }
     }
     
@@ -292,6 +293,7 @@ struct AddCredentialView: View {
         case .ollama: return "desktopcomputer"
         case .lmstudio: return "server.rack"
         case .custom: return "gearshape.fill"
+        case .private: return "lock.shield.fill"
         }
     }
     
@@ -310,6 +312,7 @@ struct AddCredentialView: View {
         case .ollama: return .green
         case .lmstudio: return .purple
         case .custom: return .gray
+        case .private: return .purple
         }
     }
 }

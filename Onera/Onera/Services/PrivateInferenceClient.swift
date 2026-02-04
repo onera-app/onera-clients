@@ -10,6 +10,53 @@ import Foundation
 import Network
 import os.log
 
+// MARK: - WebSocket Delegate
+
+/// Delegate to handle WebSocket connection events
+/// Required because URLSessionWebSocketTask.resume() is async and doesn't block until connected
+private final class WebSocketDelegate: NSObject, URLSessionWebSocketDelegate, Sendable {
+    private let onOpen: @Sendable () -> Void
+    private let onClose: @Sendable (URLSessionWebSocketTask.CloseCode, Data?) -> Void
+    private let onError: @Sendable (Error) -> Void
+    
+    init(
+        onOpen: @escaping @Sendable () -> Void,
+        onClose: @escaping @Sendable (URLSessionWebSocketTask.CloseCode, Data?) -> Void,
+        onError: @escaping @Sendable (Error) -> Void
+    ) {
+        self.onOpen = onOpen
+        self.onClose = onClose
+        self.onError = onError
+    }
+    
+    nonisolated func urlSession(
+        _ session: URLSession,
+        webSocketTask: URLSessionWebSocketTask,
+        didOpenWithProtocol protocol: String?
+    ) {
+        onOpen()
+    }
+    
+    nonisolated func urlSession(
+        _ session: URLSession,
+        webSocketTask: URLSessionWebSocketTask,
+        didCloseWith closeCode: URLSessionWebSocketTask.CloseCode,
+        reason: Data?
+    ) {
+        onClose(closeCode, reason)
+    }
+    
+    nonisolated func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didCompleteWithError error: Error?
+    ) {
+        if let error = error {
+            onError(error)
+        }
+    }
+}
+
 /// WebSocket client for encrypted communication with TEE inference endpoints
 /// Handles attestation verification, Noise Protocol handshake, and streaming inference
 actor PrivateInferenceClient: Sendable {
@@ -18,10 +65,14 @@ actor PrivateInferenceClient: Sendable {
     private let attestationVerifier = AttestationVerifier()
     
     // Connection state
+    private var urlSession: URLSession?
+    private var webSocketDelegate: WebSocketDelegate?
     private var webSocketTask: URLSessionWebSocketTask?
     private var noiseSession: NoiseSession?
     private var isConnected = false
     private var _isClosed = false
+    
+    // Connection open/error continuations
     private var connectionContinuation: CheckedContinuation<Void, Error>?
     
     /// Whether the client is closed and cannot be reused
@@ -93,16 +144,39 @@ actor PrivateInferenceClient: Sendable {
                     // Stream responses
                     while isConnected {
                         do {
+                            logger.debug("Waiting for encrypted response...")
                             let encryptedResponse = try await receiveWebSocketMessage()
+                            logger.debug("Received encrypted response: \(encryptedResponse.count) bytes")
                             
-                            // Empty message signals end of stream
+                            // Empty message signals end of stream (server-side signal)
                             if encryptedResponse.isEmpty {
-                                logger.debug("Received end-of-stream signal")
+                                logger.info("Received end-of-stream signal (empty message), breaking receive loop")
                                 break
                             }
                             
                             let decryptedResponse = try await session.decrypt(encryptedResponse)
+                            logger.debug("Decrypted response: \(decryptedResponse.count) bytes")
                             continuation.yield(decryptedResponse)
+                            
+                            // Check response content to detect end of stream
+                            // This handles servers that don't send empty end-of-stream message
+                            if let json = try? JSONSerialization.jsonObject(with: decryptedResponse) as? [String: Any] {
+                                // Streaming finish signal: {"type": "finish", ...}
+                                if let type = json["type"] as? String, type == "finish" {
+                                    logger.info("Received finish signal in response, breaking receive loop")
+                                    break
+                                }
+                                // Streaming error signal: {"type": "error", ...}
+                                if let type = json["type"] as? String, type == "error" {
+                                    logger.info("Received error signal in response, breaking receive loop")
+                                    break
+                                }
+                                // Non-streaming response: {"content": "...", ...}
+                                if json["content"] != nil {
+                                    logger.info("Received non-streaming response with content, breaking receive loop")
+                                    break
+                                }
+                            }
                             
                         } catch {
                             logger.error("Error receiving response: \(error)")
@@ -110,6 +184,7 @@ actor PrivateInferenceClient: Sendable {
                             return
                         }
                     }
+                    logger.info("Stream receive loop ended, finishing continuation")
                     
                     continuation.finish()
                     
@@ -122,28 +197,32 @@ actor PrivateInferenceClient: Sendable {
     }
     
     /// Closes the connection and cleans up resources
-    func close() {
+    func close() async {
         logger.info("Closing private inference client")
         
         isConnected = false
         _isClosed = true
         
+        // Cancel any pending connection continuation
+        connectionContinuation?.resume(throwing: PrivateInferenceError.connectionClosed)
+        connectionContinuation = nil
+        
         // Close WebSocket
         webSocketTask?.cancel(with: .goingAway, reason: nil)
         webSocketTask = nil
         
+        // Invalidate URLSession
+        urlSession?.invalidateAndCancel()
+        urlSession = nil
+        webSocketDelegate = nil
+        
         // Clean up Noise session
         if let session = noiseSession {
-            Task {
-                await session.close()
-            }
+            await session.close()
         }
         noiseSession = nil
         
-        // Resolve any pending continuations
-        connectionContinuation?.resume(throwing: PrivateInferenceError.connectionClosed)
-        connectionContinuation = nil
-        
+        // Resolve any pending message continuations
         for resolver in messageResolvers {
             resolver.resume(throwing: PrivateInferenceError.connectionClosed)
         }
@@ -153,32 +232,112 @@ actor PrivateInferenceClient: Sendable {
     
     // MARK: - Private Implementation
     
-    /// Establishes WebSocket connection
+    /// Establishes WebSocket connection with proper open/close/error handling
+    /// Uses URLSessionWebSocketDelegate to wait for actual connection before proceeding
     private func establishWebSocketConnection(to endpoint: URL) async throws {
-        let session = URLSession(configuration: .default)
-        webSocketTask = session.webSocketTask(with: endpoint)
+        logger.debug("Connecting WebSocket to \(endpoint)...")
         
-        // Start receiving messages
-        startReceivingMessages()
-        
-        // Resume the task
-        webSocketTask?.resume()
-        
-        // Wait for connection to be established
-        try await withCheckedThrowingContinuation { continuation in
-            self.connectionContinuation = continuation
-            
-            // Set a timeout
-            Task {
-                try await Task.sleep(nanoseconds: 30_000_000_000) // 30 seconds
-                if !self.isConnected {
-                    continuation.resume(throwing: PrivateInferenceError.connectionTimeout)
+        // Create delegate to handle connection events
+        // We need to capture self weakly and handle actor isolation
+        let delegate = WebSocketDelegate(
+            onOpen: { [weak self] in
+                Task { [weak self] in
+                    await self?.handleConnectionOpened()
+                }
+            },
+            onClose: { [weak self] code, reason in
+                Task { [weak self] in
+                    await self?.handleConnectionClosed(code: code, reason: reason)
+                }
+            },
+            onError: { [weak self] error in
+                Task { [weak self] in
+                    await self?.handleConnectionError(error)
                 }
             }
+        )
+        self.webSocketDelegate = delegate
+        
+        // Create session with delegate
+        let configuration = URLSessionConfiguration.default
+        let session = URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
+        self.urlSession = session
+        
+        // Create WebSocket task
+        webSocketTask = session.webSocketTask(with: endpoint)
+        
+        // Wait for connection to open with timeout
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            // Task 1: Wait for connection open callback
+            group.addTask { [weak self] in
+                try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                    Task { [weak self] in
+                        await self?.setConnectionContinuation(continuation)
+                    }
+                }
+            }
+            
+            // Task 2: Timeout after 30 seconds
+            group.addTask {
+                try await Task.sleep(nanoseconds: 30_000_000_000) // 30 seconds
+                throw PrivateInferenceError.connectionTimeout
+            }
+            
+            // Start the connection AFTER setting up the continuation
+            // Small delay to ensure continuation is set
+            try await Task.sleep(nanoseconds: 10_000_000) // 10ms
+            webSocketTask?.resume()
+            
+            // Wait for either connection or timeout
+            do {
+                try await group.next()
+                group.cancelAll()
+            } catch {
+                group.cancelAll()
+                throw error
+            }
         }
+        
+        // Start the continuous receive loop
+        startReceivingMessages()
+        
+        // Mark as connected
+        isConnected = true
+        
+        logger.debug("WebSocket connection established successfully")
+    }
+    
+    /// Sets the connection continuation for async waiting
+    private func setConnectionContinuation(_ continuation: CheckedContinuation<Void, Error>) {
+        self.connectionContinuation = continuation
+    }
+    
+    /// Called when WebSocket connection opens
+    private func handleConnectionOpened() {
+        logger.debug("WebSocket didOpen callback received")
+        connectionContinuation?.resume()
+        connectionContinuation = nil
+    }
+    
+    /// Called when WebSocket connection closes
+    private func handleConnectionClosed(code: URLSessionWebSocketTask.CloseCode, reason: Data?) {
+        logger.debug("WebSocket closed with code: \(code.rawValue)")
+        isConnected = false
+        
+        // If we're still waiting for connection, fail it
+        connectionContinuation?.resume(throwing: PrivateInferenceError.connectionClosed)
+        connectionContinuation = nil
+        
+        // Fail any pending message receivers
+        for resolver in messageResolvers {
+            resolver.resume(throwing: PrivateInferenceError.connectionClosed)
+        }
+        messageResolvers.removeAll()
     }
     
     /// Performs Noise Protocol NK handshake over WebSocket
+    /// Uses direct WebSocket receive instead of the message queue for handshake messages
+    /// This avoids race conditions with the background receive loop
     private func performNoiseHandshake(serverPublicKey: Data) async throws -> HandshakeResult {
         return try await NoiseProtocol.performNKHandshake(
             serverPublicKey: serverPublicKey,
@@ -193,64 +352,66 @@ actor PrivateInferenceClient: Sendable {
         )
     }
     
-    /// Starts receiving WebSocket messages
+    /// Starts the continuous receive loop for WebSocket messages
+    /// Messages are either resolved immediately if a caller is waiting, or queued
     private func startReceivingMessages() {
         guard let webSocketTask = webSocketTask else { return }
         
-        Task {
-            do {
-                let message = try await webSocketTask.receive()
-                
-                switch message {
-                case .data(let data):
-                    await handleReceivedData(data)
-                case .string(let string):
-                    if let data = string.data(using: .utf8) {
-                        await handleReceivedData(data)
+        Task { [weak self] in
+            guard let self = self else { return }
+            
+            self.logger.debug("Starting WebSocket receive loop")
+            
+            while await self.isConnected {
+                do {
+                    let message = try await webSocketTask.receive()
+                    
+                    switch message {
+                    case .data(let data):
+                        self.logger.debug("WebSocket raw receive: .data(\(data.count) bytes)")
+                        await self.handleReceivedData(data)
+                    case .string(let string):
+                        self.logger.debug("WebSocket raw receive: .string(\(string.count) chars)")
+                        if let data = string.data(using: .utf8) {
+                            await self.handleReceivedData(data)
+                        }
+                    @unknown default:
+                        self.logger.warning("Received unknown WebSocket message type")
                     }
-                @unknown default:
-                    logger.warning("Received unknown WebSocket message type")
+                    
+                } catch {
+                    self.logger.error("WebSocket receive error: \(error)")
+                    await self.handleConnectionError(error)
+                    break
                 }
-                
-                // Continue receiving if still connected
-                if isConnected {
-                    startReceivingMessages()
-                }
-                
-            } catch {
-                logger.error("WebSocket receive error: \(error)")
-                await handleConnectionError(error)
             }
+            self.logger.debug("WebSocket receive loop ended")
         }
     }
     
     /// Handles received data from WebSocket
     private func handleReceivedData(_ data: Data) async {
-        // If this is the first message and we're waiting for connection
-        if !isConnected {
-            isConnected = true
-            connectionContinuation?.resume()
-            connectionContinuation = nil
-        }
-        
+        logger.debug("WebSocket received data: \(data.count) bytes, resolvers waiting: \(self.messageResolvers.count)")
         // Handle message
         if let resolver = messageResolvers.first {
             messageResolvers.removeFirst()
             resolver.resume(returning: data)
         } else {
             messageQueue.append(data)
+            logger.debug("Queued message, queue size: \(self.messageQueue.count)")
         }
     }
     
-    /// Handles connection errors
-    private func handleConnectionError(_ error: Error) async {
+    /// Handles connection errors from delegate or receive loop
+    private func handleConnectionError(_ error: Error) {
+        logger.error("Connection error: \(error)")
         isConnected = false
         
-        if let continuation = connectionContinuation {
-            connectionContinuation = nil
-            continuation.resume(throwing: error)
-        }
+        // If we're still waiting for connection, fail it
+        connectionContinuation?.resume(throwing: error)
+        connectionContinuation = nil
         
+        // Fail any pending message receivers
         for resolver in messageResolvers {
             resolver.resume(throwing: error)
         }
@@ -362,7 +523,7 @@ actor MockPrivateInferenceClient: Sendable {
         }
     }
     
-    func close() {
+    func close() async {
         isConnected = false
         logger.info("Mock private inference client closed")
     }

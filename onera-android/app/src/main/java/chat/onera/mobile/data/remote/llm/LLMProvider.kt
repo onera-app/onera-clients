@@ -83,6 +83,12 @@ enum class LLMProvider(
     CUSTOM(
         displayName = "Custom",
         defaultBaseUrl = ""
+    ),
+    
+    PRIVATE(
+        displayName = "Private (E2EE)",
+        defaultBaseUrl = "",
+        authType = AuthType.NONE  // Uses Noise Protocol instead
     );
     
     /**

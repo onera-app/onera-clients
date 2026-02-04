@@ -711,6 +711,7 @@ struct MacMainView: View {
             chatRepository: dependencies.chatRepository,
             credentialService: dependencies.credentialService,
             llmService: dependencies.llmService,
+            networkService: dependencies.networkService,
             speechService: dependencies.speechService,
             speechRecognitionService: dependencies.speechRecognitionService,
             onChatUpdated: { summary in

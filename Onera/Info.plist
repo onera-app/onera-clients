@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Onera uses Face ID to securely unlock your encrypted data and authenticate your session.</string>
+	<key>API_BASE_URL</key>
+	<string>$(API_BASE_URL)</string>
+	<key>TRPC_PATH</key>
+	<string>$(TRPC_PATH)</string>
+	<key>CLERK_PUBLISHABLE_KEY</key>
+	<string>$(CLERK_PUBLISHABLE_KEY)</string>
+	<key>WEBAUTHN_RP_ID</key>
+	<string>$(WEBAUTHN_RP_ID)</string>
+	<key>WEBAUTHN_RP_NAME</key>
+	<string>$(WEBAUTHN_RP_NAME)</string>
+	<key>KEYCHAIN_SERVICE_NAME</key>
+	<string>$(KEYCHAIN_SERVICE_NAME)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>clerk</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>clerk.humorous-toucan-95</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

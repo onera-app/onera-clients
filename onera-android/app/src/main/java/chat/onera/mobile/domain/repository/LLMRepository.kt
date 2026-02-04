@@ -4,6 +4,7 @@ import chat.onera.mobile.data.remote.llm.ChatMessage
 import chat.onera.mobile.data.remote.llm.ImageData
 import chat.onera.mobile.data.remote.llm.ModelInfo
 import chat.onera.mobile.data.remote.llm.StreamEvent
+import chat.onera.mobile.data.remote.private_inference.PrivateInferenceEvent
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -62,6 +63,27 @@ interface LLMRepository {
      * Cancel any active streaming request.
      */
     fun cancelStream()
+    
+    /**
+     * Stream a chat completion through private inference (E2EE TEE).
+     * 
+     * @param modelId The private model ID (e.g., "private:qwen2.5-7b-instruct")
+     * @param messages The conversation messages
+     * @param systemPrompt Optional system prompt
+     * @param maxTokens Maximum tokens to generate
+     * @return Flow of private inference events
+     */
+    fun streamPrivateChat(
+        modelId: String,
+        messages: List<ChatMessage>,
+        systemPrompt: String? = null,
+        maxTokens: Int = 4096
+    ): Flow<PrivateInferenceEvent>
+    
+    /**
+     * Check if a model ID refers to a private inference model.
+     */
+    fun isPrivateModel(modelId: String): Boolean
     
     /**
      * Get all stored credentials (with masked keys).

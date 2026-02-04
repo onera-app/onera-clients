@@ -82,6 +82,13 @@ object CredentialsProcedures {
     const val REMOVE = "credentials.remove"  // Server uses "remove" not "delete"
 }
 
+// Enclaves procedures - matches server tRPC router for private inference
+object EnclavesProcedures {
+    const val LIST_MODELS = "enclaves.listModels"
+    const val REQUEST = "enclaves.requestEnclave"
+    const val RELEASE = "enclaves.releaseEnclave"
+}
+
 // Input/Output DTOs
 @Serializable
 data class PaginationInput(
@@ -290,4 +297,47 @@ data class IdInput(
 @Serializable
 data class EmptyInput(
     val placeholder: String = ""
+)
+
+// Enclaves DTOs
+@Serializable
+data class PrivateModelDto(
+    val id: String,
+    val name: String,
+    val enclaveId: String,
+    val maxContextLength: Int? = null,
+    val capabilities: List<String>? = null
+)
+
+@Serializable
+data class PrivateModelsListOutput(
+    val models: List<PrivateModelDto>
+)
+
+@Serializable
+data class RequestEnclaveInput(
+    val modelId: String,
+    val tier: String = "shared",
+    val sessionId: String
+)
+
+@Serializable
+data class EnclaveInfoDto(
+    val id: String,
+    val host: String,
+    val port: Int
+)
+
+@Serializable
+data class RequestEnclaveOutput(
+    val assignmentId: String,
+    val enclave: EnclaveInfoDto,
+    val wsEndpoint: String,
+    val attestationEndpoint: String,
+    val allowUnverified: Boolean = false
+)
+
+@Serializable
+data class ReleaseEnclaveInput(
+    val assignmentId: String
 )

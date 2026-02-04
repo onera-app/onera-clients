@@ -12,12 +12,12 @@ import os.log
 
 // MARK: - Noise Protocol Constants
 
-private enum NoiseConstants {
-    static let dhLen = 32        // X25519 key length
-    static let hashLen = 32      // SHA-256 output
-    static let keyLen = 32       // ChaCha20-Poly1305 key length
-    static let nonceLen = 12     // ChaCha20-Poly1305 nonce length
-    static let protocolName = "Noise_NK_25519_ChaChaPoly_SHA256"
+private enum NoiseConstants: Sendable {
+    nonisolated static let dhLen = 32        // X25519 key length
+    nonisolated static let hashLen = 32      // SHA-256 output
+    nonisolated static let keyLen = 32       // ChaCha20-Poly1305 key length
+    nonisolated static let nonceLen = 12     // ChaCha20-Poly1305 nonce length
+    nonisolated static let protocolName = "Noise_NK_25519_ChaChaPoly_SHA256"
 }
 
 // MARK: - Cipher State
@@ -220,7 +220,11 @@ enum NoiseProtocol {
         
         cipher.nonce += 1
         
-        return sealedBox.combined
+        // Return ciphertext + tag only (NOT .combined which includes nonce)
+        // Noise Protocol: nonce is derived from counter, not transmitted
+        var result = Data(sealedBox.ciphertext)
+        result.append(contentsOf: sealedBox.tag)
+        return result
     }
     
     /// Decrypts a message using the transport cipher state
@@ -236,8 +240,19 @@ enum NoiseProtocol {
             counterPtr.pointee = cipher.nonce.littleEndian
         }
         
+        // Ciphertext format: ciphertext + tag (16 bytes)
+        // Noise Protocol: nonce is derived from counter, not included in ciphertext
+        guard ciphertext.count >= 16 else {
+            throw NoiseError.decryptionFailed
+        }
+        let tagStart = ciphertext.count - 16
+        let sealedBox = try ChaChaPoly.SealedBox(
+            nonce: ChaChaPoly.Nonce(data: nonce),
+            ciphertext: ciphertext.prefix(tagStart),
+            tag: ciphertext.suffix(16)
+        )
+        
         // Decrypt with ChaCha20-Poly1305
-        let sealedBox = try ChaChaPoly.SealedBox(combined: ciphertext)
         let plaintext = try ChaChaPoly.open(sealedBox, using: SymmetricKey(data: cipher.key))
         
         cipher.nonce += 1
@@ -317,7 +332,10 @@ private func encryptAndHash(_ state: inout SymmetricState, _ plaintext: Data) th
         authenticating: state.h
     )
     
-    let ciphertext = sealedBox.combined
+    // Return ciphertext + tag only (NOT .combined which includes nonce)
+    // Noise Protocol: nonce is derived from counter, not transmitted
+    var ciphertext = Data(sealedBox.ciphertext)
+    ciphertext.append(contentsOf: sealedBox.tag)
     mixHash(&state, ciphertext)
     state.n += 1
     
@@ -340,8 +358,19 @@ private func decryptAndHash(_ state: inout SymmetricState, _ ciphertext: Data) t
         counterPtr.pointee = state.n.littleEndian
     }
     
+    // Ciphertext format: ciphertext + tag (16 bytes)
+    // Noise Protocol: nonce is derived from counter, not included in ciphertext
+    guard ciphertext.count >= 16 else {
+        throw NoiseError.decryptionFailed
+    }
+    let tagStart = ciphertext.count - 16
+    let sealedBox = try ChaChaPoly.SealedBox(
+        nonce: ChaChaPoly.Nonce(data: nonce),
+        ciphertext: ciphertext.prefix(tagStart),
+        tag: ciphertext.suffix(16)
+    )
+    
     // Decrypt with ChaCha20-Poly1305 using handshake hash as additional data
-    let sealedBox = try ChaChaPoly.SealedBox(combined: ciphertext)
     let plaintext = try ChaChaPoly.open(
         sealedBox,
         using: SymmetricKey(data: state.k),

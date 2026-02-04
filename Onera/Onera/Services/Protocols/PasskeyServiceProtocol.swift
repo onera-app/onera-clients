@@ -58,6 +58,7 @@ enum PasskeyError: LocalizedError {
     case serverError(String)
     case invalidResponse
     case biometricRequired
+    case prfNotSupported
     
     var errorDescription: String? {
         switch self {
@@ -81,6 +82,8 @@ enum PasskeyError: LocalizedError {
             return "Invalid server response"
         case .biometricRequired:
             return "Face ID or Touch ID is required"
+        case .prfNotSupported:
+            return "Your device does not support PRF extension. Please use a different authentication method."
         }
     }
 }

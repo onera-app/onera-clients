@@ -244,7 +244,7 @@ extension LLMProvider {
         case .openrouter: return "sk-or-..."
         case .together: return ""
         case .fireworks: return "fw_..."
-        case .ollama, .lmstudio, .custom: return ""
+        case .ollama, .lmstudio, .custom, .private: return ""
         }
     }
     
@@ -262,7 +262,7 @@ extension LLMProvider {
         case .fireworks: return URL(string: "https://fireworks.ai/api-keys")
         case .ollama: return URL(string: "https://ollama.ai")
         case .lmstudio: return URL(string: "https://lmstudio.ai")
-        case .custom: return nil
+        case .custom, .private: return nil
         }
     }
 }

@@ -102,23 +102,35 @@ final class AuthService: AuthServiceProtocol {
         }
         
         do {
+            print("[AuthService] Starting Google OAuth redirect flow...")
             // This starts the OAuth redirect flow
             // The actual authentication completes when the app receives the callback
             let result = try await SignIn.authenticateWithRedirect(
                 strategy: .oauth(provider: .google)
             )
             
+            print("[AuthService] OAuth redirect completed, handling result...")
             // If we get here, the OAuth completed (user came back from browser)
             try await handleTransferFlowResult(result, provider: "Google")
         } catch let authError as AuthError {
+            print("[AuthService] AuthError: \(authError)")
             throw authError
         } catch {
             print("[AuthService] Google sign-in error: \(error)")
             print("[AuthService] Error type: \(type(of: error))")
-            if let clerkError = error as? ClerkClientError {
-                print("[AuthService] Clerk error: \(clerkError)")
+            print("[AuthService] Error localizedDescription: \(error.localizedDescription)")
+            if let nsError = error as NSError? {
+                print("[AuthService] NSError domain: \(nsError.domain), code: \(nsError.code)")
+                print("[AuthService] NSError userInfo: \(nsError.userInfo)")
             }
-            throw AuthError.oauthFailed(provider: "Google")
+            // Create detailed error for debugging
+            let errorDetails = """
+            Google Sign-In Error:
+            Type: \(type(of: error))
+            Description: \(error.localizedDescription)
+            Full: \(String(describing: error))
+            """
+            throw AuthError.oauthFailedWithDetails(provider: "Google", details: errorDetails)
         }
     }
     
@@ -182,8 +194,8 @@ final class AuthService: AuthServiceProtocol {
                 email: clerkUser.primaryEmailAddress?.emailAddress ?? "",
                 firstName: clerkUser.firstName,
                 lastName: clerkUser.lastName,
-                imageURL: URL(string: clerkUser.imageUrl ?? ""),
-                createdAt: clerkUser.createdAt ?? Date()
+                imageURL: URL(string: clerkUser.imageUrl),
+                createdAt: clerkUser.createdAt
             )
             isAuthenticated = true
         } else {

@@ -60,7 +60,7 @@ final class PromptRepository: PromptRepositoryProtocol, @unchecked Sendable {
     // MARK: - Prompts List
     
     func fetchPrompts(token: String) async throws -> [PromptSummary] {
-        guard let masterKey = await secureSession.masterKey else {
+        guard let masterKey = secureSession.masterKey else {
             throw E2EEError.sessionLocked
         }
         
@@ -82,7 +82,7 @@ final class PromptRepository: PromptRepositoryProtocol, @unchecked Sendable {
     // MARK: - Single Prompt
     
     func fetchPrompt(id: String, token: String) async throws -> Prompt {
-        guard let masterKey = await secureSession.masterKey else {
+        guard let masterKey = secureSession.masterKey else {
             throw E2EEError.sessionLocked
         }
         
@@ -98,7 +98,7 @@ final class PromptRepository: PromptRepositoryProtocol, @unchecked Sendable {
     func createPrompt(_ prompt: Prompt, token: String) async throws -> String {
         print("[PromptRepository] createPrompt: id=\(prompt.id), name='\(prompt.name)'")
         
-        guard let masterKey = await secureSession.masterKey else {
+        guard let masterKey = secureSession.masterKey else {
             print("[PromptRepository] createPrompt: E2EE session locked")
             throw E2EEError.sessionLocked
         }
@@ -119,7 +119,7 @@ final class PromptRepository: PromptRepositoryProtocol, @unchecked Sendable {
     func updatePrompt(_ prompt: Prompt, token: String) async throws {
         print("[PromptRepository] updatePrompt: id=\(prompt.id), name='\(prompt.name)'")
         
-        guard let masterKey = await secureSession.masterKey else {
+        guard let masterKey = secureSession.masterKey else {
             print("[PromptRepository] updatePrompt: E2EE session locked")
             throw E2EEError.sessionLocked
         }

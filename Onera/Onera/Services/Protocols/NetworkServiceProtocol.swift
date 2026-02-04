@@ -147,4 +147,15 @@ enum APIEndpoint {
         static let rename = "webauthn.rename"
         static let delete = "webauthn.delete"
     }
+    
+    // MARK: - Enclaves (Private Inference)
+    
+    enum Enclaves {
+        // Queries (GET)
+        static let listModels = "enclaves.listModels"
+        
+        // Mutations (POST)
+        static let requestEnclave = "enclaves.requestEnclave"
+        static let releaseEnclave = "enclaves.releaseEnclave"
+    }
 }

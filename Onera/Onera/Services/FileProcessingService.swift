@@ -16,7 +16,7 @@ typealias PlatformImage = UIImage
 // MARK: - UIImage Extension for Cross-Platform API
 
 extension UIImage {
-    func resizedImage(to newSize: CGSize) -> UIImage {
+    nonisolated func resizedImage(to newSize: CGSize) -> UIImage {
         let renderer = UIGraphicsImageRenderer(size: newSize)
         return renderer.image { _ in
             self.draw(in: CGRect(origin: .zero, size: newSize))
@@ -114,28 +114,28 @@ enum FileProcessingError: LocalizedError {
 
 // MARK: - Constants
 
-enum FileProcessingConstants {
-    static let maxImageSize = 10 * 1024 * 1024 // 10MB
-    static let maxDocumentSize = 50 * 1024 * 1024 // 50MB
-    static let maxTextSize = 1 * 1024 * 1024 // 1MB
-    static let maxExtractedTextLength = 50000 // 50k chars
+enum FileProcessingConstants: Sendable {
+    nonisolated static let maxImageSize = 10 * 1024 * 1024 // 10MB
+    nonisolated static let maxDocumentSize = 50 * 1024 * 1024 // 50MB
+    nonisolated static let maxTextSize = 1 * 1024 * 1024 // 1MB
+    nonisolated static let maxExtractedTextLength = 50000 // 50k chars
     
-    static let compressionMaxSizeMB: Double = 1.0
-    static let compressionMaxDimension = 2048
-    static let compressionQuality: CGFloat = 0.8
+    nonisolated static let compressionMaxSizeMB: Double = 1.0
+    nonisolated static let compressionMaxDimension = 2048
+    nonisolated static let compressionQuality: CGFloat = 0.8
     
-    static let supportedImageTypes = [
+    nonisolated static let supportedImageTypes = [
         "image/jpeg",
         "image/png",
         "image/gif",
         "image/webp"
     ]
     
-    static let supportedDocumentTypes = [
+    nonisolated static let supportedDocumentTypes = [
         "application/pdf"
     ]
     
-    static let supportedTextTypes = [
+    nonisolated static let supportedTextTypes = [
         "text/plain",
         "text/markdown",
         "text/csv",
@@ -195,7 +195,7 @@ final class FileProcessingService: FileProcessingServiceProtocol, @unchecked Sen
             throw FileProcessingError.processingFailed(validation.error ?? "Unknown error")
         }
         
-        guard let type = detectAttachmentType(mimeType: mimeType) else {
+        guard detectAttachmentType(mimeType: mimeType) != nil else {
             throw FileProcessingError.unsupportedType(mimeType)
         }
         

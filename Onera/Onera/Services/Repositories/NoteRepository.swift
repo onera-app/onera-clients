@@ -60,7 +60,7 @@ final class NoteRepository: NoteRepositoryProtocol, @unchecked Sendable {
     // MARK: - Notes List
     
     func fetchNotes(token: String, folderId: String? = nil, archived: Bool = false) async throws -> [NoteSummary] {
-        guard let masterKey = await secureSession.masterKey else {
+        guard let masterKey = secureSession.masterKey else {
             throw E2EEError.sessionLocked
         }
         
@@ -84,7 +84,7 @@ final class NoteRepository: NoteRepositoryProtocol, @unchecked Sendable {
     // MARK: - Single Note
     
     func fetchNote(id: String, token: String) async throws -> Note {
-        guard let masterKey = await secureSession.masterKey else {
+        guard let masterKey = secureSession.masterKey else {
             throw E2EEError.sessionLocked
         }
         
@@ -100,7 +100,7 @@ final class NoteRepository: NoteRepositoryProtocol, @unchecked Sendable {
     func createNote(_ note: Note, token: String) async throws -> String {
         print("[NoteRepository] createNote: id=\(note.id), title='\(note.title)'")
         
-        guard let masterKey = await secureSession.masterKey else {
+        guard let masterKey = secureSession.masterKey else {
             print("[NoteRepository] createNote: E2EE session locked")
             throw E2EEError.sessionLocked
         }
@@ -121,7 +121,7 @@ final class NoteRepository: NoteRepositoryProtocol, @unchecked Sendable {
     func updateNote(_ note: Note, token: String) async throws {
         print("[NoteRepository] updateNote: id=\(note.id), title='\(note.title)'")
         
-        guard let masterKey = await secureSession.masterKey else {
+        guard let masterKey = secureSession.masterKey else {
             print("[NoteRepository] updateNote: E2EE session locked")
             throw E2EEError.sessionLocked
         }

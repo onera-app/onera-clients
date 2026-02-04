@@ -75,6 +75,7 @@ final class ChatViewModel {
     private let chatRepository: ChatRepositoryProtocol
     private let credentialService: CredentialServiceProtocol
     private let llmService: LLMServiceProtocol
+    private let networkService: NetworkServiceProtocol
     private let speechService: SpeechServiceProtocol
     private var speechRecognitionService: SpeechRecognitionServiceProtocol
     let modelSelector: ModelSelectorViewModel
@@ -107,6 +108,7 @@ final class ChatViewModel {
         chatRepository: ChatRepositoryProtocol,
         credentialService: CredentialServiceProtocol,
         llmService: LLMServiceProtocol,
+        networkService: NetworkServiceProtocol,
         speechService: SpeechServiceProtocol,
         speechRecognitionService: SpeechRecognitionServiceProtocol,
         onChatUpdated: @escaping (ChatSummary) -> Void
@@ -115,11 +117,14 @@ final class ChatViewModel {
         self.chatRepository = chatRepository
         self.credentialService = credentialService
         self.llmService = llmService
+        self.networkService = networkService
         self.speechService = speechService
         self.speechRecognitionService = speechRecognitionService
         self.modelSelector = ModelSelectorViewModel(
             credentialService: credentialService,
-            llmService: llmService
+            llmService: llmService,
+            networkService: networkService,
+            authService: authService
         )
         self.onChatUpdated = onChatUpdated
         
@@ -174,8 +179,16 @@ final class ChatViewModel {
     
     func sendMessage() async {
         guard canSend else { return }
-        guard let selectedModel = modelSelector.selectedModel,
-              let credential = modelSelector.getCredentialForSelectedModel() else {
+        guard let selectedModel = modelSelector.selectedModel else {
+            error = LLMError.invalidCredential
+            return
+        }
+        
+        // Validate we have either a credential (regular) or can get enclave (private)
+        let isPrivate = modelSelector.isPrivateModelSelected
+        let credential = modelSelector.getCredentialForSelectedModel()
+        
+        if !isPrivate && credential == nil {
             error = LLMError.invalidCredential
             return
         }
@@ -241,16 +254,20 @@ final class ChatViewModel {
                 )
             }
             
-            // Parse model name from model ID
-            let (_, modelName) = ModelOption.parseModelId(selectedModel.id)
+            // Get enclave config for private models
+            var enclaveConfig: EnclaveConfig? = nil
+            if isPrivate, let chatId = chat?.id {
+                enclaveConfig = try await modelSelector.requestEnclaveForCurrentModel(sessionId: chatId)
+            }
             
             // Stream to buffers (callback only touches buffers, not chat)
             try await llmService.streamChat(
                 messages: Array(chatMessages),
                 credential: credential,
-                model: modelName,
+                model: selectedModel.id,
                 systemPrompt: nil,
-                maxTokens: 4096
+                maxTokens: 4096,
+                enclaveConfig: enclaveConfig
             ) { [weak self] event in
                 DispatchQueue.main.async {
                     self?.bufferStreamEvent(event)
@@ -468,8 +485,16 @@ final class ChatViewModel {
     
     /// Stream LLM response for current messages (used after edit/regenerate)
     private func streamLLMResponse() async {
-        guard let selectedModel = modelSelector.selectedModel,
-              let credential = modelSelector.getCredentialForSelectedModel() else {
+        guard let selectedModel = modelSelector.selectedModel else {
+            error = LLMError.invalidCredential
+            return
+        }
+        
+        // Validate we have either a credential (regular) or can get enclave (private)
+        let isPrivate = modelSelector.isPrivateModelSelected
+        let credential = modelSelector.getCredentialForSelectedModel()
+        
+        if !isPrivate && credential == nil {
             error = LLMError.invalidCredential
             return
         }
@@ -504,16 +529,20 @@ final class ChatViewModel {
                 )
             }
             
-            // Parse model name from model ID
-            let (_, modelName) = ModelOption.parseModelId(selectedModel.id)
+            // Get enclave config for private models
+            var enclaveConfig: EnclaveConfig? = nil
+            if isPrivate, let chatId = chat?.id {
+                enclaveConfig = try await modelSelector.requestEnclaveForCurrentModel(sessionId: chatId)
+            }
             
             // Stream to buffers (callback only touches buffers, not chat)
             try await llmService.streamChat(
                 messages: Array(chatMessages),
                 credential: credential,
-                model: modelName,
+                model: selectedModel.id,
                 systemPrompt: nil,
-                maxTokens: 4096
+                maxTokens: 4096,
+                enclaveConfig: enclaveConfig
             ) { [weak self] event in
                 DispatchQueue.main.async {
                     self?.bufferStreamEvent(event)

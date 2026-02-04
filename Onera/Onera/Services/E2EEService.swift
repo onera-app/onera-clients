@@ -199,17 +199,17 @@ final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
         
         // 4. Decrypt device share
         let (encryptedDeviceShare, deviceShareNonce) = try keychainService.getDeviceShare()
-        var deviceShare = try cryptoService.decrypt(
+        _ = try cryptoService.decrypt(
             ciphertext: encryptedDeviceShare,
             nonce: deviceShareNonce,
             key: deviceShareKey
         )
         
         // 5. Get key shares from server
-        let keyShares: KeySharesGetResponse = try await networkService.call(
+        _ = try await networkService.call(
             procedure: APIEndpoint.KeyShares.get,
             token: token
-        )
+        ) as KeySharesGetResponse
         
         // For same-device unlock, we need cached recovery key or need recovery phrase
         // This path assumes we have the recovery key cached
@@ -289,7 +289,7 @@ final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
     
     func setupPasswordEncryption(password: String, token: String) async throws {
         // Get master key from session
-        guard let masterKey = await secureSession.masterKey else {
+        guard let masterKey = secureSession.masterKey else {
             throw E2EEError.sessionLocked
         }
         
@@ -373,7 +373,7 @@ final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
         
         // 8. Update device last seen
         let deviceInfo = try DeviceInfo.current()
-        try? await networkService.call(
+        _ = try? await networkService.call(
             procedure: APIEndpoint.Devices.updateLastSeen,
             input: DeviceUpdateLastSeenRequest(deviceId: deviceInfo.deviceId),
             token: token
@@ -384,7 +384,7 @@ final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
     }
     
     func removePasswordEncryption(token: String) async throws {
-        guard await secureSession.isUnlocked else {
+        guard secureSession.isUnlocked else {
             throw E2EEError.sessionLocked
         }
         
@@ -410,7 +410,7 @@ final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
     
     func registerPasskey(name: String?, token: String) async throws {
         // Requires unlocked session to get master key
-        guard let masterKey = await secureSession.masterKey else {
+        guard let masterKey = secureSession.masterKey else {
             throw E2EEError.sessionLocked
         }
         
@@ -462,7 +462,7 @@ final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
         
         // 6. Update device last seen
         let deviceInfo = try DeviceInfo.current()
-        try? await networkService.call(
+        _ = try? await networkService.call(
             procedure: APIEndpoint.Devices.updateLastSeen,
             input: DeviceUpdateLastSeenRequest(deviceId: deviceInfo.deviceId),
             token: token
@@ -475,7 +475,7 @@ final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
     // MARK: - Recovery Phrase
     
     func getRecoveryPhrase(token: String) async throws -> String {
-        guard let masterKey = await secureSession.masterKey else {
+        guard let masterKey = secureSession.masterKey else {
             throw E2EEError.sessionLocked
         }
         
@@ -489,7 +489,7 @@ final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
             throw E2EEError.keySharesFetchFailed
         }
         
-        let recoveryKey = try cryptoService.decrypt(
+        _ = try cryptoService.decrypt(
             ciphertext: encryptedRecoveryKey,
             nonce: recoveryKeyNonce,
             key: masterKey
@@ -504,7 +504,7 @@ final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
     // MARK: - Verification
     
     func verifyMasterKey(token: String) async throws -> Bool {
-        guard let masterKey = await secureSession.masterKey else {
+        guard let masterKey = secureSession.masterKey else {
             return false
         }
         

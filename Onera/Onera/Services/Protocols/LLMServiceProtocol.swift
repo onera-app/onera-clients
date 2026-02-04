@@ -133,7 +133,7 @@ struct ModelOption: Identifiable, Equatable, Sendable {
                 let partStr = String(part)
                 
                 // Handle model names with versions (qwen2.5 -> Qwen 2.5, llama3.1 -> Llama 3.1)
-                if let match = partStr.range(of: #"^([a-zA-Z]+)(\d+\.?\d*)$"#, options: .regularExpression) {
+                if partStr.range(of: #"^([a-zA-Z]+)(\d+\.?\d*)$"#, options: .regularExpression) != nil {
                     let namePart = partStr.prefix(while: { $0.isLetter })
                     let versionPart = partStr.dropFirst(namePart.count)
                     return "\(namePart.prefix(1).uppercased())\(namePart.dropFirst().lowercased()) \(versionPart)"
@@ -239,6 +239,25 @@ protocol LLMServiceProtocol: Sendable {
         model: String,
         systemPrompt: String?,
         maxTokens: Int,
+        onEvent: @escaping @Sendable (StreamEvent) -> Void
+    ) async throws
+    
+    /// Streams a chat completion response with optional private inference
+    /// - Parameters:
+    ///   - messages: The conversation messages
+    ///   - credential: The decrypted credential to use (nil for private inference)
+    ///   - model: The model name to use (format: "private:modelId" for private inference)
+    ///   - systemPrompt: Optional system prompt
+    ///   - maxTokens: Maximum tokens to generate
+    ///   - enclaveConfig: Configuration for private inference (required if model is private)
+    ///   - onEvent: Callback for each stream event
+    func streamChat(
+        messages: [ChatMessage],
+        credential: DecryptedCredential?,
+        model: String,
+        systemPrompt: String?,
+        maxTokens: Int,
+        enclaveConfig: EnclaveConfig?,
         onEvent: @escaping @Sendable (StreamEvent) -> Void
     ) async throws
     

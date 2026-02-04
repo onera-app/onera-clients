@@ -180,6 +180,7 @@ private struct CredentialRowView: View {
         case .ollama: return .gray
         case .lmstudio: return .gray
         case .custom: return .secondary
+        case .private: return .purple
         }
     }
     

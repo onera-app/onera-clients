@@ -25,7 +25,7 @@ actor LLMService: LLMServiceProtocol {
     }
     
     /// Cache TTL: 5 minutes (matches web implementation)
-    private static let modelCacheTTL: TimeInterval = 5 * 60
+    private nonisolated static let modelCacheTTL: TimeInterval = 5 * 60
     
     /// Model cache keyed by credential ID
     private var modelCache: [String: ModelCacheEntry] = [:]
@@ -396,6 +396,138 @@ actor LLMService: LLMServiceProtocol {
         }.sorted { $0.name < $1.name }
     }
     
+    // MARK: - Streaming Chat with Private Inference Support
+    
+    func streamChat(
+        messages: [ChatMessage],
+        credential: DecryptedCredential?,
+        model: String,
+        systemPrompt: String?,
+        maxTokens: Int,
+        enclaveConfig: EnclaveConfig?,
+        onEvent: @escaping @Sendable (StreamEvent) -> Void
+    ) async throws {
+        // Check if this is a private inference model
+        let isPrivate = isPrivateModel(model)
+        let modelName: String
+        if isPrivate {
+            modelName = String(model.dropFirst(PRIVATE_MODEL_PREFIX.count))
+        } else {
+            let (_, name) = ModelOption.parseModelId(model)
+            modelName = name
+        }
+        
+        if isPrivate {
+            // Private inference requires enclave config
+            guard let config = enclaveConfig else {
+                throw LLMError.invalidCredential
+            }
+            
+            try await performPrivateInferenceStream(
+                messages: messages,
+                modelId: modelName,
+                systemPrompt: systemPrompt,
+                maxTokens: maxTokens,
+                enclaveConfig: config,
+                onEvent: onEvent
+            )
+        } else {
+            // Regular inference requires credential
+            guard let credential = credential else {
+                throw LLMError.invalidCredential
+            }
+            
+            try await streamChat(
+                messages: messages,
+                credential: credential,
+                model: modelName,
+                systemPrompt: systemPrompt,
+                maxTokens: maxTokens,
+                onEvent: onEvent
+            )
+        }
+    }
+    
+    /// Performs streaming inference through the private TEE enclave
+    private func performPrivateInferenceStream(
+        messages: [ChatMessage],
+        modelId: String,
+        systemPrompt: String?,
+        maxTokens: Int,
+        enclaveConfig: EnclaveConfig,
+        onEvent: @escaping @Sendable (StreamEvent) -> Void
+    ) async throws {
+        // Cancel any existing stream
+        currentTask?.cancel()
+        
+        let task = Task {
+            // Get or create private inference provider
+            let provider = await PrivateInferenceProviderCache.shared.getOrCreate(
+                config: enclaveConfig,
+                modelId: modelId
+            )
+            
+            // Convert messages to provider format
+            var sdkMessages: [[String: Any]] = []
+            
+            // Add system prompt if present
+            if let systemPrompt = systemPrompt, !systemPrompt.isEmpty {
+                sdkMessages.append([
+                    "role": "system",
+                    "content": systemPrompt
+                ])
+            }
+            
+            // Convert chat messages
+            for message in messages {
+                var content = message.content
+                
+                // Include attachment context
+                if let attachments = message.attachments, !attachments.isEmpty {
+                    for attachment in attachments {
+                        if let extractedText = attachment.extractedText, !extractedText.isEmpty {
+                            content += "\n\n[Document: \(attachment.fileName ?? "file")]\n\(extractedText)"
+                        }
+                    }
+                }
+                
+                sdkMessages.append([
+                    "role": message.role.rawValue,
+                    "content": content
+                ])
+            }
+            
+            // Stream from private inference provider directly
+            for try await chunk in await provider.streamChat(
+                modelId: modelId,
+                messages: sdkMessages,
+                temperature: 0.7,
+                maxTokens: maxTokens
+            ) {
+                try Task.checkCancellation()
+                
+                switch chunk {
+                case .textDelta(let text):
+                    onEvent(.text(text))
+                case .finish(_, _, _):
+                    // Finish is handled by stream completion
+                    break
+                }
+            }
+            
+            onEvent(.done)
+        }
+        
+        currentTask = task
+        
+        do {
+            try await task.value
+        } catch is CancellationError {
+            onEvent(.done)
+            throw LLMError.cancelled
+        }
+    }
+    
     // MARK: - Cancel
     
     func cancelStream() async {
@@ -493,6 +625,46 @@ actor MockLLMService: LLMServiceProtocol {
     
     func cancelStream() async {
         // No-op for mock
+    }
+    
+    func streamChat(
+        messages: [ChatMessage],
+        credential: DecryptedCredential?,
+        model: String,
+        systemPrompt: String?,
+        maxTokens: Int,
+        enclaveConfig: EnclaveConfig?,
+        onEvent: @escaping @Sendable (StreamEvent) -> Void
+    ) async throws {
+        // For private inference mock
+        let isPrivate = isPrivateModel(model)
+        
+        if isPrivate {
+            if shouldFail {
+                throw LLMError.networkError(underlying: URLError(.notConnectedToInternet))
+            }
+            
+            // Simulate private inference streaming
+            let privateResponse = "[Private] \(mockResponseText)"
+            for char in privateResponse {
+                try await Task.sleep(for: .milliseconds(20))
+                onEvent(.text(String(char)))
+            }
+            onEvent(.done)
+        } else {
+            // Delegate to regular streamChat
+            guard let credential = credential else {
+                throw LLMError.invalidCredential
+            }
+            try await streamChat(
+                messages: messages,
+                credential: credential,
+                model: model,
+                systemPrompt: systemPrompt,
+                maxTokens: maxTokens,
+                onEvent: onEvent
+            )
+        }
     }
 }
 #endif
