@@ -17,7 +17,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [ "${CI_XCODEBUILD_EXIT_CODE:-0}" -ne 0 ]; then
     echo "ERROR: Build failed with exit code ${CI_XCODEBUILD_EXIT_CODE}"
-    exit 1
+    # Don't exit - still log diagnostics
 fi
 
 echo "Build succeeded."
@@ -44,6 +44,26 @@ if [ -n "${CI_ARCHIVE_PATH:-}" ] && [ -d "${CI_ARCHIVE_PATH}" ]; then
         echo "  Bundle ID: ${BUNDLE_ID}"
         echo "  Version: ${BUNDLE_VERSION} (${BUILD_VERSION})"
     fi
+fi
+
+# --- Log embedded apps and entitlements for diagnostics ---
+
+if [ -n "${CI_ARCHIVE_PATH:-}" ] && [ -d "${CI_ARCHIVE_PATH}" ]; then
+    echo ""
+    echo "=== Embedded apps ==="
+    find "${CI_ARCHIVE_PATH}" -name "*.app" -maxdepth 5 2>/dev/null | while read app; do
+        APP_PLIST="${app}/Info.plist"
+        if [ -f "${APP_PLIST}" ]; then
+            BID=$(/usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" "${APP_PLIST}" 2>/dev/null || echo "unknown")
+            echo "  ${app##*/}: ${BID}"
+        fi
+    done
+    
+    echo ""
+    echo "=== Entitlements ==="
+    find "${CI_ARCHIVE_PATH}" -name "*.app" -maxdepth 3 | head -1 | while read app; do
+        codesign -d --entitlements :- "${app}" 2>/dev/null | head -30 || echo "  Could not read entitlements"
+    done
 fi
 
 # --- Log TestFlight notes ---
