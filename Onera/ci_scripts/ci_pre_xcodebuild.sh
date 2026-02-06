@@ -24,12 +24,22 @@ REPO_DIR="$(dirname "${PROJECT_DIR}")"
 if [ -n "${CI_TAG:-}" ]; then
     # Strip the 'v' prefix: v1.2.3 -> 1.2.3
     VERSION="${CI_TAG#v}"
-    echo "Tag detected: ${CI_TAG}"
+    echo "Tag detected (CI_TAG): ${CI_TAG}"
     echo "Marketing version: ${VERSION}"
 else
-    # Not a tag build - use default
-    VERSION="1.0.0"
-    echo "No tag detected, using default version: ${VERSION}"
+    # CI_TAG not set - try to detect tag from git
+    GIT_TAG=$(git describe --tags --exact-match HEAD 2>/dev/null || echo "")
+    if [ -n "${GIT_TAG}" ]; then
+        VERSION="${GIT_TAG#v}"
+        echo "Tag detected (git): ${GIT_TAG}"
+        echo "Marketing version: ${VERSION}"
+    else
+        # No tag at all - use latest tag as base
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v1.0.1")
+        VERSION="${LATEST_TAG#v}"
+        echo "No exact tag on HEAD, using latest tag: ${LATEST_TAG}"
+        echo "Marketing version: ${VERSION}"
+    fi
 fi
 
 # Validate version format (x.y.z)
