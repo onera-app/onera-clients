@@ -1,13 +1,21 @@
 #!/bin/bash
 #
 # update_release_notes.sh
-# Updates App Store Connect "What's New" text via the API
+# Automates App Store release: sets "What's New", attaches build, submits for review
 #
 # Requires these Xcode Cloud environment variables:
 #   ASC_KEY_ID        - App Store Connect API Key ID
 #   ASC_ISSUER_ID     - App Store Connect API Issuer ID
 #   ASC_API_KEY_B64   - Base64-encoded .p8 private key contents
 #   ASC_APP_ID        - App Store Connect App ID (6758128954 for Onera)
+#
+# Flow:
+#   1. Extract release notes from CHANGELOG.md (done by ci_pre_xcodebuild.sh)
+#   2. Find or create the App Store version
+#   3. Set "What's New" text
+#   4. Wait for build to be processed by App Store Connect
+#   5. Attach build to the version
+#   6. Submit for App Review
 #
 # Called from ci_post_xcodebuild.sh after a successful build.
 #
@@ -293,4 +301,150 @@ if echo "$ERROR_CHECK" | grep -q "SUCCESS"; then
 else
     echo "[release_notes] Failed to update What's New:"
     echo "$ERROR_CHECK"
+fi
+
+# --- Auto-submit: Attach build and submit for review ---
+#
+# Xcode Cloud uploads the build to App Store Connect automatically.
+# We need to:
+#   1. Wait for the build to finish processing
+#   2. Find the build by version + build number
+#   3. Attach it to the App Store version
+#   4. Submit for review
+#
+
+BUILD_NUMBER="${CI_BUILD_NUMBER:-}"
+if [ -z "$BUILD_NUMBER" ]; then
+    echo "[auto-submit] No CI_BUILD_NUMBER, skipping auto-submit"
+    exit 0
+fi
+
+echo ""
+echo "=== Auto-submit: Attaching build and submitting for review ==="
+
+# --- Wait for build to be processed ---
+# Xcode Cloud uploads the build after ci_post_xcodebuild, so the build
+# may not be fully processed yet. We poll until it appears.
+
+echo "[auto-submit] Waiting for build ${VERSION} (${BUILD_NUMBER}) to be processed..."
+
+BUILD_ID=""
+MAX_ATTEMPTS=30  # 30 * 30s = 15 minutes max wait
+ATTEMPT=0
+
+while [ -z "$BUILD_ID" ] && [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+    ATTEMPT=$((ATTEMPT + 1))
+    
+    BUILDS_RESPONSE=$(curl -s -H "$AUTH_HEADER" \
+        "${ASC_BASE}/builds?filter[app]=${ASC_APP_ID}&filter[version]=${BUILD_NUMBER}&filter[preReleaseVersion.version]=${VERSION}&limit=1")
+    
+    BUILD_ID=$(echo "$BUILDS_RESPONSE" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for item in data.get('data', []):
+    attrs = item.get('attributes', {})
+    state = attrs.get('processingState', '')
+    if state in ('VALID', 'PROCESSING'):
+        if state == 'VALID':
+            print(item['id'])
+        # If PROCESSING, keep waiting
+        break
+" 2>/dev/null)
+    
+    if [ -z "$BUILD_ID" ]; then
+        if [ $ATTEMPT -eq 1 ] || [ $((ATTEMPT % 5)) -eq 0 ]; then
+            echo "[auto-submit] Build not ready yet (attempt ${ATTEMPT}/${MAX_ATTEMPTS}), waiting 30s..."
+        fi
+        sleep 30
+    fi
+done
+
+if [ -z "$BUILD_ID" ]; then
+    echo "[auto-submit] Build not found after ${MAX_ATTEMPTS} attempts, skipping auto-submit"
+    echo "[auto-submit] You'll need to manually select the build and submit in App Store Connect"
+    exit 0
+fi
+
+echo "[auto-submit] Build found: ${BUILD_ID}"
+
+# --- Attach build to the App Store version ---
+
+echo "[auto-submit] Attaching build to version ${VERSION}..."
+
+ATTACH_RESPONSE=$(curl -s -X PATCH -H "$AUTH_HEADER" \
+    -H "Content-Type: application/json" \
+    -d "{
+        \"data\": {
+            \"type\": \"appStoreVersions\",
+            \"id\": \"${VERSION_ID}\",
+            \"relationships\": {
+                \"build\": {
+                    \"data\": {
+                        \"type\": \"builds\",
+                        \"id\": \"${BUILD_ID}\"
+                    }
+                }
+            }
+        }
+    }" \
+    "${ASC_BASE}/appStoreVersions/${VERSION_ID}")
+
+ATTACH_ERROR=$(echo "$ATTACH_RESPONSE" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+errors = data.get('errors', [])
+if errors:
+    for e in errors:
+        print(f\"ERROR: {e.get('title', '')} - {e.get('detail', '')}\")
+else:
+    print('SUCCESS')
+" 2>/dev/null)
+
+if ! echo "$ATTACH_ERROR" | grep -q "SUCCESS"; then
+    echo "[auto-submit] Failed to attach build:"
+    echo "$ATTACH_ERROR"
+    echo "[auto-submit] You may need to manually select the build in App Store Connect"
+    exit 0
+fi
+
+echo "[auto-submit] Build attached successfully"
+
+# --- Submit for App Review ---
+
+echo "[auto-submit] Submitting for App Review..."
+
+SUBMIT_RESPONSE=$(curl -s -X POST -H "$AUTH_HEADER" \
+    -H "Content-Type: application/json" \
+    -d "{
+        \"data\": {
+            \"type\": \"appStoreVersionSubmissions\",
+            \"relationships\": {
+                \"appStoreVersion\": {
+                    \"data\": {
+                        \"type\": \"appStoreVersions\",
+                        \"id\": \"${VERSION_ID}\"
+                    }
+                }
+            }
+        }
+    }" \
+    "${ASC_BASE}/appStoreVersionSubmissions")
+
+SUBMIT_ERROR=$(echo "$SUBMIT_RESPONSE" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+errors = data.get('errors', [])
+if errors:
+    for e in errors:
+        print(f\"ERROR: {e.get('title', '')} - {e.get('detail', '')}\")
+else:
+    print('SUCCESS')
+" 2>/dev/null)
+
+if echo "$SUBMIT_ERROR" | grep -q "SUCCESS"; then
+    echo "[auto-submit] Successfully submitted version ${VERSION} (build ${BUILD_NUMBER}) for App Review!"
+else
+    echo "[auto-submit] Failed to submit for review:"
+    echo "$SUBMIT_ERROR"
+    echo "[auto-submit] The build is attached to the version - you can manually submit in App Store Connect"
 fi
