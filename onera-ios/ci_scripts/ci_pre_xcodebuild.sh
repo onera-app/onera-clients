@@ -39,7 +39,7 @@ echo "Build number: ${BUILD_NUMBER}"
 
 # --- Update Xcode project ---
 
-PROJECT_DIR="${CI_WORKSPACE}/Onera"
+PROJECT_DIR="${CI_WORKSPACE}/onera-ios"
 PBXPROJ="${PROJECT_DIR}/Onera.xcodeproj/project.pbxproj"
 
 if [ ! -f "${PBXPROJ}" ]; then
@@ -98,6 +98,6 @@ echo ""
 echo "=== ci_pre_xcodebuild: Summary ==="
 echo "  Version:      ${VERSION}"
 echo "  Build:        ${BUILD_NUMBER}"
-echo "  Bundle ID:    $(grep 'PRODUCT_BUNDLE_IDENTIFIER' "${CI_WORKSPACE}/Onera/Onera/Production.xcconfig" 2>/dev/null | head -1 | awk -F'= ' '{print $2}' || echo 'unknown')"
+echo "  Bundle ID:    $(grep 'PRODUCT_BUNDLE_IDENTIFIER' "${CI_WORKSPACE}/onera-ios/Onera/Production.xcconfig" 2>/dev/null | head -1 | awk -F'= ' '{print $2}' || echo 'unknown')"
 echo "  Tag:          ${CI_TAG:-none}"
 echo "=== Done ==="

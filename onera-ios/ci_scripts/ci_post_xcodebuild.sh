@@ -45,7 +45,7 @@ fi
 
 # --- Log TestFlight notes ---
 
-TESTFLIGHT_NOTES="${CI_WORKSPACE}/Onera/ci_scripts/TestFlightNotes.txt"
+TESTFLIGHT_NOTES="${CI_WORKSPACE}/onera-ios/ci_scripts/TestFlightNotes.txt"
 if [ -f "${TESTFLIGHT_NOTES}" ]; then
     echo ""
     echo "TestFlight release notes:"

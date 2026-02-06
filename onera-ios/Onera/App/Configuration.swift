@@ -63,7 +63,10 @@ enum Configuration {
     // MARK: - Clerk Configuration
     
     static var clerkPublishableKey: String {
-        InfoPlist.string(forKey: "CLERK_PUBLISHABLE_KEY", default: "REDACTED_CLERK_KEY")
+        guard let key = InfoPlist.string(forKey: "CLERK_PUBLISHABLE_KEY"), !key.isEmpty else {
+            fatalError("CLERK_PUBLISHABLE_KEY not configured. Copy Config/*.xcconfig.example to *.xcconfig and fill in your values.")
+        }
+        return key
     }
     
     // MARK: - Security Configuration

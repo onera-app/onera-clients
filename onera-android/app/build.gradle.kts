@@ -26,7 +26,7 @@ android {
 
         // Build config for API URLs
         buildConfigField("String", "API_BASE_URL", "\"https://api.onera.chat/\"")
-        buildConfigField("String", "CLERK_PUBLISHABLE_KEY", "\"REDACTED_CLERK_KEY\"")
+        buildConfigField("String", "CLERK_PUBLISHABLE_KEY", "\"${project.findProperty("CLERK_PUBLISHABLE_KEY") ?: System.getenv("CLERK_PUBLISHABLE_KEY") ?: "MISSING_KEY"}\"")
     }
 
     buildTypes {

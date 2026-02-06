@@ -17,7 +17,7 @@ echo "=== ci_post_clone: Generating xcconfig files from environment variables ==
 
 # Resolve paths relative to the workspace
 # Xcode Cloud sets CI_WORKSPACE to the repo root
-XCCONFIG_DIR="${CI_WORKSPACE}/Onera/Onera"
+XCCONFIG_DIR="${CI_WORKSPACE}/onera-ios/Onera"
 
 # --- Decode base64-encoded secrets ---
 
