@@ -17,8 +17,8 @@ Onera lets you chat with 13+ AI providers (OpenAI, Anthropic, Google, Mistral, G
 ## Repository Structure
 
 ```
-onera-mobile/
-├── onera-ios/              # iOS, iPadOS, macOS, watchOS (SwiftUI)
+onera-clients/
+├── Onera/                  # iOS, iPadOS, macOS, watchOS (SwiftUI)
 │   ├── Onera/              # Main app target
 │   ├── Onera-watchOS Watch App/
 │   ├── ci_scripts/         # Xcode Cloud CI/CD
@@ -47,13 +47,13 @@ onera-mobile/
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/onera-app/onera-mobile.git
-   cd onera-mobile
+   git clone https://github.com/onera-app/onera-clients.git
+   cd onera-clients
    ```
 
 2. **iOS/macOS** - Configure environment:
    ```bash
-   cd onera-ios/Onera/Config
+   cd Onera/Onera/Config
    cp Staging.xcconfig.example ../Staging.xcconfig
    cp Production.xcconfig.example ../Production.xcconfig
    ```
@@ -70,13 +70,13 @@ onera-mobile/
 
 **iOS:**
 ```bash
-cd onera-ios
+cd Onera
 xcodebuild -scheme Onera -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 ```
 
 **macOS:**
 ```bash
-cd onera-ios
+cd Onera
 xcodebuild -scheme Onera -destination 'platform=macOS'
 ```
 
@@ -120,7 +120,7 @@ git push origin main --tags
 # -> Xcode Cloud builds iOS + macOS + watchOS -> TestFlight
 ```
 
-See [`onera-ios/ci_scripts/`](onera-ios/ci_scripts/) for the pipeline configuration.
+See [`Onera/ci_scripts/`](Onera/ci_scripts/) for the pipeline configuration.
 
 ## Contributing
 

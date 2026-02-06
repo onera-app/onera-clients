@@ -9,8 +9,8 @@ Native iOS, iPadOS, macOS, watchOS, and Android applications for Onera - an end-
 ## Project Structure
 
 ```
-onera-mobile/
-├── onera-ios/                # iOS, iPadOS, macOS (SwiftUI)
+onera-clients/
+├── Onera/                    # iOS, iPadOS, macOS (SwiftUI)
 │   ├── Onera/
 │   │   ├── App/              # App entry, DI, coordinator
 │   │   ├── Core/             # Shared models, extensions
@@ -227,7 +227,7 @@ ipados-features, watchos-patterns
 
 ```bash
 # iOS / iPadOS
-cd onera-ios
+cd Onera
 xcodebuild -scheme Onera -destination 'platform=iOS Simulator,name=iPhone 16'
 xcodebuild -scheme Onera -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M4)'
 
