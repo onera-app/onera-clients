@@ -159,7 +159,9 @@ struct SidebarView: View {
                 }
                 .buttonStyle(.plain)
                 .listRowBackground(
-                    selectedSection == section ? theme.accent.opacity(0.15) : Color.clear
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(selectedSection == section ? theme.accent.opacity(0.15) : Color.clear)
+                        .padding(.horizontal, 4)
                 )
                 #if os(iOS)
                 .hoverEffect(.highlight)
@@ -228,7 +230,9 @@ private struct AllChatsDropTarget: View {
             isHovered = hovering
         }
         .listRowBackground(
-            isTargeted ? theme.accent.opacity(0.2) : (isHovered ? theme.secondaryBackground.opacity(0.5) : Color.clear)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(isTargeted ? theme.accent.opacity(0.2) : (isHovered ? theme.secondaryBackground.opacity(0.5) : Color.clear))
+                .padding(.horizontal, 4)
         )
         .dropDestination(for: String.self) { chatIds, _ in
             for chatId in chatIds {
@@ -266,7 +270,9 @@ private struct FolderRowView: View {
             isHovered = hovering
         }
         .listRowBackground(
-            isTargeted ? theme.accent.opacity(0.2) : (isHovered ? theme.secondaryBackground.opacity(0.5) : Color.clear)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(isTargeted ? theme.accent.opacity(0.2) : (isHovered ? theme.secondaryBackground.opacity(0.5) : Color.clear))
+                .padding(.horizontal, 4)
         )
         .dropDestination(for: String.self) { chatIds, _ in
             for chatId in chatIds {

@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "anthropic/claude-sonnet-4-20250514",
+  "model": "anthropic/claude-opus-4-6",
   "command": {
     "ios-build": {
       "description": "Build and run iOS app",

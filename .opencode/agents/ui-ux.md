@@ -1,7 +1,7 @@
 ---
 description: UI/UX design guidance - native-first philosophy, anti-customization, platform-specific patterns
 mode: subagent
-model: anthropic/claude-sonnet-4-20250514
+model: anthropic/claude-opus-4-6
 temperature: 0.3
 ---
 

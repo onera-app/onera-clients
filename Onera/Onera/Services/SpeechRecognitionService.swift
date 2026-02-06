@@ -26,6 +26,7 @@ protocol SpeechRecognitionServiceProtocol: Sendable {
 
 enum SpeechRecognitionError: LocalizedError {
     case notAuthorized
+    case microphoneNotAuthorized
     case audioEngineError
     case recognizerUnavailable
     case recordingInProgress
@@ -34,6 +35,8 @@ enum SpeechRecognitionError: LocalizedError {
         switch self {
         case .notAuthorized:
             return "Speech recognition is not authorized. Please enable it in Settings."
+        case .microphoneNotAuthorized:
+            return "Microphone access is not authorized. Please enable it in Settings > Privacy & Security > Microphone."
         case .audioEngineError:
             return "Failed to start audio engine."
         case .recognizerUnavailable:
@@ -91,6 +94,23 @@ final class SpeechRecognitionService: SpeechRecognitionServiceProtocol {
     
     // MARK: - Recording
     
+    /// Request microphone permission (separate from speech recognition permission)
+    private func requestMicrophonePermission() async -> Bool {
+        #if os(iOS)
+        if #available(iOS 17.0, *) {
+            return await AVAudioApplication.requestRecordPermission()
+        } else {
+            return await withCheckedContinuation { continuation in
+                AVAudioSession.sharedInstance().requestRecordPermission { granted in
+                    continuation.resume(returning: granted)
+                }
+            }
+        }
+        #else
+        return true
+        #endif
+    }
+    
     func startRecording() async throws {
         guard isAuthorized else {
             throw SpeechRecognitionError.notAuthorized
@@ -102,6 +122,12 @@ final class SpeechRecognitionService: SpeechRecognitionServiceProtocol {
         
         guard !isRecording else {
             throw SpeechRecognitionError.recordingInProgress
+        }
+        
+        // Request microphone permission before accessing audio
+        let micGranted = await requestMicrophonePermission()
+        guard micGranted else {
+            throw SpeechRecognitionError.microphoneNotAuthorized
         }
         
         // Configure audio session
@@ -159,7 +185,20 @@ final class SpeechRecognitionService: SpeechRecognitionServiceProtocol {
     func stopRecording() -> String? {
         guard isRecording else { return nil }
         
-        stopAudioEngine()
+        // Stop the audio engine but finish (don't cancel) the recognition task
+        // so we get the final transcription result
+        audioEngine.stop()
+        audioEngine.inputNode.removeTap(onBus: 0)
+        
+        // Signal end of audio input - this triggers the final result callback
+        recognitionRequest?.endAudio()
+        recognitionRequest = nil
+        
+        // Finish the task (not cancel) to allow final result delivery
+        recognitionTask?.finish()
+        recognitionTask = nil
+        
+        isRecording = false
         
         let finalText = transcribedText
         return finalText.isEmpty ? nil : finalText

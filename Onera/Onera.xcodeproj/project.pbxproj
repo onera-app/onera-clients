@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2D05D86F316F486541E5BBBD /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9047AE2C0994ED77368ECDA1 /* Foundation.framework */; };
+		44E3D33372FD357C5A0554E9 /* OneraUITestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6D60D4EF8FA928D52C3502B /* OneraUITestCase.swift */; };
+		A42C8C4DEFFF795280BAD25E /* ChatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5603D31EA87F24776FBACE6E /* ChatTests.swift */; };
 		B1AE86FA2F2B8AFB004FE3D7 /* Clerk in Frameworks */ = {isa = PBXBuildFile; productRef = CE986D06C5FECA4130B9FBB7 /* Clerk */; };
 		B1AE86FB2F2B8AFB004FE3D7 /* Clibsodium in Frameworks */ = {isa = PBXBuildFile; productRef = 3F6F6E71946C0AABCFF039CC /* Clibsodium */; };
 		B1AE86FC2F2B8AFB004FE3D7 /* Sodium in Frameworks */ = {isa = PBXBuildFile; productRef = CD6C13C6D418524BF1805EE3 /* Sodium */; };
@@ -30,9 +33,18 @@
 		B1AE870E2F2B8AFB004FE3D7 /* XAIProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 531D546BE67674E3B633CF82 /* XAIProvider */; };
 		B1AE870F2F2B8AFB004FE3D7 /* Highlightr in Frameworks */ = {isa = PBXBuildFile; productRef = E2E6118F4D3ED82A14A3D312 /* Highlightr */; };
 		B1AE880F2F2B8B5B004FE3D7 /* Onera-watchOS Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = B1AE88052F2B8B5B004FE3D7 /* Onera-watchOS Watch App.app */; platformFilters = (ios, watchos, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B7DE419C622688B075992B1B /* SettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94C73529DE8D6F5523368BC6 /* SettingsTests.swift */; };
+		D2E4BBA1E49AED8F51C27A8D /* AuthenticationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30903014009C0294EFF5CB49 /* AuthenticationTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		1F3E4F43AB4733D83AAF813B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EAB5AAF12F2B7F0500C79D0F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EAB5AAF82F2B7F0500C79D0F;
+			remoteInfo = Onera;
+		};
 		B1AE880D2F2B8B5B004FE3D7 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = EAB5AAF12F2B7F0500C79D0F /* Project object */;
@@ -57,7 +69,13 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		30903014009C0294EFF5CB49 /* AuthenticationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthenticationTests.swift; sourceTree = "<group>"; };
+		5603D31EA87F24776FBACE6E /* ChatTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatTests.swift; sourceTree = "<group>"; };
+		9047AE2C0994ED77368ECDA1 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		94C73529DE8D6F5523368BC6 /* SettingsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsTests.swift; sourceTree = "<group>"; };
+		A6D60D4EF8FA928D52C3502B /* OneraUITestCase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OneraUITestCase.swift; sourceTree = "<group>"; };
 		B1AE88052F2B8B5B004FE3D7 /* Onera-watchOS Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Onera-watchOS Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB0EEB6F7D685DBC79D2514D /* OneraUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OneraUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CFGPROD0000000000000001 /* Onera/Production.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Onera/Production.xcconfig; sourceTree = SOURCE_ROOT; };
 		CFGSTAG0000000000000001 /* Onera/Staging.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Onera/Staging.xcconfig; sourceTree = SOURCE_ROOT; };
 		EAB5AAF92F2B7F0500C79D0F /* Onera.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Onera.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -92,6 +110,14 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		445CC29FA14E187A112C121C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2D05D86F316F486541E5BBBD /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		B1AE88022F2B8B5B004FE3D7 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -131,6 +157,33 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		506AAEF971B100B4F99F9D9F /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				9047AE2C0994ED77368ECDA1 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		7287C69B28AEC3EF6E439343 /* OneraUITests */ = {
+			isa = PBXGroup;
+			children = (
+				A6D60D4EF8FA928D52C3502B /* OneraUITestCase.swift */,
+				94C73529DE8D6F5523368BC6 /* SettingsTests.swift */,
+				30903014009C0294EFF5CB49 /* AuthenticationTests.swift */,
+				5603D31EA87F24776FBACE6E /* ChatTests.swift */,
+			);
+			path = OneraUITests;
+			sourceTree = "<group>";
+		};
+		99389E3B0974F0E3AC94921B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				506AAEF971B100B4F99F9D9F /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		B12C86982F3300CB00A1DA3E /* Recovered References */ = {
 			isa = PBXGroup;
 			children = (
@@ -147,6 +200,8 @@
 				B1AE88062F2B8B5B004FE3D7 /* Onera-watchOS Watch App */,
 				EAB5AAFA2F2B7F0500C79D0F /* Products */,
 				B12C86982F3300CB00A1DA3E /* Recovered References */,
+				99389E3B0974F0E3AC94921B /* Frameworks */,
+				7287C69B28AEC3EF6E439343 /* OneraUITests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -155,6 +210,7 @@
 			children = (
 				EAB5AAF92F2B7F0500C79D0F /* Onera.app */,
 				B1AE88052F2B8B5B004FE3D7 /* Onera-watchOS Watch App.app */,
+				BB0EEB6F7D685DBC79D2514D /* OneraUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -162,6 +218,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		01B1134EC58D2DE1FF409825 /* OneraUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DE6B0E355F8924E48326FF0F /* Build configuration list for PBXNativeTarget "OneraUITests" */;
+			buildPhases = (
+				7EAB298FEE921B72FCD19CEE /* Sources */,
+				445CC29FA14E187A112C121C /* Frameworks */,
+				2B5A793244C4A89A3AFFE14D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9776DE41AD5A73E169C2E6FF /* PBXTargetDependency */,
+			);
+			name = OneraUITests;
+			productName = OneraUITests;
+			productReference = BB0EEB6F7D685DBC79D2514D /* OneraUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		B1AE88042F2B8B5B004FE3D7 /* Onera-watchOS Watch App */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = B1AE88132F2B8B5B004FE3D7 /* Build configuration list for PBXNativeTarget "Onera-watchOS Watch App" */;
@@ -178,8 +252,6 @@
 				B1AE88062F2B8B5B004FE3D7 /* Onera-watchOS Watch App */,
 			);
 			name = "Onera-watchOS Watch App";
-			packageProductDependencies = (
-			);
 			productName = "Onera-watchOS Watch App";
 			productReference = B1AE88052F2B8B5B004FE3D7 /* Onera-watchOS Watch App.app */;
 			productType = "com.apple.product-type.application";
@@ -271,11 +343,19 @@
 			targets = (
 				EAB5AAF82F2B7F0500C79D0F /* Onera */,
 				B1AE88042F2B8B5B004FE3D7 /* Onera-watchOS Watch App */,
+				01B1134EC58D2DE1FF409825 /* OneraUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		2B5A793244C4A89A3AFFE14D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		B1AE88032F2B8B5B004FE3D7 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -293,6 +373,17 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		7EAB298FEE921B72FCD19CEE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				44E3D33372FD357C5A0554E9 /* OneraUITestCase.swift in Sources */,
+				B7DE419C622688B075992B1B /* SettingsTests.swift in Sources */,
+				D2E4BBA1E49AED8F51C27A8D /* AuthenticationTests.swift in Sources */,
+				A42C8C4DEFFF795280BAD25E /* ChatTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		B1AE88012F2B8B5B004FE3D7 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -310,6 +401,12 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		9776DE41AD5A73E169C2E6FF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Onera;
+			target = EAB5AAF82F2B7F0500C79D0F /* Onera */;
+			targetProxy = 1F3E4F43AB4733D83AAF813B /* PBXContainerItemProxy */;
+		};
 		B1AE880E2F2B8B5B004FE3D7 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			platformFilters = (
@@ -322,10 +419,51 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		A8F9B4EBD185647B7AF58566 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = chat.onera.staging.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = YES;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_VERSION = 6.0;
+				TEST_TARGET_NAME = Onera;
+			};
+			name = Debug;
+		};
+		ADE30285CDACE962865B5823 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = chat.onera.staging.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = YES;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_VERSION = 6.0;
+				TEST_TARGET_NAME = Onera;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		B1AE88112F2B8B5B004FE3D7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Onera;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -358,7 +496,7 @@
 		B1AE88122F2B8B5B004FE3D7 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Onera;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -611,6 +749,15 @@
 			buildConfigurations = (
 				B1AE88112F2B8B5B004FE3D7 /* Debug */,
 				B1AE88122F2B8B5B004FE3D7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DE6B0E355F8924E48326FF0F /* Build configuration list for PBXNativeTarget "OneraUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ADE30285CDACE962865B5823 /* Release */,
+				A8F9B4EBD185647B7AF58566 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

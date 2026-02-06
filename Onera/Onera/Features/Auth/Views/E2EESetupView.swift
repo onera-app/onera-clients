@@ -19,6 +19,11 @@ struct E2EESetupView: View {
     @FocusState private var passwordFieldFocused: Bool
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     
+    /// Callback for signing out
+    var onSignOut: (() -> Void)?
+    
+    @State private var showingSignOutConfirmation = false
+    
     /// iPad uses constrained width
     private var isRegularWidth: Bool {
         horizontalSizeClass == .regular
@@ -212,6 +217,46 @@ struct E2EESetupView: View {
             } footer: {
                 Text("You can always set this up later in Settings. Your recovery phrase will still be shown.")
             }
+            
+            // Sign out section
+            if onSignOut != nil {
+                Section {
+                    Button(role: .destructive) {
+                        showingSignOutConfirmation = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                                .font(.title2)
+                                .foregroundStyle(.red)
+                                .frame(width: 32)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Sign Out")
+                                    .font(.body.weight(.medium))
+                                Text("Use a different account")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            
+                            Spacer()
+                        }
+                    }
+                } header: {
+                    Text("Account")
+                }
+            }
+        }
+        .confirmationDialog(
+            "Sign Out",
+            isPresented: $showingSignOutConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Sign Out", role: .destructive) {
+                onSignOut?()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Are you sure you want to sign out?")
         }
     }
     
@@ -475,6 +520,34 @@ struct E2EESetupView: View {
                     viewModel.proceedAfterRecoveryPhrase()
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
+            }
+            
+            // Sign out section
+            if onSignOut != nil {
+                Section {
+                    Button(role: .destructive) {
+                        showingSignOutConfirmation = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                                .font(.title2)
+                                .foregroundStyle(.red)
+                                .frame(width: 32)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Sign Out")
+                                    .font(.body.weight(.medium))
+                                Text("Use a different account")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            
+                            Spacer()
+                        }
+                    }
+                } header: {
+                    Text("Account")
+                }
             }
         }
     }

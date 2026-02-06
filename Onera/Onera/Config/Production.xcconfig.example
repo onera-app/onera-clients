@@ -1,10 +1,10 @@
 // Production.xcconfig.example
-// Copy this file to Production.xcconfig and fill in your production values
+// Copy this file to ../Production.xcconfig and fill in your production values
 //
 // SETUP INSTRUCTIONS:
-// 1. Copy this file: cp Production.xcconfig.example Production.xcconfig
+// 1. Copy this file: cp Config/Production.xcconfig.example ../Production.xcconfig
 // 2. Fill in your production values below
-// 3. The xcconfig is already linked in the Xcode project
+// 3. The xcconfig is already linked in the Xcode project (Release config)
 
 // =====================================================
 // Environment Variables
@@ -25,5 +25,10 @@ WEBAUTHN_RP_NAME = Onera
 // Keychain Configuration
 KEYCHAIN_SERVICE_NAME = chat.onera.keychain
 
-// Bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = prod.app.onera
+// Bundle Identifiers
+PRODUCT_BUNDLE_IDENTIFIER = chat.onera
+WATCHOS_BUNDLE_IDENTIFIER = chat.onera.watchkitapp
+IOS_BUNDLE_IDENTIFIER = chat.onera
+
+// Display Name
+DISPLAY_NAME = Onera

@@ -181,7 +181,7 @@ struct AuthenticationView: View {
             .disabled(viewModel.isLoading)
             .accessibilityIdentifier("signInWithApple")
             
-            // Continue with Google - styled to match Apple button
+            // Continue with Google - Google brand style (white/light background)
             Button {
                 Task { await viewModel.signInWithGoogle() }
             } label: {
@@ -195,9 +195,13 @@ struct AuthenticationView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: buttonHeight)
-                .foregroundStyle(colorScheme == .dark ? .black : .white)
-                .background(colorScheme == .dark ? Color.white : Color.black)
+                .foregroundStyle(Color(.darkGray))
+                .background(colorScheme == .dark ? Color(.systemGray5) : Color.white)
                 .clipShape(RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous)
+                        .stroke(Color(.systemGray4), lineWidth: 1)
+                )
             }
             .disabled(viewModel.isLoading)
             .accessibilityIdentifier("signInWithGoogle")

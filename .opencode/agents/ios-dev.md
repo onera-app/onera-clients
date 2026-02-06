@@ -1,7 +1,7 @@
 ---
 description: iOS development - Liquid Glass, iPhone navigation, native SwiftUI, Apple HIG
 mode: subagent
-model: anthropic/claude-sonnet-4-20250514
+model: anthropic/claude-opus-4-6
 temperature: 0.2
 ---
 

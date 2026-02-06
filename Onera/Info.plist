@@ -4,6 +4,12 @@
 <dict>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Onera uses Face ID to securely unlock your encrypted data and authenticate your session.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Onera needs microphone access for voice input and speech-to-text.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Onera uses speech recognition to convert your voice into text messages.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Onera uses the camera to capture photos for your conversations.</string>
 	<key>API_BASE_URL</key>
 	<string>$(API_BASE_URL)</string>
 	<key>TRPC_PATH</key>

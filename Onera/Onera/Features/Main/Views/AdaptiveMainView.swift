@@ -293,32 +293,44 @@ struct AdaptiveMainView: View {
             )
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                // Leading: Toggle sidebar/columns button
-                ToolbarItem(placement: .topBarLeading) {
+            .toolbarRole(.editor) // Suppresses system sidebar/back buttons
+            .toolbar(.hidden, for: .navigationBar) // Hide the default nav bar entirely
+            .safeAreaInset(edge: .top) {
+                // Custom toolbar that won't conflict with system buttons
+                HStack {
+                    // Single sidebar toggle button
                     Button {
                         withAnimation {
-                            toggleColumnVisibility()
+                            if columnVisibility == .detailOnly {
+                                columnVisibility = .all
+                            } else {
+                                columnVisibility = .detailOnly
+                            }
                         }
                     } label: {
-                        Image(systemName: columnVisibility == .detailOnly ? "sidebar.left" : "sidebar.squares.left")
+                        Image(systemName: columnVisibility == .detailOnly ? "sidebar.leading" : "sidebar.squares.leading")
+                            .font(.system(size: 17))
                     }
-                    .accessibilityLabel(columnVisibility == .detailOnly ? "Show sidebar" : "Hide sidebar")
-                }
-                
-                // Center: Model selector
-                ToolbarItem(placement: .principal) {
+                    .accessibilityLabel(columnVisibility == .detailOnly ? "Show sidebars" : "Hide sidebars")
+                    
+                    Spacer()
+                    
+                    // Center: Model selector
                     modelSelectorButton
-                }
-                
-                // Trailing: New chat
-                ToolbarItem(placement: .primaryAction) {
+                    
+                    Spacer()
+                    
+                    // Trailing: New chat
                     Button {
                         createNewChat()
                     } label: {
                         Image(systemName: "square.and.pencil")
+                            .font(.system(size: 17))
                     }
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(.bar)
             }
             #endif
         } else {
@@ -326,7 +338,7 @@ struct AdaptiveMainView: View {
         }
     }
     
-    /// Toggle between showing all columns and detail-only
+    /// Toggle between showing all columns and detail-only (used by onMenuTap)
     private func toggleColumnVisibility() {
         if columnVisibility == .detailOnly {
             columnVisibility = .all
@@ -363,17 +375,45 @@ struct AdaptiveMainView: View {
     @ViewBuilder
     private var modelSelectorButton: some View {
         if let chatVM = chatViewModel {
-            Button {
-                // Open model selector
+            Menu {
+                if chatVM.modelSelector.isLoading {
+                    Text("Loading models...")
+                } else if chatVM.modelSelector.groupedModels.isEmpty {
+                    Text("No models available")
+                    Text("Add API keys in Settings")
+                } else {
+                    ForEach(chatVM.modelSelector.groupedModels, id: \.provider) { group in
+                        Section(group.provider.displayName) {
+                            ForEach(group.models) { model in
+                                Button {
+                                    chatVM.modelSelector.selectedModel = model
+                                } label: {
+                                    HStack {
+                                        Text(model.displayName)
+                                        if chatVM.modelSelector.selectedModel?.id == model.id {
+                                            Image(systemName: "checkmark")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             } label: {
                 HStack(spacing: 4) {
+                    if chatVM.modelSelector.isLoading {
+                        ProgressView()
+                            .scaleEffect(0.7)
+                    }
                     Text(chatVM.modelSelector.selectedModel?.displayName ?? "Select Model")
                         .font(.headline)
                     Image(systemName: "chevron.down")
                         .font(.caption)
                 }
             }
-            .buttonStyle(.plain)
+            .menuStyle(.borderlessButton)
+            .accessibilityLabel("Select AI model")
+            .accessibilityValue(chatVM.modelSelector.selectedModel?.displayName ?? "No model selected")
         }
     }
     

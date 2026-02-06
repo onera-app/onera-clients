@@ -642,9 +642,14 @@ final class ChatViewModel {
     func stopRecording() {
         guard isRecording else { return }
         
-        _ = speechRecognitionService.stopRecording()
+        let transcribedText = speechRecognitionService.stopRecording()
         isRecording = false
-        // The transcribed text is already in inputText via the callback
+        
+        // Ensure the final transcribed text is in the input field
+        // (the live callback may have already set it, but use the final result as fallback)
+        if let text = transcribedText, !text.isEmpty, inputText.isEmpty {
+            inputText = text
+        }
     }
     
     // MARK: - Private Methods

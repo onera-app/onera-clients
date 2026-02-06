@@ -222,6 +222,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         configureAppearance()
+        configureWatchConnectivity()
         return true
     }
     
@@ -242,6 +243,20 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     
     private func configureAppearance() {
         // Configure global appearance
+    }
+    
+    private func configureWatchConnectivity() {
+        // Configure WatchConnectivity with dependencies
+        let dependencies = DependencyContainer.shared
+        iOSWatchConnectivityManager.shared.configure(
+            authService: dependencies.authService,
+            chatRepository: dependencies.chatRepository,
+            cryptoService: dependencies.cryptoService,
+            secureSession: dependencies.secureSession
+        )
+        // Activate the session
+        iOSWatchConnectivityManager.shared.activate()
+        print("[WatchConnectivity] Configured and activated")
     }
 }
 #endif

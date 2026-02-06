@@ -1,10 +1,10 @@
 // Staging.xcconfig.example
-// Copy this file to Staging.xcconfig and fill in your staging values
+// Copy this file to ../Staging.xcconfig and fill in your staging values
 //
 // SETUP INSTRUCTIONS:
-// 1. Copy this file: cp Staging.xcconfig.example Staging.xcconfig
+// 1. Copy this file: cp Config/Staging.xcconfig.example ../Staging.xcconfig
 // 2. Fill in your staging values below
-// 3. The xcconfig is already linked in the Xcode project
+// 3. The xcconfig is already linked in the Xcode project (Debug config)
 
 // =====================================================
 // Environment Variables
@@ -25,5 +25,10 @@ WEBAUTHN_RP_NAME = Onera Staging
 // Keychain Configuration
 KEYCHAIN_SERVICE_NAME = chat.onera.staging.keychain
 
-// Bundle identifier (different from prod to allow both apps on same device)
-PRODUCT_BUNDLE_IDENTIFIER = staging.app.onera
+// Bundle Identifiers (different from prod to allow both apps on same device)
+PRODUCT_BUNDLE_IDENTIFIER = chat.onera.staging
+WATCHOS_BUNDLE_IDENTIFIER = chat.onera.staging.watchkitapp
+IOS_BUNDLE_IDENTIFIER = chat.onera.staging
+
+// Display Name
+DISPLAY_NAME = Onera Staging

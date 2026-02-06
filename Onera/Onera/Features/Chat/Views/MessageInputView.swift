@@ -91,16 +91,18 @@ struct MessageInputView: View {
                             .accessibilityHidden(true)
                     } else if !text.isEmpty {
                         // Send button when text present
+                        let sendEnabled = canSend && !isSending
                         Button(action: onSend) {
                             Image(systemName: "arrow.up")
                                 .font(.system(size: horizontalSizeClass == .regular ? 18 : 16, weight: .bold))
-                                .foregroundStyle(theme.background)
+                                .foregroundStyle(sendEnabled ? .white : theme.textSecondary)
                                 .frame(width: touchTargetSize, height: touchTargetSize)
-                                .background(theme.textPrimary)
+                                .background(sendEnabled ? theme.accent : theme.textSecondary.opacity(0.3))
                                 .clipShape(Circle())
+                                .animation(.easeInOut(duration: 0.2), value: sendEnabled)
                         }
                         .padding(.trailing, OneraSpacing.xs)
-                        .disabled(!canSend || isSending)
+                        .disabled(!sendEnabled)
                         .sensoryFeedback(.impact(weight: .medium), trigger: text.isEmpty)
                         .accessibilityIdentifier("sendButton")
                         .accessibilityLabel("Send message")
@@ -150,8 +152,10 @@ struct MessageInputView: View {
         .accessibilityLabel("Add attachment")
         .accessibilityHint("Opens menu to attach photos or files")
         .confirmationDialog("Add Attachment", isPresented: $showingAttachmentOptions, titleVisibility: .visible) {
-            Button("Take Photo") {
-                showingCamera = true
+            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                Button("Take Photo") {
+                    showingCamera = true
+                }
             }
             Button("Photo Library") {
                 showingPhotosPicker = true

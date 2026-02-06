@@ -43,7 +43,8 @@ struct RootView: View {
                         authService: dependencies.authService,
                         e2eeService: dependencies.e2eeService,
                         onComplete: { coordinator.handleE2EESetupComplete() }
-                    )
+                    ),
+                    onSignOut: { Task { await coordinator.handleSignOut() } }
                 )
                 
             case .authenticatedNeedsE2EEUnlock:

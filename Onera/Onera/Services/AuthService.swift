@@ -145,6 +145,11 @@ final class AuthService: AuthServiceProtocol {
         
         currentUser = nil
         isAuthenticated = false
+        
+        // Sync sign-out state to Apple Watch
+        #if os(iOS)
+        await iOSWatchConnectivityManager.shared.syncToWatch()
+        #endif
     }
     
     // MARK: - OAuth Callback
@@ -186,6 +191,8 @@ final class AuthService: AuthServiceProtocol {
     }
     
     private func updateSessionState() async {
+        let wasAuthenticated = isAuthenticated
+        
         if let session = Clerk.shared.session,
            let clerkUser = session.user {
             // Map Clerk's User to our app's User model
@@ -202,6 +209,13 @@ final class AuthService: AuthServiceProtocol {
             currentUser = nil
             isAuthenticated = false
         }
+        
+        // Sync auth state to Apple Watch when authentication changes
+        #if os(iOS)
+        if wasAuthenticated != isAuthenticated {
+            await iOSWatchConnectivityManager.shared.syncToWatch()
+        }
+        #endif
     }
 }
 

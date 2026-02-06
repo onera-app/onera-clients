@@ -1,7 +1,7 @@
 ---
 description: Shared Apple platform development - SwiftUI, MVVM, protocol-based DI, native-first philosophy
 mode: subagent
-model: anthropic/claude-sonnet-4-20250514
+model: anthropic/claude-opus-4-6
 temperature: 0.2
 ---
 

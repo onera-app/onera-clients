@@ -1,7 +1,7 @@
 ---
 description: iPadOS development - Stage Manager, keyboard/trackpad, Apple Pencil, native tablet patterns
 mode: subagent
-model: anthropic/claude-sonnet-4-20250514
+model: anthropic/claude-opus-4-6
 temperature: 0.2
 ---
 

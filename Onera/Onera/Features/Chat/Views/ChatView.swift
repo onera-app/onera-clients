@@ -102,7 +102,8 @@ struct ChatView: View {
                 LazyVStack(spacing: 16) {
                     ForEach(viewModel.messages) { message in
                         messageBubble(for: message)
-                            .frame(maxWidth: maxMessageWidth)
+                            .frame(maxWidth: maxMessageWidth, alignment: message.isUser ? .trailing : .leading)
+                            .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
                             .id(message.id)
                     }
                     
