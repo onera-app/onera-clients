@@ -67,7 +67,7 @@ KEYCHAIN_SERVICE_NAME = ${PROD_KEYCHAIN_SERVICE_NAME:-chat.onera.keychain}
 
 // Bundle Identifiers
 PRODUCT_BUNDLE_IDENTIFIER = ${PROD_BUNDLE_IDENTIFIER:-chat.onera}
-WATCHOS_BUNDLE_IDENTIFIER = ${PROD_WATCHOS_BUNDLE_IDENTIFIER:-chat.onera.watchkitapp}
+WATCHOS_BUNDLE_IDENTIFIER = ${PROD_WATCHOS_BUNDLE_IDENTIFIER:-chat.onera.watch}
 IOS_BUNDLE_IDENTIFIER = ${PROD_BUNDLE_IDENTIFIER:-chat.onera}
 
 // Display Name
@@ -105,7 +105,7 @@ KEYCHAIN_SERVICE_NAME = chat.onera.staging.keychain
 
 // Bundle Identifiers
 PRODUCT_BUNDLE_IDENTIFIER = chat.onera.staging
-WATCHOS_BUNDLE_IDENTIFIER = chat.onera.staging.watchkitapp
+WATCHOS_BUNDLE_IDENTIFIER = chat.onera.staging.watch
 IOS_BUNDLE_IDENTIFIER = chat.onera.staging
 
 // Display Name

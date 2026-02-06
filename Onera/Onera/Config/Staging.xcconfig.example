@@ -27,7 +27,7 @@ KEYCHAIN_SERVICE_NAME = chat.onera.staging.keychain
 
 // Bundle Identifiers (different from prod to allow both apps on same device)
 PRODUCT_BUNDLE_IDENTIFIER = chat.onera.staging
-WATCHOS_BUNDLE_IDENTIFIER = chat.onera.staging.watchkitapp
+WATCHOS_BUNDLE_IDENTIFIER = chat.onera.staging.watch
 IOS_BUNDLE_IDENTIFIER = chat.onera.staging
 
 // Display Name
