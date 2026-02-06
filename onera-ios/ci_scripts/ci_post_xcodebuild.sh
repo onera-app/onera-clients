@@ -6,9 +6,12 @@
 # Post-build validation and artifact logging.
 #
 
-set -euo pipefail
+set -eo pipefail
 
 echo "=== ci_post_xcodebuild: Post-build ==="
+
+# Resolve paths relative to the script location
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # --- Log build result ---
 
@@ -45,7 +48,7 @@ fi
 
 # --- Log TestFlight notes ---
 
-TESTFLIGHT_NOTES="${CI_WORKSPACE}/onera-ios/ci_scripts/TestFlightNotes.txt"
+TESTFLIGHT_NOTES="${SCRIPT_DIR}/TestFlightNotes.txt"
 if [ -f "${TESTFLIGHT_NOTES}" ]; then
     echo ""
     echo "TestFlight release notes:"

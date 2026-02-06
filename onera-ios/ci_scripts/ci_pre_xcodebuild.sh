@@ -10,9 +10,14 @@
 # Also extracts release notes from CHANGELOG.md for TestFlight.
 #
 
-set -euo pipefail
+set -eo pipefail
 
 echo "=== ci_pre_xcodebuild: Version management ==="
+
+# Resolve paths relative to the script location
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "${SCRIPT_DIR}")"
+REPO_DIR="$(dirname "${PROJECT_DIR}")"
 
 # --- Extract version from tag ---
 
@@ -39,7 +44,6 @@ echo "Build number: ${BUILD_NUMBER}"
 
 # --- Update Xcode project ---
 
-PROJECT_DIR="${CI_WORKSPACE}/onera-ios"
 PBXPROJ="${PROJECT_DIR}/Onera.xcodeproj/project.pbxproj"
 
 if [ ! -f "${PBXPROJ}" ]; then
@@ -61,8 +65,8 @@ echo "  CURRENT_PROJECT_VERSION = ${BUILD_NUMBER}"
 
 # --- Extract release notes from CHANGELOG.md ---
 
-CHANGELOG="${CI_WORKSPACE}/CHANGELOG.md"
-TESTFLIGHT_NOTES="${CI_WORKSPACE}/Onera/ci_scripts/TestFlightNotes.txt"
+CHANGELOG="${REPO_DIR}/CHANGELOG.md"
+TESTFLIGHT_NOTES="${SCRIPT_DIR}/TestFlightNotes.txt"
 
 if [ -f "${CHANGELOG}" ]; then
     echo ""
@@ -78,7 +82,7 @@ if [ -f "${CHANGELOG}" ]; then
     else
         echo "  No release notes found for version ${VERSION}"
         # Fall back to default release notes
-        METADATA_NOTES="${CI_WORKSPACE}/metadata/en-US/release_notes/default.txt"
+        METADATA_NOTES="${REPO_DIR}/metadata/en-US/release_notes/default.txt"
         if [ -f "${METADATA_NOTES}" ]; then
             cp "${METADATA_NOTES}" "${TESTFLIGHT_NOTES}"
             echo "  Using default release notes from metadata/"
@@ -98,6 +102,6 @@ echo ""
 echo "=== ci_pre_xcodebuild: Summary ==="
 echo "  Version:      ${VERSION}"
 echo "  Build:        ${BUILD_NUMBER}"
-echo "  Bundle ID:    $(grep 'PRODUCT_BUNDLE_IDENTIFIER' "${CI_WORKSPACE}/onera-ios/Onera/Production.xcconfig" 2>/dev/null | head -1 | awk -F'= ' '{print $2}' || echo 'unknown')"
+echo "  Bundle ID:    $(grep 'PRODUCT_BUNDLE_IDENTIFIER' "${PROJECT_DIR}/Onera/Production.xcconfig" 2>/dev/null | head -1 | awk -F'= ' '{print $2}' || echo 'unknown')"
 echo "  Tag:          ${CI_TAG:-none}"
 echo "=== Done ==="
