@@ -152,11 +152,13 @@ struct MessageInputView: View {
         .accessibilityLabel("Add attachment")
         .accessibilityHint("Opens menu to attach photos or files")
         .confirmationDialog("Add Attachment", isPresented: $showingAttachmentOptions, titleVisibility: .visible) {
+            #if os(iOS)
             if UIImagePickerController.isSourceTypeAvailable(.camera) {
                 Button("Take Photo") {
                     showingCamera = true
                 }
             }
+            #endif
             Button("Photo Library") {
                 showingPhotosPicker = true
             }

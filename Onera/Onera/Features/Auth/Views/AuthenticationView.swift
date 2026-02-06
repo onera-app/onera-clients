@@ -196,11 +196,11 @@ struct AuthenticationView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: buttonHeight)
                 .foregroundStyle(Color(.darkGray))
-                .background(colorScheme == .dark ? Color(.systemGray5) : Color.white)
+                .background(colorScheme == .dark ? Color.gray.opacity(0.2) : Color.white)
                 .clipShape(RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous)
-                        .stroke(Color(.systemGray4), lineWidth: 1)
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                 )
             }
             .disabled(viewModel.isLoading)

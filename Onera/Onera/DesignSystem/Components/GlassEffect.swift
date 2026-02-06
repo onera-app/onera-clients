@@ -103,7 +103,7 @@ struct OneraGlassEffect<S: InsettableShape>: ViewModifier {
 // MARK: - iOS 26+ Native Glass Effect Wrapper
 
 /// Wrapper that uses native iOS 26 glassEffect when available
-@available(iOS 26.0, *)
+@available(iOS 26.0, macOS 26.0, *)
 struct NativeGlassModifier: ViewModifier {
     func body(content: Content) -> some View {
         content.glassEffect()
@@ -117,7 +117,7 @@ extension View {
     /// On iOS 26+, automatically uses native .glassEffect() for better performance
     @ViewBuilder
     func oneraGlass(showBorder: Bool = true, showShadow: Bool = true) -> some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, macOS 26.0, *) {
             self.glassEffect()
         } else {
             self.modifier(OneraGlassEffect(shape: Capsule(), showBorder: showBorder, showShadow: showShadow))
@@ -128,7 +128,7 @@ extension View {
     /// On iOS 26+, automatically uses native .glassEffect() with circle shape
     @ViewBuilder
     func oneraGlassCircle(showBorder: Bool = true, showShadow: Bool = true) -> some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, macOS 26.0, *) {
             self.glassEffect(.regular, in: .circle)
         } else {
             self.modifier(OneraGlassEffect(shape: Circle(), showBorder: showBorder, showShadow: showShadow))
@@ -139,7 +139,7 @@ extension View {
     /// On iOS 26+, automatically uses native .glassEffect() with rounded rect
     @ViewBuilder
     func oneraGlassRounded(_ cornerRadius: CGFloat = OneraRadius.medium, showBorder: Bool = true, showShadow: Bool = true) -> some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, macOS 26.0, *) {
             self.glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         } else {
             self.modifier(OneraGlassEffect(shape: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous), showBorder: showBorder, showShadow: showShadow))
@@ -242,7 +242,7 @@ struct GlassCapsuleButtonStyle: ButtonStyle {
 /// Falls back to custom GlassButtonStyle on earlier versions
 struct AdaptiveGlassButtonStyle: ButtonStyle {
     func makeBody(configuration: ButtonStyleConfiguration) -> some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, macOS 26.0, *) {
             configuration.label
                 .buttonStyle(.glass)
         } else {
@@ -259,7 +259,7 @@ struct AdaptiveGlassProminentButtonStyle: ButtonStyle {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     func makeBody(configuration: ButtonStyleConfiguration) -> some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, macOS 26.0, *) {
             configuration.label
                 .buttonStyle(.glassProminent)
         } else {

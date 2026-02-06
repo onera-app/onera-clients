@@ -1307,6 +1307,7 @@ private struct MacCredentialRow: View {
         case .ollama: return .gray
         case .lmstudio: return .gray
         case .custom: return .secondary
+        case .`private`: return .blue
         }
     }
     
