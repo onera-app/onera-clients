@@ -246,6 +246,47 @@ final class WatchConnectivityManager: NSObject {
         }
     }
     
+    // MARK: - Demo Mode
+    
+    /// Loads demo data directly without WatchConnectivity
+    func loadDemoData() {
+        recentChats = [
+            WatchChatSummary(
+                id: "demo-chat-1",
+                title: "Swift async/await patterns",
+                lastMessage: "Here's a simple example...",
+                lastMessageDate: Date().addingTimeInterval(-3600),
+                unreadCount: 0
+            ),
+            WatchChatSummary(
+                id: "demo-chat-2",
+                title: "React best practices",
+                lastMessage: "Great question! Here are the key...",
+                lastMessageDate: Date().addingTimeInterval(-86400),
+                unreadCount: 0
+            ),
+            WatchChatSummary(
+                id: "demo-chat-3",
+                title: "Database optimization",
+                lastMessage: "There are several strategies...",
+                lastMessageDate: Date().addingTimeInterval(-172800),
+                unreadCount: 0
+            )
+        ]
+        quickReplies = [
+            "Yes",
+            "No",
+            "On my way",
+            "Thanks!",
+            "I'll check later"
+        ]
+        selectedModelName = "Claude Sonnet 4"
+        authToken = "demo-token"
+        lastSyncDate = Date()
+        
+        print("[WatchConnectivity] Demo data loaded")
+    }
+    
     // MARK: - Background Task
     
     func handleBackgroundTask() {

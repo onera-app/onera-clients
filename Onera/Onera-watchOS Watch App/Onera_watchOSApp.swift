@@ -63,16 +63,71 @@ final class WatchAppDelegate: NSObject, WKApplicationDelegate {
 
 struct WatchRootView: View {
     @Environment(\.watchAppState) private var appState
+    @State private var demoModeActive = false
     
     var body: some View {
-        Group {
-            if appState.isConnected && appState.isAuthenticated {
-                WatchMainView()
-            } else if !appState.isConnected {
-                WatchDisconnectedView()
-            } else {
-                WatchUnauthenticatedView()
-            }
+        if demoModeActive {
+            // Demo mode: show chat list directly to avoid NavigationStack nesting crash
+            WatchChatListView()
+        } else if appState.isConnected && appState.isAuthenticated {
+            WatchMainView()
+        } else {
+            WatchPlaceholderView(onDemoActivated: activateDemoMode)
+        }
+    }
+    
+    private func activateDemoMode() {
+        // Populate demo data directly on the watch
+        WatchConnectivityManager.shared.loadDemoData()
+        
+        let state = WatchAppState.shared
+        state.isConnected = true
+        state.isAuthenticated = true
+        demoModeActive = true
+    }
+}
+
+// MARK: - Placeholder View (Disconnected / Unauthenticated with Demo Activation)
+
+struct WatchPlaceholderView: View {
+    var onDemoActivated: (() -> Void)?
+    @Environment(\.watchAppState) private var appState
+    @State private var tapCount = 0
+    @State private var lastTapTime: Date?
+    
+    private var isDisconnected: Bool { !appState.isConnected }
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: isDisconnected ? "iphone.slash" : "person.crop.circle.badge.exclamationmark")
+                .font(.system(size: 40))
+                .foregroundStyle(isDisconnected ? .orange : .yellow)
+            
+            Text(isDisconnected ? "iPhone Required" : "Sign In Required")
+                .font(.headline)
+            
+            Text(isDisconnected ? "Open Onera on your iPhone to sync" : "Sign in to Onera on your iPhone")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding()
+        .onTapGesture {
+            handleDemoTap()
+        }
+    }
+    
+    private func handleDemoTap() {
+        let now = Date()
+        if let last = lastTapTime, now.timeIntervalSince(last) > 1.5 {
+            tapCount = 0
+        }
+        tapCount += 1
+        lastTapTime = now
+        if tapCount >= 5 {
+            tapCount = 0
+            WKInterfaceDevice.current().play(.success)
+            onDemoActivated?()
         }
     }
 }

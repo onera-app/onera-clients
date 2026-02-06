@@ -77,5 +77,18 @@ if [ -f "${TESTFLIGHT_NOTES}" ]; then
     echo "---"
 fi
 
+# --- Update App Store Connect "What's New" via API ---
+
+if [ "${CI_XCODEBUILD_EXIT_CODE:-0}" -eq 0 ]; then
+    echo ""
+    echo "=== Updating App Store Connect release notes ==="
+    UPDATE_SCRIPT="${SCRIPT_DIR}/update_release_notes.sh"
+    if [ -x "${UPDATE_SCRIPT}" ]; then
+        bash "${UPDATE_SCRIPT}" || echo "WARNING: Release notes update failed (non-fatal)"
+    else
+        echo "  update_release_notes.sh not found or not executable, skipping"
+    fi
+fi
+
 echo ""
 echo "=== ci_post_xcodebuild: Done ==="

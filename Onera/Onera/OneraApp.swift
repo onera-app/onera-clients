@@ -205,6 +205,19 @@ struct OneraApp: App {
             do {
                 try await demoAuthService.signInWithGoogle()
                 await newCoordinator.handleAuthenticationSuccess()
+                
+                // Reconfigure WatchConnectivity with demo services so the watch gets an auth token
+                #if os(iOS)
+                let demoDeps = DemoDependencyContainer.shared
+                iOSWatchConnectivityManager.shared.configure(
+                    authService: demoDeps.authService,
+                    chatRepository: demoDeps.chatRepository,
+                    cryptoService: demoDeps.cryptoService,
+                    secureSession: demoDeps.secureSession
+                )
+                await iOSWatchConnectivityManager.shared.syncToWatch()
+                print("[DemoMode] Reconfigured WatchConnectivity with demo services and synced")
+                #endif
             } catch {
                 print("[DemoMode] Auto sign-in error: \(error)")
             }

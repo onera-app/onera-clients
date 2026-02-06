@@ -5,6 +5,18 @@ All notable changes to Onera will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2026-02-06
+
+### Fixed
+- Added LSApplicationCategoryType for Mac App Store compliance (ITMS-90242)
+- Added ITSAppUsesNonExemptEncryption for export compliance
+- Fixed export compliance code error (ITMS-90592)
+
+### Added
+- Apple Watch demo mode for App Store review screenshots
+- Automated App Store "What's New" release notes via CI
+- Sync to Apple Watch button in Settings (demo mode)
+
 ## [1.0.3] - 2026-02-06
 
 ### Fixed

@@ -230,6 +230,12 @@ struct SettingsView: View {
                 Label("Tools", systemImage: "wrench.and.screwdriver")
             }
             
+            #if os(iOS)
+            if DemoModeManager.shared.isActive {
+                WatchSyncButton()
+            }
+            #endif
+            
             // Theme selection
             Picker(selection: Binding(
                 get: { themeManager.currentTheme },
@@ -745,6 +751,61 @@ private struct DeviceRow: View {
         .padding(.vertical, 4)
     }
 }
+
+// MARK: - Watch Sync Button (Demo Mode)
+
+#if os(iOS)
+struct WatchSyncButton: View {
+    @Environment(\.theme) private var theme
+    @State private var isSyncing = false
+    @State private var syncSuccess = false
+    
+    var body: some View {
+        Button {
+            syncToWatch()
+        } label: {
+            HStack {
+                Label("Sync to Apple Watch", systemImage: "applewatch")
+                Spacer()
+                if isSyncing {
+                    ProgressView()
+                        .controlSize(.small)
+                } else if syncSuccess {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                }
+            }
+        }
+        .disabled(isSyncing)
+    }
+    
+    private func syncToWatch() {
+        isSyncing = true
+        syncSuccess = false
+        
+        Task { @MainActor in
+            // Reconfigure with demo services
+            let demoDeps = DemoDependencyContainer.shared
+            iOSWatchConnectivityManager.shared.configure(
+                authService: demoDeps.authService,
+                chatRepository: demoDeps.chatRepository,
+                cryptoService: demoDeps.cryptoService,
+                secureSession: demoDeps.secureSession
+            )
+            
+            // Force sync
+            await iOSWatchConnectivityManager.shared.syncToWatch()
+            
+            isSyncing = false
+            syncSuccess = true
+            
+            // Reset checkmark after a delay
+            try? await Task.sleep(for: .seconds(3))
+            syncSuccess = false
+        }
+    }
+}
+#endif
 
 // MARK: - Appearance Settings
 
