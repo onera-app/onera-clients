@@ -27,12 +27,13 @@ struct DataSettingsView: View {
     @State private var importError: String?
     
     var body: some View {
-        List {
+        Form {
             exportSection
             importSection
             archiveSection
             dangerZoneSection
         }
+        .formStyle(.grouped)
         .navigationTitle("Data")
         .alert("Export Successful", isPresented: $showExportSuccess) {
             Button("OK", role: .cancel) {}

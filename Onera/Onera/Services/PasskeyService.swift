@@ -246,6 +246,32 @@ final class PasskeyService: NSObject, PasskeyServiceProtocol, @unchecked Sendabl
         return response.hasPasskeys
     }
     
+    func listPasskeys(token: String) async throws -> [WebAuthnPasskey] {
+        let response: WebAuthnListResponse = try await networkService.call(
+            procedure: APIEndpoint.WebAuthn.list,
+            token: token
+        )
+        return response.passkeys
+    }
+    
+    func renamePasskey(credentialId: String, name: String, token: String) async throws {
+        let input = WebAuthnRenameRequest(credentialId: credentialId, name: name)
+        let _: WebAuthnRenameResponse = try await networkService.call(
+            procedure: APIEndpoint.WebAuthn.rename,
+            input: input,
+            token: token
+        )
+    }
+    
+    func deletePasskey(credentialId: String, token: String) async throws {
+        let input = WebAuthnDeleteRequest(credentialId: credentialId)
+        let _: WebAuthnDeleteResponse = try await networkService.call(
+            procedure: APIEndpoint.WebAuthn.delete,
+            input: input,
+            token: token
+        )
+    }
+    
     func hasLocalPasskeyKEK() -> Bool {
         // With PRF, we no longer store local KEK
         // Return true if PRF is supported (passkeys can work)
@@ -543,6 +569,20 @@ final class MockPasskeyService: PasskeyServiceProtocol, @unchecked Sendable {
     func hasPasskeys(token: String) async throws -> Bool {
         if shouldFail { throw PasskeyError.serverError("Mock error") }
         return hasPasskey
+    }
+    
+    func listPasskeys(token: String) async throws -> [WebAuthnPasskey] {
+        if shouldFail { throw PasskeyError.serverError("Mock error") }
+        return hasPasskey ? [WebAuthnPasskey(id: "1", credentialId: "mock-cred", name: "Mock Passkey", credentialDeviceType: "multiDevice", credentialBackedUp: true, lastUsedAt: nil, createdAt: Date(), deviceType: "platform")] : []
+    }
+    
+    func renamePasskey(credentialId: String, name: String, token: String) async throws {
+        if shouldFail { throw PasskeyError.serverError("Mock error") }
+    }
+    
+    func deletePasskey(credentialId: String, token: String) async throws {
+        if shouldFail { throw PasskeyError.serverError("Mock error") }
+        hasPasskey = false
     }
     
     func hasLocalPasskeyKEK() -> Bool {

@@ -28,13 +28,13 @@ struct TTSPlayerOverlay: View {
             HStack(spacing: 16) {
                 // Speaker icon with animation
                 Image(systemName: "speaker.wave.2.fill")
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.body.weight(.medium))
                     .foregroundStyle(.white)
                     .symbolEffect(.bounce.byLayer, options: .repeating, isActive: isPlaying)
                 
                 // Elapsed time display
                 Text(formatElapsedTime(elapsedSeconds))
-                    .font(.system(size: 14, weight: .semibold, design: .monospaced))
+                    .font(.subheadline.weight(.semibold).monospaced())
                     .foregroundStyle(.white)
                 
                 Spacer()
@@ -45,7 +45,7 @@ struct TTSPlayerOverlay: View {
                     onStop()
                 } label: {
                     Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.subheadline.bold())
                         .foregroundStyle(.white.opacity(0.8))
                         .padding(8)
                         .background(Circle().fill(Color.white.opacity(0.2)))

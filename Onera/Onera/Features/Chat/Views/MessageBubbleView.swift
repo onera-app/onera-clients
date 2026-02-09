@@ -13,19 +13,12 @@ import UIKit
 import AppKit
 #endif
 
-/// Parsed message content with thinking blocks extracted
-struct ParsedMessageContent {
-    let displayContent: String
-    let thinkingContent: String?
-    let isThinking: Bool
-}
-
 struct MessageBubbleView: View {
     
     let message: Message
     /// Called when user saves edit (with regenerate: true to regenerate, false to just save)
     var onEdit: ((String, Bool) -> Void)?
-    var onRegenerate: (() -> Void)?
+    var onRegenerate: ((String?) -> Void)?
     var onSpeak: ((String) -> Void)?
     var onStopSpeaking: (() -> Void)?
     var isSpeaking: Bool = false
@@ -40,11 +33,12 @@ struct MessageBubbleView: View {
     @State private var editText = ""
     @State private var showCopiedFeedback = false
     @State private var isRegenerating = false
+    @State private var showTextSelection = false
     @FocusState private var isEditFocused: Bool
     
     /// Parse the message content for thinking tags
     private var parsedContent: ParsedMessageContent {
-        parseThinkingContent(message.content)
+        ThinkingTagParser.parse(message.content)
     }
     
     /// Combined reasoning from SDK events and parsed <think> tags
@@ -103,6 +97,44 @@ struct MessageBubbleView: View {
                         }
                     }
                 }
+                .contextMenu {
+                    Button {
+                        #if os(iOS)
+                        UIPasteboard.general.string = parsedContent.displayContent
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.success)
+                        #elseif os(macOS)
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(parsedContent.displayContent, forType: .string)
+                        #endif
+                    } label: {
+                        Label("Copy", systemImage: "doc.on.doc")
+                    }
+                    
+                    #if os(iOS)
+                    Button {
+                        showTextSelection = true
+                    } label: {
+                        Label("Select Text", systemImage: "text.cursor")
+                    }
+                    #endif
+                    
+                    if onSpeak != nil || onStopSpeaking != nil {
+                        Button {
+                            doSpeak()
+                        } label: {
+                            Label(
+                                isSpeaking ? "Stop Speaking" : "Read Aloud",
+                                systemImage: isSpeaking ? "stop.fill" : "speaker.wave.2"
+                            )
+                        }
+                    }
+                }
+                #if os(iOS)
+                .sheet(isPresented: $showTextSelection) {
+                    SelectableTextSheet(text: parsedContent.displayContent)
+                }
+                #endif
             }
         }
     }
@@ -120,7 +152,7 @@ struct MessageBubbleView: View {
                 onPreviousBranch?()
             } label: {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.caption.weight(.medium))
                     .frame(minWidth: AccessibilitySize.minTouchTarget, minHeight: AccessibilitySize.minTouchTarget)
                     .contentShape(Rectangle())
             }
@@ -147,7 +179,7 @@ struct MessageBubbleView: View {
                 onNextBranch?()
             } label: {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.caption.weight(.medium))
                     .frame(minWidth: AccessibilitySize.minTouchTarget, minHeight: AccessibilitySize.minTouchTarget)
                     .contentShape(Rectangle())
             }
@@ -162,76 +194,6 @@ struct MessageBubbleView: View {
         .padding(.leading, OneraSpacing.sm)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Response versions. Version \(current) of \(total)")
-    }
-    
-    // MARK: - Thinking Tag Parser
-    
-    /// Supported thinking tags
-    private static let thinkingTags = ["think", "thinking", "reason", "reasoning"]
-    
-    /// Parse content and extract thinking blocks
-    private func parseThinkingContent(_ content: String) -> ParsedMessageContent {
-        guard !content.isEmpty else {
-            return ParsedMessageContent(displayContent: "", thinkingContent: nil, isThinking: false)
-        }
-        
-        var displayContent = content
-        var thinkingBlocks: [String] = []
-        var isThinking = false
-        
-        // Build regex pattern for complete blocks: <tag>content</tag>
-        let tagsPattern = Self.thinkingTags.joined(separator: "|")
-        let completeBlockPattern = "<(\(tagsPattern))>([\\s\\S]*?)</\\1>"
-        
-        // Find and extract complete thinking blocks
-        if let regex = try? NSRegularExpression(pattern: completeBlockPattern, options: [.caseInsensitive]) {
-            let nsContent = content as NSString
-            let matches = regex.matches(in: content, options: [], range: NSRange(location: 0, length: nsContent.length))
-            
-            // Process matches in reverse order to preserve indices
-            for match in matches.reversed() {
-                if match.numberOfRanges >= 3 {
-                    let contentRange = match.range(at: 2)
-                    let thinkingText = nsContent.substring(with: contentRange).trimmingCharacters(in: .whitespacesAndNewlines)
-                    if !thinkingText.isEmpty {
-                        thinkingBlocks.insert(thinkingText, at: 0)
-                    }
-                    // Remove the block from display content
-                    displayContent = (displayContent as NSString).replacingCharacters(in: match.range, with: "")
-                }
-            }
-        }
-        
-        // Check for incomplete (still streaming) thinking block: <tag>content (no closing tag)
-        let openTagPattern = "<(\(tagsPattern))>([\\s\\S]*)$"
-        if let regex = try? NSRegularExpression(pattern: openTagPattern, options: [.caseInsensitive]) {
-            let nsDisplay = displayContent as NSString
-            if let match = regex.firstMatch(in: displayContent, options: [], range: NSRange(location: 0, length: nsDisplay.length)) {
-                if match.numberOfRanges >= 3 {
-                    let contentRange = match.range(at: 2)
-                    let thinkingText = nsDisplay.substring(with: contentRange).trimmingCharacters(in: .whitespacesAndNewlines)
-                    if !thinkingText.isEmpty {
-                        thinkingBlocks.append(thinkingText)
-                    }
-                    // Remove the incomplete block from display content
-                    displayContent = (displayContent as NSString).replacingCharacters(in: match.range, with: "")
-                    isThinking = true
-                }
-            }
-        }
-        
-        // Clean up display content
-        displayContent = displayContent
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "\n{3,}", with: "\n\n", options: .regularExpression)
-        
-        let combinedThinking = thinkingBlocks.isEmpty ? nil : thinkingBlocks.joined(separator: "\n\n")
-        
-        return ParsedMessageContent(
-            displayContent: displayContent,
-            thinkingContent: combinedThinking,
-            isThinking: isThinking
-        )
     }
     
     // MARK: - User Message View
@@ -413,7 +375,33 @@ struct MessageBubbleView: View {
     }
     
     private var regenerateButton: some View {
-        Button(action: doRegenerate) {
+        Menu {
+            Button {
+                doRegenerate(modifier: nil)
+            } label: {
+                Label("Try Again", systemImage: "arrow.clockwise")
+            }
+            
+            Divider()
+            
+            Button {
+                doRegenerate(modifier: "Please provide more details and expand on your explanation.")
+            } label: {
+                Label("Add Details", systemImage: "doc.text")
+            }
+            
+            Button {
+                doRegenerate(modifier: "Please be more concise and brief in your response.")
+            } label: {
+                Label("More Concise", systemImage: "arrow.down.right.and.arrow.up.left")
+            }
+            
+            Button {
+                doRegenerate(modifier: "Please be more creative and think outside the box.")
+            } label: {
+                Label("Be Creative", systemImage: "sparkles")
+            }
+        } label: {
             Image(systemName: "arrow.clockwise")
                 .font(OneraTypography.iconLabel)
                 .foregroundStyle(isRegenerating ? theme.info : theme.textSecondary)
@@ -422,16 +410,18 @@ struct MessageBubbleView: View {
                 .clipShape(Circle())
                 .rotationEffect(.degrees(isRegenerating ? 360 : 0))
                 .animateRepeatingIfAllowed(OneraAnimation.rotate, isActive: isRegenerating)
+        } primaryAction: {
+            doRegenerate(modifier: nil)
         }
-        .buttonStyle(.plain)
+        .menuStyle(.borderlessButton)
         .contentShape(Circle())
         .disabled(isRegenerating)
         .accessibilityIdentifier("regenerateButton")
         .accessibilityLabel(isRegenerating ? "Regenerating response" : "Regenerate response")
-        .accessibilityHint("Generates a new response from the assistant")
+        .accessibilityHint("Tap to regenerate, hold for options")
     }
     
-    private func doRegenerate() {
+    private func doRegenerate(modifier: String? = nil) {
         // Haptic feedback
         #if os(iOS)
         let generator = UIImpactFeedbackGenerator(style: .medium)
@@ -443,8 +433,8 @@ struct MessageBubbleView: View {
             isRegenerating = true
         }
         
-        // Call the regenerate callback
-        onRegenerate?()
+        // Call the regenerate callback with optional modifier
+        onRegenerate?(modifier)
         
         // Reset after short delay
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
@@ -928,7 +918,7 @@ struct ReasoningView: View {
                 // Chevron (pointing right to indicate tap to expand)
                 if !isStreaming {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.caption2.weight(.semibold))
                         .foregroundStyle(theme.textSecondary)
                 }
             }
@@ -1048,7 +1038,7 @@ struct ThinkingDrawerView: View {
                         dismiss()
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 24))
+                            .font(.title2)
                             .foregroundStyle(theme.textSecondary)
                             .frame(minWidth: AccessibilitySize.minTouchTarget, minHeight: AccessibilitySize.minTouchTarget)
                     }
@@ -1099,6 +1089,59 @@ private struct PulsingDotModifier: ViewModifier {
     }
 }
 
+// MARK: - Selectable Text Sheet (iOS)
+
+#if os(iOS)
+/// A sheet that presents message text in a native UITextView for free-form text selection.
+/// This gives the full iOS text selection experience with drag handles, copy, share, etc.
+struct SelectableTextSheet: View {
+    let text: String
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.theme) private var theme
+    
+    var body: some View {
+        NavigationStack {
+            SelectableTextViewRepresentable(text: text)
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .navigationTitle("Select Text")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") {
+                            dismiss()
+                        }
+                    }
+                }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+}
+
+/// UITextView wrapper that supports native text selection with handles
+private struct SelectableTextViewRepresentable: UIViewRepresentable {
+    let text: String
+    
+    func makeUIView(context: Context) -> UITextView {
+        let textView = UITextView()
+        textView.isEditable = false
+        textView.isSelectable = true
+        textView.font = .preferredFont(forTextStyle: .body)
+        textView.textColor = .label
+        textView.backgroundColor = .clear
+        textView.textContainerInset = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
+        textView.dataDetectorTypes = [.link, .phoneNumber]
+        textView.alwaysBounceVertical = true
+        return textView
+    }
+    
+    func updateUIView(_ textView: UITextView, context: Context) {
+        textView.text = text
+    }
+}
+#endif
+
 #if DEBUG
 #Preview {
     VStack(spacing: 16) {
@@ -1108,7 +1151,7 @@ private struct PulsingDotModifier: ViewModifier {
         )
         MessageBubbleView(
             message: .mockAssistantMessage,
-            onRegenerate: { print("Regenerate") },
+            onRegenerate: { _ in print("Regenerate") },
             onSpeak: { print("Speak: \($0)") },
             onStopSpeaking: { print("Stop speaking") }
         )

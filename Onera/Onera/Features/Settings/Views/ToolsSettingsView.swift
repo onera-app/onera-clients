@@ -103,11 +103,12 @@ struct ToolsSettingsView: View {
     @State private var providerToRemove: SearchProvider?
     
     var body: some View {
-        List {
+        Form {
             webSearchSection
             nativeSearchSection
             externalProvidersSection
         }
+        .formStyle(.grouped)
         .navigationTitle("Tools")
         .alert("Remove API Key", isPresented: $showRemoveConfirmation, presenting: providerToRemove) { provider in
             Button("Remove", role: .destructive) {

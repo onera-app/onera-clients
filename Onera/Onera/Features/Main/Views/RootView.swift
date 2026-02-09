@@ -169,7 +169,7 @@ struct LaunchView: View {
                     
                     // Lock + chat bubble icon representing secure chat
                     Image(systemName: "lock.shield.fill")
-                        .font(.system(size: 36, weight: .medium))
+                        .font(.title.weight(.medium))
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [.accentColor, .accentColor.opacity(0.7)],

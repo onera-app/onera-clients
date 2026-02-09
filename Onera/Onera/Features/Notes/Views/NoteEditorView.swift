@@ -84,6 +84,73 @@ struct NoteEditorView: View {
                     .disabled(title.isEmpty || isSaving)
                     .accessibilityIdentifier("saveNoteButton")
                 }
+                
+                #if os(iOS)
+                ToolbarItemGroup(placement: .keyboard) {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            Button { toggleBold() } label: {
+                                Image(systemName: "bold")
+                            }
+                            .accessibilityLabel("Bold")
+                            
+                            Button { toggleItalic() } label: {
+                                Image(systemName: "italic")
+                            }
+                            .accessibilityLabel("Italic")
+                            
+                            Button { toggleStrikethrough() } label: {
+                                Image(systemName: "strikethrough")
+                            }
+                            .accessibilityLabel("Strikethrough")
+                            
+                            Divider()
+                            
+                            Button { insertHeading() } label: {
+                                Image(systemName: "number")
+                            }
+                            .accessibilityLabel("Heading")
+                            
+                            Button { insertBulletList() } label: {
+                                Image(systemName: "list.bullet")
+                            }
+                            .accessibilityLabel("Bullet list")
+                            
+                            Button { insertNumberedList() } label: {
+                                Image(systemName: "list.number")
+                            }
+                            .accessibilityLabel("Numbered list")
+                            
+                            Button { insertTaskList() } label: {
+                                Image(systemName: "checklist")
+                            }
+                            .accessibilityLabel("Task list")
+                            
+                            Divider()
+                            
+                            Button { insertInlineCode() } label: {
+                                Image(systemName: "chevron.left.forwardslash.chevron.right")
+                            }
+                            .accessibilityLabel("Inline code")
+                            
+                            Button { insertCodeBlock() } label: {
+                                Image(systemName: "text.page")
+                            }
+                            .accessibilityLabel("Code block")
+                            
+                            Button { insertLink() } label: {
+                                Image(systemName: "link")
+                            }
+                            .accessibilityLabel("Link")
+                            
+                            Button { insertBlockquote() } label: {
+                                Image(systemName: "text.quote")
+                            }
+                            .accessibilityLabel("Blockquote")
+                        }
+                    }
+                }
+                #endif
             }
             .disabled(isSaving)
             .overlay {
@@ -149,11 +216,11 @@ struct NoteEditorView: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "folder")
-                        .font(.system(size: 14))
+                        .font(.subheadline)
                     Text(selectedFolderName)
                         .font(.subheadline)
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 10))
+                        .font(.caption2)
                 }
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 12)
@@ -170,7 +237,7 @@ struct NoteEditorView: View {
                 isPinned.toggle()
             } label: {
                 Image(systemName: isPinned ? "pin.fill" : "pin")
-                    .font(.system(size: 16))
+                    .font(.body)
                     .foregroundStyle(isPinned ? .orange : .secondary)
             }
             
@@ -179,7 +246,7 @@ struct NoteEditorView: View {
                 isArchived.toggle()
             } label: {
                 Image(systemName: isArchived ? "archivebox.fill" : "archivebox")
-                    .font(.system(size: 16))
+                    .font(.body)
                     .foregroundStyle(isArchived ? .blue : .secondary)
             }
         }
@@ -217,6 +284,32 @@ struct NoteEditorView: View {
                 }
             }
     }
+    
+    // MARK: - Markdown Formatting Helpers
+    
+    private func wrapSelection(_ prefix: String, _ suffix: String) {
+        content = content + prefix + suffix
+    }
+    
+    private func insertPrefix(_ prefix: String) {
+        if content.isEmpty || content.last == "\n" {
+            content += prefix
+        } else {
+            content += "\n" + prefix
+        }
+    }
+    
+    private func toggleBold() { wrapSelection("**", "**") }
+    private func toggleItalic() { wrapSelection("*", "*") }
+    private func toggleStrikethrough() { wrapSelection("~~", "~~") }
+    private func insertHeading() { insertPrefix("## ") }
+    private func insertBulletList() { insertPrefix("- ") }
+    private func insertNumberedList() { insertPrefix("1. ") }
+    private func insertTaskList() { insertPrefix("- [ ] ") }
+    private func insertInlineCode() { wrapSelection("`", "`") }
+    private func insertCodeBlock() { wrapSelection("```\n", "\n```") }
+    private func insertLink() { wrapSelection("[", "](url)") }
+    private func insertBlockquote() { insertPrefix("> ") }
     
     // MARK: - Actions
     

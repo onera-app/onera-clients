@@ -15,6 +15,7 @@ struct MenuBarView: View {
     
     @Environment(\.dependencies) private var dependencies
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
     @State private var inputText = ""
     @State private var recentChats: [ChatSummary] = []
     @State private var isLoading = false
@@ -69,6 +70,7 @@ struct MenuBarView: View {
             }
             .buttonStyle(.plain)
             .help("Open Main Window")
+            .accessibilityLabel("Open main window")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -97,6 +99,7 @@ struct MenuBarView: View {
                             .foregroundStyle(Color.accentColor)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Send message")
                     .disabled(isLoading)
                 }
             }
@@ -141,7 +144,7 @@ struct MenuBarView: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(chat.title)
-                                    .font(.system(size: 13))
+                                    .font(.subheadline)
                                     .lineLimit(1)
                                 
                                 Text(chat.updatedAt, style: .relative)
@@ -194,7 +197,10 @@ struct MenuBarView: View {
             
             // Settings - HIG: Provide quick access
             Button {
-                // Open settings
+                #if os(macOS)
+                openSettings()
+                NSApp.activate(ignoringOtherApps: true)
+                #endif
             } label: {
                 Image(systemName: "gearshape")
                     .font(.caption)
@@ -202,6 +208,7 @@ struct MenuBarView: View {
             }
             .buttonStyle(.plain)
             .help("Settings (⌘,)")
+            .accessibilityLabel("Settings")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -253,6 +260,29 @@ struct MacChatView: View {
     @Environment(\.theme) private var theme
     @FocusState private var isInputFocused: Bool
     
+    // Prompt @mention support
+    var promptSummaries: [PromptSummary] = []
+    var onFetchPromptContent: ((PromptSummary) async -> String?)? = nil
+    
+    @State private var showMentionPopover = false
+    @State private var mentionQuery = ""
+    @State private var mentionSelectedIndex = 0
+    @State private var pendingPrompt: PromptSummary? = nil
+    @State private var pendingPromptVariables: [String] = []
+    @State private var pendingPromptResolvedContent: String? = nil
+    @State private var variableValues: [String: String] = [:]
+    @State private var showVariableSheet = false
+    
+    /// Prompts filtered by the current @mention query
+    private var filteredMentionPrompts: [PromptSummary] {
+        if mentionQuery.isEmpty {
+            return Array(promptSummaries.prefix(8))
+        }
+        return promptSummaries.filter {
+            $0.name.localizedCaseInsensitiveContains(mentionQuery)
+        }.prefix(8).map { $0 }
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             // Messages
@@ -268,16 +298,139 @@ struct MacChatView: View {
             inputArea
         }
         .background(theme.background)
+        .onChange(of: viewModel.inputText) { _, newValue in
+            detectMention(in: newValue)
+        }
+        .sheet(isPresented: $showVariableSheet) {
+            if let prompt = pendingPrompt {
+                PromptVariableSheet(
+                    promptName: prompt.name,
+                    variables: pendingPromptVariables,
+                    values: $variableValues,
+                    onConfirm: {
+                        insertPromptContent(prompt, variables: variableValues)
+                        showVariableSheet = false
+                        pendingPrompt = nil
+                    },
+                    onCancel: {
+                        showVariableSheet = false
+                        pendingPrompt = nil
+                    }
+                )
+            }
+        }
+    }
+    
+    // MARK: - @Mention Detection
+    
+    private func detectMention(in text: String) {
+        // Find the last "@" that starts a mention (not preceded by a word char)
+        guard let atRange = text.range(of: "@", options: .backwards) else {
+            showMentionPopover = false
+            return
+        }
+        
+        let afterAt = text[atRange.upperBound...]
+        
+        // If there's a newline or the mention was "completed" (no active query), hide
+        if afterAt.contains("\n") {
+            showMentionPopover = false
+            return
+        }
+        
+        // Check that @ is at start of text or preceded by whitespace
+        if atRange.lowerBound != text.startIndex {
+            let charBefore = text[text.index(before: atRange.lowerBound)]
+            if !charBefore.isWhitespace && !charBefore.isNewline {
+                showMentionPopover = false
+                return
+            }
+        }
+        
+        mentionQuery = String(afterAt)
+        mentionSelectedIndex = 0
+        showMentionPopover = !filteredMentionPrompts.isEmpty
+    }
+    
+    private func selectMentionPrompt(_ prompt: PromptSummary) {
+        showMentionPopover = false
+        
+        Task {
+            guard let content = await onFetchPromptContent?(prompt) else { return }
+            
+            // Check if the prompt has variables
+            let variablePattern = "\\{\\{\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\}\\}"
+            let variables: [String]
+            if let regex = try? NSRegularExpression(pattern: variablePattern) {
+                let range = NSRange(content.startIndex..., in: content)
+                let matches = regex.matches(in: content, range: range)
+                variables = matches.compactMap { match in
+                    guard let r = Range(match.range(at: 1), in: content) else { return nil }
+                    return String(content[r])
+                }
+            } else {
+                variables = []
+            }
+            
+            if variables.isEmpty {
+                insertPromptContent(prompt, resolvedContent: content)
+            } else {
+                // Show variable input sheet
+                pendingPrompt = prompt
+                pendingPromptVariables = Array(Set(variables))
+                pendingPromptResolvedContent = content
+                variableValues = [:]
+                showVariableSheet = true
+            }
+        }
+    }
+    
+    private func insertPromptContent(_ prompt: PromptSummary, variables: [String: String] = [:], resolvedContent: String? = nil) {
+        // Remove the @query from input text
+        var text = viewModel.inputText
+        if let atRange = text.range(of: "@", options: .backwards) {
+            let charBeforeOk: Bool
+            if atRange.lowerBound == text.startIndex {
+                charBeforeOk = true
+            } else {
+                let c = text[text.index(before: atRange.lowerBound)]
+                charBeforeOk = c.isWhitespace || c.isNewline
+            }
+            if charBeforeOk {
+                text = String(text[..<atRange.lowerBound])
+            }
+        }
+        
+        if !variables.isEmpty, let resolved = resolvedContent ?? pendingPromptResolvedContent {
+            // Apply variable substitution to the resolved content
+            var content = resolved
+            for (key, value) in variables {
+                content = content.replacingOccurrences(of: "{{\(key)}}", with: value)
+                content = content.replacingOccurrences(of: "{{ \(key) }}", with: value)
+            }
+            viewModel.inputText = text + content
+        } else if let resolved = resolvedContent {
+            viewModel.inputText = text + resolved
+        }
+        
+        pendingPromptResolvedContent = nil
     }
     
     // MARK: - Empty State
     
+    private let starterPrompts: [(icon: String, title: String, prompt: String)] = [
+        ("lightbulb", "Explain a concept", "Explain quantum computing in simple terms"),
+        ("envelope", "Draft an email", "Help me write a professional email to my team about project updates"),
+        ("terminal", "Write code", "Write a Python function that finds the longest palindromic substring"),
+        ("chart.bar", "Analyze data", "What are the key metrics I should track for a SaaS product?"),
+    ]
+    
     private var emptyState: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
             Spacer()
             
             Image(systemName: "bubble.left.and.text.bubble.right")
-                .font(.system(size: 48, weight: .light))
+                .font(.largeTitle.weight(.light))
                 .foregroundStyle(.tertiary)
             
             VStack(spacing: 4) {
@@ -294,6 +447,42 @@ struct MacChatView: View {
                 .foregroundStyle(.secondary)
             }
             
+            // Starter prompts grid
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                ForEach(starterPrompts, id: \.title) { item in
+                    Button {
+                        viewModel.inputText = item.prompt
+                        Task { await viewModel.sendMessage() }
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: item.icon)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .frame(width: 20)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(item.title)
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                Text(item.prompt)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                            
+                            Spacer(minLength: 0)
+                        }
+                        .padding(10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(.quaternary.opacity(0.5))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 4)
+            
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -301,15 +490,25 @@ struct MacChatView: View {
     
     // MARK: - Messages
     
+    @AppStorage("chatDensity") private var chatDensity: String = "comfortable"
+    
+    private var messageSpacing: CGFloat {
+        switch chatDensity {
+        case "compact": return 8
+        case "spacious": return 24
+        default: return 16
+        }
+    }
+    
     private var messagesScrollView: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(spacing: 16) {
+                LazyVStack(spacing: messageSpacing) {
                     ForEach(viewModel.messages) { message in
                         MacMessageBubble(
                             message: message,
-                            onRegenerate: {
-                                Task { await viewModel.regenerateMessage(messageId: message.id) }
+                            onRegenerate: { modifier in
+                                Task { await viewModel.regenerateMessage(messageId: message.id, modifier: modifier) }
                             },
                             onSpeak: { text in
                                 Task { await viewModel.speak(text, messageId: message.id) }
@@ -317,13 +516,40 @@ struct MacChatView: View {
                             onStopSpeaking: {
                                 viewModel.stopSpeaking()
                             },
-                            isSpeaking: viewModel.speakingMessageId == message.id
+                            isSpeaking: viewModel.speakingMessageId == message.id,
+                            onEdit: { newContent, shouldRegenerate in
+                                Task { await viewModel.editMessage(messageId: message.id, newContent: newContent, regenerate: shouldRegenerate) }
+                            },
+                            onDelete: {
+                                Task { await viewModel.deleteMessage(messageId: message.id) }
+                            },
+                            branchInfo: viewModel.getBranchInfo(for: message.id),
+                            onPreviousBranch: {
+                                viewModel.switchToPreviousBranch(for: message.id)
+                            },
+                            onNextBranch: {
+                                viewModel.switchToNextBranch(for: message.id)
+                            }
                         )
                         .id(message.id)
+                    }
+                    
+                    // Follow-up suggestions after the last message
+                    if !viewModel.followUps.isEmpty && !viewModel.isStreaming {
+                        FollowUpsView(
+                            followUps: viewModel.followUps,
+                            onSelect: { followUp in
+                                viewModel.inputText = followUp
+                                Task { await viewModel.sendMessage() }
+                            }
+                        )
+                        .padding(.horizontal)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
                     }
                 }
                 .padding()
             }
+            .scrollIndicators(.hidden)
             .onChange(of: viewModel.messages.count) { _, _ in
                 if let lastId = viewModel.messages.last?.id {
                     withAnimation {
@@ -337,36 +563,155 @@ struct MacChatView: View {
     // MARK: - Input Area
     
     private var inputArea: some View {
-        HStack(alignment: .bottom, spacing: 12) {
-            TextField("Message...", text: $viewModel.inputText, axis: .vertical)
-                .textFieldStyle(.plain)
-                .lineLimit(1...10)
-                .focused($isInputFocused)
-                .onSubmit {
-                    if !viewModel.inputText.isEmpty {
-                        Task {
-                            await viewModel.sendMessage()
+        VStack(spacing: 0) {
+            // @mention prompt suggestions (above input)
+            if showMentionPopover && !filteredMentionPrompts.isEmpty {
+                PromptMentionList(
+                    prompts: filteredMentionPrompts,
+                    selectedIndex: mentionSelectedIndex,
+                    onSelect: { prompt in
+                        selectMentionPrompt(prompt)
+                    }
+                )
+                .padding(.horizontal)
+                .padding(.bottom, 4)
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
+            
+            HStack(alignment: .bottom, spacing: 8) {
+                // Search toggle — glass circle with provider picker
+                searchToggleButton
+                
+                // Input field — glass pill
+                HStack(spacing: 6) {
+                    TextField("Ask anything...", text: $viewModel.inputText, axis: .vertical)
+                        .textFieldStyle(.plain)
+                        .font(.subheadline)
+                        .lineLimit(1...10)
+                        .focused($isInputFocused)
+                        .onSubmit {
+                            if showMentionPopover && !filteredMentionPrompts.isEmpty {
+                                let idx = min(mentionSelectedIndex, filteredMentionPrompts.count - 1)
+                                selectMentionPrompt(filteredMentionPrompts[idx])
+                            } else if !viewModel.inputText.isEmpty {
+                                Task { await viewModel.sendMessage() }
+                            }
+                        }
+                    
+                    // Send / Stop button inside the pill
+                    if viewModel.isStreaming {
+                        Button {
+                            viewModel.stopStreaming()
+                        } label: {
+                            Image(systemName: "stop.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.white)
+                                .frame(width: 24, height: 24)
+                                .background(Color.red)
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Stop generating")
+                    } else if !viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Button {
+                            Task { await viewModel.sendMessage() }
+                        } label: {
+                            Image(systemName: "arrow.up")
+                                .font(.caption.bold())
+                                .foregroundStyle(.white)
+                                .frame(width: 24, height: 24)
+                                .background(viewModel.canSend ? Color.accentColor : Color.secondary.opacity(0.5))
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Send message")
+                        .disabled(!viewModel.canSend)
+                        .keyboardShortcut(.return, modifiers: .command)
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(.controlBackgroundColor))
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+        }
+    }
+    
+    // MARK: - Search Toggle
+    
+    /// Whether any search provider is configured with an API key
+    private var hasSearchProvider: Bool {
+        let providerRaw = UserDefaults.standard.string(forKey: "defaultSearchProvider") ?? "tavily"
+        let apiKey = UserDefaults.standard.string(forKey: "search.\(providerRaw).apiKey") ?? ""
+        return !apiKey.isEmpty
+    }
+    
+    private var currentProviderName: String {
+        let providerRaw = UserDefaults.standard.string(forKey: "defaultSearchProvider") ?? "tavily"
+        return SearchProvider(rawValue: providerRaw)?.displayName ?? "Tavily"
+    }
+    
+    private var searchToggleButton: some View {
+        Menu {
+            // Toggle on/off
+            Button {
+                viewModel.searchEnabled.toggle()
+            } label: {
+                Label(
+                    viewModel.searchEnabled ? "Disable Web Search" : "Enable Web Search",
+                    systemImage: viewModel.searchEnabled ? "globe.badge.chevron.backward" : "globe"
+                )
+            }
+            
+            Divider()
+            
+            // Provider picker
+            Text("Search Provider")
+            ForEach(SearchProvider.allCases) { provider in
+                Button {
+                    UserDefaults.standard.set(provider.rawValue, forKey: "defaultSearchProvider")
+                    if !viewModel.searchEnabled {
+                        viewModel.searchEnabled = true
+                    }
+                } label: {
+                    HStack {
+                        Text(provider.displayName)
+                        if provider.rawValue == (UserDefaults.standard.string(forKey: "defaultSearchProvider") ?? "tavily") {
+                            Spacer()
+                            Image(systemName: "checkmark")
                         }
                     }
                 }
-                .padding(12)
-                .background(Color(nsColor: .controlBackgroundColor))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            
-            Button {
-                Task {
-                    await viewModel.sendMessage()
-                }
-            } label: {
-                Image(systemName: viewModel.isStreaming ? "stop.fill" : "arrow.up.circle.fill")
-                    .font(.title)
-                    .foregroundStyle(viewModel.canSend ? Color.accentColor : .secondary)
             }
-            .buttonStyle(.plain)
-            .disabled(!viewModel.canSend && !viewModel.isStreaming)
-            .keyboardShortcut(.return, modifiers: .command)
+        } label: {
+            Group {
+                if viewModel.isSearching {
+                    ProgressView()
+                        .controlSize(.small)
+                        .frame(width: 32, height: 32)
+                } else {
+                    Image(systemName: "globe")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(viewModel.searchEnabled ? Color.accentColor : .secondary)
+                        .frame(width: 32, height: 32)
+                }
+            }
+        } primaryAction: {
+            if hasSearchProvider {
+                viewModel.searchEnabled.toggle()
+            }
         }
-        .padding()
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .background(Color(.controlBackgroundColor))
+        .clipShape(Circle())
+        .help(
+            !hasSearchProvider ? "Configure a search provider in Settings > Tools" :
+            viewModel.searchEnabled ? "Web search enabled (\(currentProviderName))" : "Enable web search"
+        )
+        .opacity(hasSearchProvider ? 1.0 : 0.5)
     }
 }
 
@@ -374,19 +719,31 @@ struct MacChatView: View {
 
 struct MacMessageBubble: View {
     let message: Message
-    var onRegenerate: (() -> Void)?
+    var onRegenerate: ((String?) -> Void)?
     var onSpeak: ((String) -> Void)?
     var onStopSpeaking: (() -> Void)?
     var isSpeaking: Bool = false
     
+    // Edit support
+    var onEdit: ((String, Bool) -> Void)?
+    
+    // Delete support
+    var onDelete: (() -> Void)?
+    
+    // Branch navigation
+    var branchInfo: (current: Int, total: Int)?
+    var onPreviousBranch: (() -> Void)?
+    var onNextBranch: (() -> Void)?
+    
     @Environment(\.theme) private var theme
-    @State private var isHovering = false
     @State private var showCopiedFeedback = false
     @State private var isRegenerating = false
+    @State private var isEditing = false
+    @State private var editText = ""
     
     /// Parse the message content for thinking tags
     private var parsedContent: ParsedMessageContent {
-        parseThinkingContent(message.content)
+        ThinkingTagParser.parse(message.content)
     }
     
     var body: some View {
@@ -399,9 +756,7 @@ struct MacMessageBubble: View {
                 Spacer(minLength: 60)
             }
         }
-        .onHover { hovering in
-            isHovering = hovering
-        }
+
     }
     
     // MARK: - User Message
@@ -413,34 +768,79 @@ struct MacMessageBubble: View {
     
     private var userMessageView: some View {
         VStack(alignment: .trailing, spacing: 4) {
-            // User message with images if present
-            VStack(alignment: .trailing, spacing: 8) {
-                // Show attached images if any
-                if !imageAttachments.isEmpty {
+            if isEditing {
+                // Edit mode
+                VStack(alignment: .trailing, spacing: 8) {
+                    TextEditor(text: $editText)
+                        .font(.body)
+                        .frame(minHeight: 60, maxHeight: 200)
+                        .scrollContentBackground(.hidden)
+                        .padding(8)
+                        .background(Color(nsColor: .controlBackgroundColor))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    
                     HStack(spacing: 8) {
-                        ForEach(imageAttachments) { attachment in
-                            if let nsImage = NSImage(data: attachment.data) {
-                                Image(nsImage: nsImage)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(width: 80, height: 80)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                        Button("Cancel") {
+                            isEditing = false
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        
+                        Button("Save & Regenerate") {
+                            onEdit?(editText, true)
+                            isEditing = false
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                        
+                        Button("Save") {
+                            onEdit?(editText, false)
+                            isEditing = false
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
+                }
+                .padding(12)
+                .background(theme.userBubble)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            } else {
+                // Normal display
+                VStack(alignment: .trailing, spacing: 8) {
+                    // Show attached images if any
+                    if !imageAttachments.isEmpty {
+                        HStack(spacing: 8) {
+                            ForEach(imageAttachments) { attachment in
+                                if let nsImage = NSImage(data: attachment.data) {
+                                    Image(nsImage: nsImage)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(width: 80, height: 80)
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                }
                             }
                         }
                     }
+                    
+                    Text(message.content)
+                        .font(.body)
+                        .textSelection(.enabled)
+                    
+                    // Show edited indicator
+                    if message.edited == true {
+                        Text("edited")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
                 }
+                .padding(12)
+                .background(theme.userBubble)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
                 
-                Text(message.content)
-                    .font(.body)
-                    .textSelection(.enabled)
-            }
-            .padding(12)
-            .background(theme.userBubble)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            
-            // Actions on hover
-            if isHovering && !message.isStreaming {
-                userActionButtons
+                // Actions
+                if !message.isStreaming {
+                    userActionButtons
+                }
             }
         }
     }
@@ -462,11 +862,74 @@ struct MacMessageBubble: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             
-            // Actions on hover
-            if isHovering && !message.isStreaming {
-                assistantActionButtons
+            // Message metadata + branch navigation + actions (below bubble)
+            if !message.isStreaming {
+                HStack(spacing: 12) {
+                    // Model name and timestamp
+                    messageMetadata
+                    
+                    // Branch navigation (if branches exist)
+                    if let info = branchInfo, info.total > 1 {
+                        branchNavigationView(info: info)
+                    }
+                    
+                    Spacer()
+                    
+                    // Actions
+                    assistantActionButtons
+                }
+                .foregroundStyle(.secondary)
+                .transition(.opacity)
             }
         }
+    }
+    
+    // MARK: - Message Metadata
+    
+    @ViewBuilder
+    private var messageMetadata: some View {
+        HStack(spacing: 6) {
+            if let model = message.model {
+                Text(ModelOption.formatModelName(model))
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            
+            Text(message.createdAt, style: .time)
+                .font(.caption2)
+                .foregroundStyle(.quaternary)
+        }
+    }
+    
+    // MARK: - Branch Navigation
+    
+    private func branchNavigationView(info: (current: Int, total: Int)) -> some View {
+        HStack(spacing: 4) {
+            Button {
+                onPreviousBranch?()
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.caption2)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Previous response version")
+            .disabled(info.current <= 1)
+            
+            Text("\(info.current)/\(info.total)")
+                .font(.caption)
+                .monospacedDigit()
+            
+            Button {
+                onNextBranch?()
+            } label: {
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Next response version")
+            .disabled(info.current >= info.total)
+        }
+        .foregroundStyle(.secondary)
     }
     
     // MARK: - Action Buttons
@@ -474,6 +937,14 @@ struct MacMessageBubble: View {
     private var userActionButtons: some View {
         HStack(spacing: 8) {
             copyButton
+            
+            if onEdit != nil {
+                editButton
+            }
+            
+            if onDelete != nil {
+                deleteButton
+            }
         }
         .foregroundStyle(.secondary)
         .transition(.opacity.combined(with: .move(edge: .top)))
@@ -491,7 +962,6 @@ struct MacMessageBubble: View {
                 speakButton
             }
         }
-        .foregroundStyle(.secondary)
         .transition(.opacity.combined(with: .move(edge: .top)))
     }
     
@@ -511,18 +981,85 @@ struct MacMessageBubble: View {
         }
         .buttonStyle(.plain)
         .help(showCopiedFeedback ? "Copied!" : "Copy message")
+        .accessibilityLabel("Copy message")
     }
     
-    private var regenerateButton: some View {
+    private var editButton: some View {
         Button {
-            doRegenerate()
+            editText = message.content
+            isEditing = true
         } label: {
-            Image(systemName: "arrow.clockwise")
+            Image(systemName: "pencil")
                 .font(.caption)
-                .rotationEffect(.degrees(isRegenerating ? 360 : 0))
-                .animation(isRegenerating ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isRegenerating)
         }
         .buttonStyle(.plain)
+        .help("Edit message")
+        .accessibilityLabel("Edit message")
+    }
+    
+    @State private var showDeleteConfirmation = false
+    
+    private var deleteButton: some View {
+        Button(role: .destructive) {
+            showDeleteConfirmation = true
+        } label: {
+            Image(systemName: "trash")
+                .font(.caption)
+                .foregroundStyle(.red.opacity(0.7))
+        }
+        .buttonStyle(.plain)
+        .help("Delete message")
+        .accessibilityLabel("Delete message")
+        .confirmationDialog("Delete Message", isPresented: $showDeleteConfirmation) {
+            Button("Delete", role: .destructive) {
+                onDelete?()
+            }
+        } message: {
+            Text("Are you sure you want to delete this message? This cannot be undone.")
+        }
+    }
+    
+    @State private var customRegeneratePrompt = ""
+    
+    private var regenerateButton: some View {
+        Menu {
+            Button {
+                doRegenerate(modifier: nil)
+            } label: {
+                Label("Try Again", systemImage: "arrow.clockwise")
+            }
+            
+            Divider()
+            
+            Button {
+                doRegenerate(modifier: "Please provide more details and expand on your explanation.")
+            } label: {
+                Label("Add Details", systemImage: "doc.text")
+            }
+            
+            Button {
+                doRegenerate(modifier: "Please be more concise and brief in your response.")
+            } label: {
+                Label("More Concise", systemImage: "arrow.down.right.and.arrow.up.left")
+            }
+            
+            Button {
+                doRegenerate(modifier: "Please be more creative and think outside the box.")
+            } label: {
+                Label("Be Creative", systemImage: "sparkles")
+            }
+        } label: {
+            HStack(spacing: 2) {
+                Image(systemName: "arrow.clockwise")
+                    .font(.caption)
+                    .rotationEffect(.degrees(isRegenerating ? 360 : 0))
+                    .animation(isRegenerating ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isRegenerating)
+                Image(systemName: "chevron.down")
+                    .font(.caption2.bold())
+            }
+        }
+        .menuIndicator(.hidden)
+        .fixedSize()
         .help("Regenerate response")
     }
     
@@ -536,6 +1073,7 @@ struct MacMessageBubble: View {
         }
         .buttonStyle(.plain)
         .help(isSpeaking ? "Stop speaking" : "Read aloud")
+        .accessibilityLabel(isSpeaking ? "Stop speaking" : "Read aloud")
     }
     
     // MARK: - Actions
@@ -556,12 +1094,12 @@ struct MacMessageBubble: View {
         }
     }
     
-    private func doRegenerate() {
+    private func doRegenerate(modifier: String? = nil) {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             isRegenerating = true
         }
         
-        onRegenerate?()
+        onRegenerate?(modifier)
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             withAnimation(.easeOut(duration: 0.2)) {
@@ -578,75 +1116,6 @@ struct MacMessageBubble: View {
         }
     }
     
-    // MARK: - Thinking Tag Parser
-    
-    /// Supported thinking tags
-    private static let thinkingTags = ["think", "thinking", "reason", "reasoning"]
-    
-    /// Parse content and extract thinking blocks
-    private func parseThinkingContent(_ content: String) -> ParsedMessageContent {
-        guard !content.isEmpty else {
-            return ParsedMessageContent(displayContent: "", thinkingContent: nil, isThinking: false)
-        }
-        
-        var displayContent = content
-        var thinkingBlocks: [String] = []
-        var isThinking = false
-        
-        // Build regex pattern for complete blocks: <tag>content</tag>
-        let tagsPattern = Self.thinkingTags.joined(separator: "|")
-        let completeBlockPattern = "<(\(tagsPattern))>([\\s\\S]*?)</\\1>"
-        
-        // Find and extract complete thinking blocks
-        if let regex = try? NSRegularExpression(pattern: completeBlockPattern, options: [.caseInsensitive]) {
-            let nsContent = content as NSString
-            let matches = regex.matches(in: content, options: [], range: NSRange(location: 0, length: nsContent.length))
-            
-            // Process matches in reverse order to preserve indices
-            for match in matches.reversed() {
-                if match.numberOfRanges >= 3 {
-                    let contentRange = match.range(at: 2)
-                    let thinkingText = nsContent.substring(with: contentRange).trimmingCharacters(in: .whitespacesAndNewlines)
-                    if !thinkingText.isEmpty {
-                        thinkingBlocks.insert(thinkingText, at: 0)
-                    }
-                    // Remove the block from display content
-                    displayContent = (displayContent as NSString).replacingCharacters(in: match.range, with: "")
-                }
-            }
-        }
-        
-        // Check for incomplete (still streaming) thinking block: <tag>content (no closing tag)
-        let openTagPattern = "<(\(tagsPattern))>([\\s\\S]*)$"
-        if let regex = try? NSRegularExpression(pattern: openTagPattern, options: [.caseInsensitive]) {
-            let nsDisplay = displayContent as NSString
-            if let match = regex.firstMatch(in: displayContent, options: [], range: NSRange(location: 0, length: nsDisplay.length)) {
-                if match.numberOfRanges >= 3 {
-                    let contentRange = match.range(at: 2)
-                    let thinkingText = nsDisplay.substring(with: contentRange).trimmingCharacters(in: .whitespacesAndNewlines)
-                    if !thinkingText.isEmpty {
-                        thinkingBlocks.append(thinkingText)
-                    }
-                    // Remove the incomplete block from display content
-                    displayContent = (displayContent as NSString).replacingCharacters(in: match.range, with: "")
-                    isThinking = true
-                }
-            }
-        }
-        
-        // Clean up display content
-        displayContent = displayContent
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "\n{3,}", with: "\n\n", options: .regularExpression)
-        
-        let combinedThinking = thinkingBlocks.isEmpty ? nil : thinkingBlocks.joined(separator: "\n\n")
-        
-        return ParsedMessageContent(
-            displayContent: displayContent,
-            thinkingContent: combinedThinking,
-            isThinking: isThinking
-        )
-    }
 }
 
 // MARK: - Mac Reasoning View
@@ -763,7 +1232,7 @@ struct DetachedNoteView: View {
             } else if let error = error {
                 VStack(spacing: 16) {
                     Image(systemName: "exclamationmark.triangle")
-                        .font(.system(size: 40))
+                        .font(.largeTitle)
                         .foregroundStyle(.secondary)
                     Text("Failed to load note")
                         .font(.headline)
@@ -782,7 +1251,7 @@ struct DetachedNoteView: View {
             } else {
                 VStack(spacing: 16) {
                     Image(systemName: "note.text")
-                        .font(.system(size: 40))
+                        .font(.largeTitle)
                         .foregroundStyle(.secondary)
                     Text("Note not found")
                         .font(.headline)
@@ -857,6 +1326,7 @@ struct MacNoteEditorView: View {
                 }
                 .buttonStyle(.plain)
                 .help(isPinned ? "Unpin Note" : "Pin Note")
+                .accessibilityLabel(isPinned ? "Unpin note" : "Pin note")
                 
                 Spacer()
                 
@@ -884,6 +1354,7 @@ struct MacNoteEditorView: View {
                 .buttonStyle(.plain)
                 .disabled(isSaving || !hasChanges)
                 .help("Save (⌘S)")
+                .accessibilityLabel("Save note")
                 .keyboardShortcut("s", modifiers: .command)
             }
             .padding(.horizontal)
@@ -900,20 +1371,70 @@ struct MacNoteEditorView: View {
                 .padding(.top, 16)
                 .onChange(of: title) { _, _ in scheduleAutoSave() }
             
+            // Markdown formatting toolbar
+            HStack(spacing: 2) {
+                FormatButton(icon: "bold", help: "Bold (⌘B)") {
+                    wrapSelection(prefix: "**", suffix: "**")
+                }
+                FormatButton(icon: "italic", help: "Italic (⌘I)") {
+                    wrapSelection(prefix: "_", suffix: "_")
+                }
+                FormatButton(icon: "strikethrough", help: "Strikethrough") {
+                    wrapSelection(prefix: "~~", suffix: "~~")
+                }
+                
+                Divider()
+                    .frame(height: 16)
+                    .padding(.horizontal, 4)
+                
+                FormatButton(icon: "number", help: "Heading") {
+                    insertAtLineStart("# ")
+                }
+                FormatButton(icon: "list.bullet", help: "Bullet List") {
+                    insertAtLineStart("- ")
+                }
+                FormatButton(icon: "list.number", help: "Numbered List") {
+                    insertAtLineStart("1. ")
+                }
+                FormatButton(icon: "checklist", help: "Task List") {
+                    insertAtLineStart("- [ ] ")
+                }
+                
+                Divider()
+                    .frame(height: 16)
+                    .padding(.horizontal, 4)
+                
+                FormatButton(icon: "chevron.left.forwardslash.chevron.right", help: "Inline Code") {
+                    wrapSelection(prefix: "`", suffix: "`")
+                }
+                FormatButton(icon: "text.page", help: "Code Block") {
+                    wrapSelection(prefix: "```\n", suffix: "\n```")
+                }
+                FormatButton(icon: "link", help: "Link") {
+                    wrapSelection(prefix: "[", suffix: "](url)")
+                }
+                FormatButton(icon: "text.quote", help: "Blockquote") {
+                    insertAtLineStart("> ")
+                }
+                
+                Spacer()
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 4)
+            .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
+            
             Divider()
-                .padding(.horizontal)
-                .padding(.vertical, 8)
             
             // Content
             TextEditor(text: $content)
-                .font(.body)
+                .font(.system(.body, design: .monospaced))
                 .scrollContentBackground(.hidden)
                 .padding(.horizontal, 12)
                 .focused($isContentFocused)
                 .onChange(of: content) { _, _ in scheduleAutoSave() }
                 .overlay(alignment: .topLeading) {
                     if content.isEmpty {
-                        Text("Start writing...")
+                        Text("Start writing in Markdown...")
                             .font(.body)
                             .foregroundStyle(.tertiary)
                             .padding(.horizontal, 16)
@@ -971,6 +1492,53 @@ struct MacNoteEditorView: View {
         
         isSaving = false
         lastSaveTime = Date()
+    }
+    
+    // MARK: - Markdown Formatting Helpers
+    
+    private func wrapSelection(prefix: String, suffix: String) {
+        // Simple approach: insert at cursor position (end of content)
+        content += prefix + suffix
+    }
+    
+    private func insertAtLineStart(_ prefix: String) {
+        if content.isEmpty || content.hasSuffix("\n") {
+            content += prefix
+        } else {
+            content += "\n" + prefix
+        }
+    }
+}
+
+// MARK: - Format Button
+
+private struct FormatButton: View {
+    let icon: String
+    let help: String
+    let action: () -> Void
+    
+    /// Accessibility label derived from help text, stripping keyboard shortcuts
+    private var accessibilityText: String {
+        help.replacingOccurrences(of: #"\s*\(.*\)$"#, with: "", options: .regularExpression)
+    }
+    
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.caption)
+                .frame(width: 26, height: 26)
+                .foregroundStyle(.secondary)
+        }
+        .buttonStyle(.plain)
+        .help(help)
+        .accessibilityLabel(accessibilityText)
+        .onHover { hovering in
+            if hovering {
+                NSCursor.pointingHand.push()
+            } else {
+                NSCursor.pop()
+            }
+        }
     }
 }
 
@@ -1042,6 +1610,7 @@ struct MacSettingsView: View {
 struct AdvancedSettingsView: View {
     @AppStorage("enableDeveloperMode") private var enableDeveloperMode = false
     @AppStorage("enableLogging") private var enableLogging = false
+    @State private var showResetConfirmation = false
     
     var body: some View {
         Form {
@@ -1052,21 +1621,47 @@ struct AdvancedSettingsView: View {
             
             Section("Reset") {
                 Button("Reset All Settings", role: .destructive) {
-                    // Reset settings
+                    showResetConfirmation = true
                 }
             }
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
+        .alert("Reset All Settings?", isPresented: $showResetConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Reset", role: .destructive) {
+                resetAllSettings()
+            }
+        } message: {
+            Text("This will reset all preferences to their defaults. This cannot be undone.")
+        }
+    }
+    
+    private func resetAllSettings() {
+        let keysToReset = [
+            "systemPrompt", "streamResponse", "temperature", "topP", "topK",
+            "maxTokens", "frequencyPenalty", "presencePenalty",
+            "openai.reasoningEffort", "anthropic.extendedThinking",
+            "enableDeveloperMode", "enableLogging",
+            "colorScheme", "selectedTheme"
+        ]
+        let defaults = UserDefaults.standard
+        for key in keysToReset {
+            defaults.removeObject(forKey: key)
+        }
     }
 }
 
 struct MenuBarGeneralSettingsView: View {
+    @AppStorage("showInMenuBar") private var showInMenuBar = true
+    
     var body: some View {
         Form {
             Section("Startup") {
-                Toggle("Launch at login", isOn: .constant(false))
-                Toggle("Show in menu bar", isOn: .constant(true))
+                #if os(macOS)
+                LaunchAtLoginToggle()
+                #endif
+                Toggle("Show in menu bar", isOn: $showInMenuBar)
             }
         }
         .formStyle(.grouped)
@@ -1074,9 +1669,37 @@ struct MenuBarGeneralSettingsView: View {
     }
 }
 
+#if os(macOS)
+import ServiceManagement
+
+/// Native macOS launch-at-login toggle using SMAppService
+private struct LaunchAtLoginToggle: View {
+    @State private var isEnabled = SMAppService.mainApp.status == .enabled
+    
+    var body: some View {
+        Toggle("Launch at login", isOn: $isEnabled)
+            .onChange(of: isEnabled) { _, newValue in
+                do {
+                    if newValue {
+                        try SMAppService.mainApp.register()
+                    } else {
+                        try SMAppService.mainApp.unregister()
+                    }
+                } catch {
+                    print("[Settings] Failed to toggle launch at login: \(error)")
+                    isEnabled = SMAppService.mainApp.status == .enabled
+                }
+            }
+    }
+}
+#endif
+
 struct MacAppearanceSettingsView: View {
     @Binding var colorScheme: Int
     @Binding var selectedTheme: String
+    @AppStorage("uiScale") private var uiScale: Double = 1.0
+    @AppStorage("chatDensity") private var chatDensity: String = "comfortable"
+    @AppStorage("oledDark") private var oledDark: Bool = false
     
     var body: some View {
         Form {
@@ -1087,6 +1710,11 @@ struct MacAppearanceSettingsView: View {
                     Text("Dark").tag(2)
                 }
                 .pickerStyle(.segmented)
+                
+                if colorScheme == 2 || colorScheme == 0 {
+                    Toggle("OLED Black (true black backgrounds)", isOn: $oledDark)
+                        .help("Uses pure black instead of dark gray for OLED displays")
+                }
             }
             
             Section("Theme") {
@@ -1096,9 +1724,59 @@ struct MacAppearanceSettingsView: View {
                     }
                 }
             }
+            
+            Section("Chat Density") {
+                Picker("Message Spacing", selection: $chatDensity) {
+                    Text("Compact").tag("compact")
+                    Text("Comfortable").tag("comfortable")
+                    Text("Spacious").tag("spacious")
+                }
+                .pickerStyle(.segmented)
+                
+                Text(chatDensityDescription)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            
+            Section("UI Scale") {
+                HStack {
+                    Text("A")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    Slider(value: $uiScale, in: 0.85...1.25, step: 0.05)
+                    
+                    Text("A")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                }
+                
+                HStack {
+                    Text("\(Int(uiScale * 100))%")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    Spacer()
+                    
+                    if uiScale != 1.0 {
+                        Button("Reset") {
+                            uiScale = 1.0
+                        }
+                        .font(.caption)
+                    }
+                }
+            }
         }
         .formStyle(.grouped)
         .padding()
+    }
+    
+    private var chatDensityDescription: String {
+        switch chatDensity {
+        case "compact": return "Minimal spacing between messages"
+        case "spacious": return "Extra breathing room between messages"
+        default: return "Standard spacing between messages"
+        }
     }
 }
 
@@ -1160,6 +1838,7 @@ private struct MacCredentialsListView: View {
                 }
                 .buttonStyle(.plain)
                 .help("Refresh")
+                .accessibilityLabel("Refresh credentials")
                 
                 Button {
                     viewModel.showAddCredential = true
@@ -1168,6 +1847,7 @@ private struct MacCredentialsListView: View {
                 }
                 .buttonStyle(.plain)
                 .help("Add API Key")
+                .accessibilityLabel("Add API key")
             }
             .padding()
             .background(Color(nsColor: .controlBackgroundColor))
@@ -1209,7 +1889,7 @@ private struct MacCredentialsListView: View {
             Spacer()
             
             Image(systemName: "key.horizontal")
-                .font(.system(size: 48, weight: .light))
+                .font(.largeTitle.weight(.light))
                 .foregroundStyle(.tertiary)
             
             VStack(spacing: 8) {
@@ -1266,7 +1946,7 @@ private struct MacCredentialRow: View {
                     .fill(providerColor.opacity(0.15))
                 
                 Text(credential.provider.displayName.prefix(1))
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.caption.bold())
                     .foregroundStyle(providerColor)
             }
             .frame(width: 32, height: 32)
@@ -1419,6 +2099,9 @@ struct SecuritySettingsView: View {
     @State private var recoveryPhrase: String?
     @State private var isLoadingRecovery = false
     @State private var showLockConfirmation = false
+    @State private var showResetConfirmation = false
+    @State private var resetConfirmText = ""
+    @State private var isResetting = false
     @State private var error: Error?
     
     var body: some View {
@@ -1546,6 +2229,19 @@ struct SecuritySettingsView: View {
                     Label("Lock Session Now", systemImage: "lock.fill")
                 }
                 .disabled(!dependencies.secureSession.isUnlocked)
+                
+                Divider()
+                
+                Button(role: .destructive) {
+                    showResetConfirmation = true
+                } label: {
+                    Label("Reset Encryption", systemImage: "exclamationmark.triangle.fill")
+                }
+                .disabled(!dependencies.secureSession.isUnlocked)
+                
+                Text("Deletes all encryption keys. You will need to set up encryption again. All existing encrypted data will be lost.")
+                    .font(.caption)
+                    .foregroundStyle(.red.opacity(0.8))
             }
             
             // About Section
@@ -1589,6 +2285,14 @@ struct SecuritySettingsView: View {
         } message: {
             Text("You'll need to enter your password or recovery phrase to unlock again.")
         }
+        .sheet(isPresented: $showResetConfirmation) {
+            MacResetEncryptionSheet(
+                confirmText: $resetConfirmText,
+                isResetting: isResetting,
+                onReset: performEncryptionReset,
+                onCancel: { showResetConfirmation = false }
+            )
+        }
     }
     
     private func checkStatus() async {
@@ -1617,6 +2321,100 @@ struct SecuritySettingsView: View {
         }
         
         isLoadingRecovery = false
+    }
+    
+    private func performEncryptionReset() async {
+        guard resetConfirmText == "RESET MY ENCRYPTION" else { return }
+        isResetting = true
+        
+        do {
+            let token = try await dependencies.authService.getToken()
+            
+            struct ResetInput: Encodable {
+                let confirmPhrase: String
+            }
+            struct ResetResponse: Decodable {
+                let success: Bool
+            }
+            
+            let _: ResetResponse = try await dependencies.networkService.call(
+                procedure: "keyShares.resetEncryption",
+                input: ResetInput(confirmPhrase: "RESET MY ENCRYPTION"),
+                token: token
+            )
+            
+            // Clear local session and keychain data
+            dependencies.secureSession.lock()
+            dependencies.secureSession.clearPersistedSession()
+            
+            showResetConfirmation = false
+            resetConfirmText = ""
+        } catch {
+            self.error = error
+        }
+        
+        isResetting = false
+    }
+}
+
+// MARK: - Reset Encryption Sheet
+
+private struct MacResetEncryptionSheet: View {
+    @Binding var confirmText: String
+    let isResetting: Bool
+    let onReset: () async -> Void
+    let onCancel: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 24) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.largeTitle)
+                .foregroundStyle(.red)
+            
+            Text("Reset Encryption")
+                .font(.title2.bold())
+            
+            VStack(alignment: .leading, spacing: 8) {
+                Text("This will permanently delete all your encryption keys.")
+                    .font(.body)
+                
+                Text("All your encrypted chats and notes will become unreadable. This cannot be undone.")
+                    .font(.body)
+                    .foregroundStyle(.red)
+            }
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Type **RESET MY ENCRYPTION** to confirm:")
+                    .font(.callout)
+                
+                TextField("Confirmation", text: $confirmText)
+                    .textFieldStyle(.roundedBorder)
+            }
+            
+            HStack {
+                Button("Cancel", role: .cancel) {
+                    onCancel()
+                }
+                .keyboardShortcut(.cancelAction)
+                
+                Spacer()
+                
+                Button(role: .destructive) {
+                    Task { await onReset() }
+                } label: {
+                    if isResetting {
+                        ProgressView()
+                            .scaleEffect(0.7)
+                    } else {
+                        Text("Reset Encryption")
+                    }
+                }
+                .disabled(confirmText != "RESET MY ENCRYPTION" || isResetting)
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(32)
+        .frame(width: 420)
     }
 }
 
@@ -1652,7 +2450,7 @@ private struct MacRecoveryPhraseSheet: View {
             // Content
             VStack(spacing: 24) {
                 Image(systemName: "exclamationmark.shield.fill")
-                    .font(.system(size: 48))
+                    .font(.largeTitle)
                     .foregroundStyle(.orange)
                 
                 VStack(spacing: 8) {
@@ -1707,6 +2505,124 @@ private struct MacRecoveryPhraseSheet: View {
                 await onLoad()
             }
         }
+    }
+}
+
+// MARK: - Prompt @Mention List
+
+struct PromptMentionList: View {
+    let prompts: [PromptSummary]
+    let selectedIndex: Int
+    let onSelect: (PromptSummary) -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 4) {
+                Image(systemName: "at")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Text("Prompts")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 8)
+            .padding(.top, 6)
+            
+            ForEach(Array(prompts.enumerated()), id: \.element.id) { index, prompt in
+                Button {
+                    onSelect(prompt)
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "text.quote")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                            .frame(width: 16)
+                        
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(prompt.name)
+                                .font(.subheadline)
+                                .lineLimit(1)
+                            
+                            if let desc = prompt.description, !desc.isEmpty {
+                                Text(desc)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                        }
+                        
+                        Spacer()
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(index == selectedIndex ? Color.accentColor.opacity(0.15) : Color.clear)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(6)
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .shadow(color: .black.opacity(0.15), radius: 8, y: 2)
+    }
+}
+
+// MARK: - Prompt Variable Sheet
+
+struct PromptVariableSheet: View {
+    let promptName: String
+    let variables: [String]
+    @Binding var values: [String: String]
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Button("Cancel") { onCancel() }
+                    .keyboardShortcut(.escape, modifiers: [])
+                
+                Spacer()
+                
+                Text("Fill in Variables")
+                    .font(.headline)
+                
+                Spacer()
+                
+                Button("Insert") { onConfirm() }
+                    .keyboardShortcut(.return, modifiers: .command)
+                    .buttonStyle(.borderedProminent)
+            }
+            .padding()
+            .background(Color(nsColor: .controlBackgroundColor))
+            
+            Divider()
+            
+            // Content
+            Form {
+                Section {
+                    Text("Prompt: \(promptName)")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+                
+                Section("Variables") {
+                    ForEach(variables, id: \.self) { variable in
+                        TextField(variable, text: Binding(
+                            get: { values[variable] ?? "" },
+                            set: { values[variable] = $0 }
+                        ))
+                        .textFieldStyle(.roundedBorder)
+                    }
+                }
+            }
+            .formStyle(.grouped)
+            .scrollContentBackground(.hidden)
+        }
+        .frame(width: 400, height: 350)
     }
 }
 

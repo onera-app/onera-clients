@@ -89,6 +89,26 @@ actor LLMService: LLMServiceProtocol {
         maxTokens: Int,
         onEvent: @escaping @Sendable (StreamEvent) -> Void
     ) async throws {
+        let params = ModelParameters(
+            systemPrompt: systemPrompt,
+            maxTokens: maxTokens > 0 ? maxTokens : nil
+        )
+        try await performStreamChat(
+            messages: messages,
+            credential: credential,
+            model: model,
+            parameters: params,
+            onEvent: onEvent
+        )
+    }
+    
+    private func performStreamChat(
+        messages: [ChatMessage],
+        credential: DecryptedCredential,
+        model: String,
+        parameters: ModelParameters,
+        onEvent: @escaping @Sendable (StreamEvent) -> Void
+    ) async throws {
         // Get the model from the provider factory
         let languageModel: any LanguageModelV3
         do {
@@ -131,15 +151,20 @@ actor LLMService: LLMServiceProtocol {
             }
         }
         
-        // Configure call settings
+        // Configure call settings from ModelParameters
         let settings = CallSettings(
-            maxOutputTokens: maxTokens
+            maxOutputTokens: parameters.maxTokens,
+            temperature: parameters.temperature,
+            topP: parameters.topP,
+            topK: parameters.topK,
+            presencePenalty: parameters.presencePenalty,
+            frequencyPenalty: parameters.frequencyPenalty
         )
         
         // Create the stream using Swift AI SDK
         let result: DefaultStreamTextResult<JSONValue, JSONValue> = try streamText(
             model: .v3(languageModel),
-            system: systemPrompt,
+            system: parameters.systemPrompt,
             messages: sdkMessages,
             settings: settings
         )
@@ -396,6 +421,38 @@ actor LLMService: LLMServiceProtocol {
         }.sorted { $0.name < $1.name }
     }
     
+    // MARK: - Streaming Chat with Full Parameters
+    
+    func streamChat(
+        messages: [ChatMessage],
+        credential: DecryptedCredential,
+        model: String,
+        parameters: ModelParameters,
+        onEvent: @escaping @Sendable (StreamEvent) -> Void
+    ) async throws {
+        // Cancel any existing stream
+        currentTask?.cancel()
+        
+        let task = Task {
+            try await performStreamChat(
+                messages: messages,
+                credential: credential,
+                model: model,
+                parameters: parameters,
+                onEvent: onEvent
+            )
+        }
+        
+        currentTask = task
+        
+        do {
+            try await task.value
+        } catch is CancellationError {
+            onEvent(.done)
+            throw LLMError.cancelled
+        }
+    }
+    
     // MARK: - Streaming Chat with Private Inference Support
     
     func streamChat(
@@ -404,6 +461,28 @@ actor LLMService: LLMServiceProtocol {
         model: String,
         systemPrompt: String?,
         maxTokens: Int,
+        enclaveConfig: EnclaveConfig?,
+        onEvent: @escaping @Sendable (StreamEvent) -> Void
+    ) async throws {
+        let params = ModelParameters(
+            systemPrompt: systemPrompt,
+            maxTokens: maxTokens > 0 ? maxTokens : nil
+        )
+        try await streamChat(
+            messages: messages,
+            credential: credential,
+            model: model,
+            parameters: params,
+            enclaveConfig: enclaveConfig,
+            onEvent: onEvent
+        )
+    }
+    
+    func streamChat(
+        messages: [ChatMessage],
+        credential: DecryptedCredential?,
+        model: String,
+        parameters: ModelParameters,
         enclaveConfig: EnclaveConfig?,
         onEvent: @escaping @Sendable (StreamEvent) -> Void
     ) async throws {
@@ -426,8 +505,8 @@ actor LLMService: LLMServiceProtocol {
             try await performPrivateInferenceStream(
                 messages: messages,
                 modelId: modelName,
-                systemPrompt: systemPrompt,
-                maxTokens: maxTokens,
+                systemPrompt: parameters.systemPrompt,
+                maxTokens: parameters.maxTokens ?? 4096,
                 enclaveConfig: config,
                 onEvent: onEvent
             )
@@ -441,8 +520,7 @@ actor LLMService: LLMServiceProtocol {
                 messages: messages,
                 credential: credential,
                 model: modelName,
-                systemPrompt: systemPrompt,
-                maxTokens: maxTokens,
+                parameters: parameters,
                 onEvent: onEvent
             )
         }

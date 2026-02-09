@@ -38,12 +38,20 @@ final class ThemeManager {
     /// - Parameter colorScheme: The current system color scheme (light/dark)
     /// - Returns: ThemeColors instance with appropriate colors
     func colors(for colorScheme: ColorScheme) -> ThemeColors {
+        let base: ThemeColors
         switch currentTheme {
         case .system:
-            return DefaultThemeColors()
+            base = DefaultThemeColors()
         case .claude:
-            return ClaudeThemeColors(colorScheme: colorScheme)
+            base = ClaudeThemeColors(colorScheme: colorScheme)
         }
+        
+        // Apply OLED black override when in dark mode and user has enabled it
+        if colorScheme == .dark && UserDefaults.standard.bool(forKey: "oledDark") {
+            return OLEDDarkThemeColors(wrapping: base)
+        }
+        
+        return base
     }
     
     /// Check if Claude theme is active

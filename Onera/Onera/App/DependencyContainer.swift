@@ -28,6 +28,7 @@ protocol DependencyContaining: Sendable {
     var speechService: SpeechServiceProtocol { get }
     var speechRecognitionService: SpeechRecognitionServiceProtocol { get }
     var fileProcessingService: FileProcessingServiceProtocol { get }
+    var webSocketSyncService: WebSocketSyncServiceProtocol { get }
 }
 
 // MARK: - Live Dependency Container
@@ -88,6 +89,7 @@ final class DependencyContainer: DependencyContaining, @unchecked Sendable {
     )
     private lazy var _llmService: LLMServiceProtocol = LLMService()
     private lazy var _chatTasksService: ChatTasksServiceProtocol = ChatTasksService()
+    private var _webSocketSyncService: WebSocketSyncServiceProtocol?
     private var _speechService: SpeechServiceProtocol?
     private var _speechRecognitionService: SpeechRecognitionServiceProtocol?
     
@@ -129,6 +131,14 @@ final class DependencyContainer: DependencyContaining, @unchecked Sendable {
         FileProcessingService()
     }
     
+    @MainActor
+    var webSocketSyncService: WebSocketSyncServiceProtocol {
+        if _webSocketSyncService == nil {
+            _webSocketSyncService = WebSocketSyncService()
+        }
+        return _webSocketSyncService!
+    }
+    
     // MARK: - Initialization
     
     private init() {}
@@ -157,6 +167,7 @@ final class MockDependencyContainer: DependencyContaining, @unchecked Sendable {
     var speechService: SpeechServiceProtocol
     var speechRecognitionService: SpeechRecognitionServiceProtocol
     var fileProcessingService: FileProcessingServiceProtocol
+    var webSocketSyncService: WebSocketSyncServiceProtocol
     
     init(
         authService: AuthServiceProtocol? = nil,
@@ -202,7 +213,15 @@ final class MockDependencyContainer: DependencyContaining, @unchecked Sendable {
         self.speechService = speechService ?? MockSpeechService()
         self.speechRecognitionService = speechRecognitionService ?? MockSpeechRecognitionService()
         self.fileProcessingService = fileProcessingService ?? MockFileProcessingService()
+        self.webSocketSyncService = MockWebSocketSyncService()
     }
+}
+
+@MainActor
+final class MockWebSocketSyncService: WebSocketSyncServiceProtocol {
+    var isConnected = false
+    func connect(token: String) {}
+    func disconnect() {}
 }
 #endif
 

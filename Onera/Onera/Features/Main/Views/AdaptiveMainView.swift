@@ -43,6 +43,7 @@ struct AdaptiveMainView: View {
     @State private var folderViewModel: FolderViewModel?
     @State private var notesViewModel: NotesViewModel?
     @State private var settingsViewModel: SettingsViewModel?
+    @State private var promptsViewModel: PromptsViewModel?
     
     let onSignOut: () async -> Void
     
@@ -104,6 +105,7 @@ struct AdaptiveMainView: View {
         .task {
             setupViewModels()
             await chatListViewModel?.loadChats()
+            await promptsViewModel?.loadPrompts()
         }
     }
     
@@ -186,6 +188,7 @@ struct AdaptiveMainView: View {
                         Image(systemName: "square.and.pencil")
                     }
                     .help(selectedSection == .chats ? "New Chat" : "New Note")
+                    .accessibilityLabel(selectedSection == .chats ? "New chat" : "New note")
                     .oneraShortcut(.newChat)
                 }
             }
@@ -289,7 +292,11 @@ struct AdaptiveMainView: View {
                     }
                 },
                 onNewConversation: createNewChat,
-                showCustomNavBar: false // iPad/Mac uses native nav
+                showCustomNavBar: false, // iPad/Mac uses native nav
+                promptSummaries: promptsViewModel?.prompts ?? [],
+                onFetchPromptContent: { summary in
+                    await promptsViewModel?.usePrompt(summary)
+                }
             )
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -309,7 +316,7 @@ struct AdaptiveMainView: View {
                         }
                     } label: {
                         Image(systemName: columnVisibility == .detailOnly ? "sidebar.leading" : "sidebar.squares.leading")
-                            .font(.system(size: 17))
+                            .font(.body)
                     }
                     .accessibilityLabel(columnVisibility == .detailOnly ? "Show sidebars" : "Hide sidebars")
                     
@@ -325,8 +332,9 @@ struct AdaptiveMainView: View {
                         createNewChat()
                     } label: {
                         Image(systemName: "square.and.pencil")
-                            .font(.system(size: 17))
+                            .font(.body)
                     }
+                    .accessibilityLabel("New chat")
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
@@ -352,7 +360,7 @@ struct AdaptiveMainView: View {
     private var emptyDetailView: some View {
         VStack(spacing: 16) {
             Image(systemName: "bubble.left.and.bubble.right")
-                .font(.system(size: 56, weight: .light))
+                .font(.largeTitle.weight(.light))
                 .foregroundStyle(.secondary.opacity(0.5))
             
             Text("Select a chat or start a new conversation")
@@ -407,11 +415,8 @@ struct AdaptiveMainView: View {
                     }
                     Text(chatVM.modelSelector.selectedModel?.displayName ?? "Select Model")
                         .font(.headline)
-                    Image(systemName: "chevron.down")
-                        .font(.caption)
                 }
             }
-            .menuStyle(.borderlessButton)
             .accessibilityLabel("Select AI model")
             .accessibilityValue(chatVM.modelSelector.selectedModel?.displayName ?? "No model selected")
         }
@@ -450,7 +455,7 @@ struct AdaptiveMainView: View {
             // Empty state for notes
             VStack(spacing: 16) {
                 Image(systemName: "note.text")
-                    .font(.system(size: 56, weight: .light))
+                    .font(.largeTitle.weight(.light))
                     .foregroundStyle(.secondary.opacity(0.5))
                 
                 Text("Select a note or create a new one")
@@ -561,7 +566,13 @@ struct AdaptiveMainView: View {
             networkService: dependencies.networkService,
             cryptoService: dependencies.cryptoService,
             extendedCryptoService: dependencies.extendedCryptoService,
+            passkeyService: dependencies.passkeyService,
             onSignOut: onSignOut
+        )
+        
+        promptsViewModel = PromptsViewModel(
+            promptRepository: dependencies.promptRepository,
+            authService: dependencies.authService
         )
     }
     

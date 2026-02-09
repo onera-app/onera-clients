@@ -191,7 +191,7 @@ struct AuthenticationView: View {
                         .scaledToFit()
                         .frame(width: 20, height: 20)
                     Text("Continue with Google")
-                        .font(.system(size: 19, weight: .medium))
+                        .font(.body.weight(.medium))
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: buttonHeight)

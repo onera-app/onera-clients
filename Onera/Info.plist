@@ -45,7 +45,7 @@
 			<string>clerk</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>clerk.humorous-toucan-95</string>
+				<string>$(CLERK_CALLBACK_SCHEME)</string>
 			</array>
 		</dict>
 	</array>

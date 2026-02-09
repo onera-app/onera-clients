@@ -18,6 +18,13 @@ struct SettingsView: View {
     @Environment(\.theme) private var theme
     @Bindable var viewModel: SettingsViewModel
     @AppStorage("colorScheme") private var selectedColorScheme = 0
+    @AppStorage("oledDark") private var oledDark = false
+    @AppStorage("chatDensity") private var chatDensity: String = "comfortable"
+    @State private var showResetEncryption = false
+    @State private var resetConfirmText = ""
+    @State private var isResetting = false
+    
+    @Environment(\.dependencies) private var dependencies
     
     /// Theme manager for switching themes
     private var themeManager: ThemeManager { ThemeManager.shared }
@@ -70,6 +77,17 @@ struct SettingsView: View {
                 RecoveryPhraseDisplayView(
                     viewModel: viewModel,
                     onDismiss: { viewModel.clearRecoveryPhrase() }
+                )
+            }
+            .sheet(isPresented: $showResetEncryption) {
+                ResetEncryptionSheet(
+                    confirmText: $resetConfirmText,
+                    isResetting: isResetting,
+                    onReset: performEncryptionReset,
+                    onCancel: {
+                        showResetEncryption = false
+                        resetConfirmText = ""
+                    }
                 )
             }
             .onAppear {
@@ -127,7 +145,7 @@ struct SettingsView: View {
                 } else {
                     // No user state
                     Image(systemName: "person.circle.fill")
-                        .font(.system(size: 80))
+                        .font(.largeTitle)
                         .foregroundStyle(theme.textSecondary)
                     
                     Text("Not signed in")
@@ -195,6 +213,13 @@ struct SettingsView: View {
             }
             
             NavigationLink {
+                PasskeyManagementView(viewModel: viewModel.passkeyManagementViewModel)
+            } label: {
+                Label("Manage Passkeys", systemImage: "person.badge.key")
+            }
+            .disabled(!viewModel.isSessionUnlocked)
+            
+            NavigationLink {
                 DeviceManagementView()
             } label: {
                 Label("Manage Devices", systemImage: "laptopcomputer.and.iphone")
@@ -205,6 +230,13 @@ struct SettingsView: View {
             } label: {
                 Label("API Connections", systemImage: "key.horizontal")
             }
+            
+            Button(role: .destructive) {
+                showResetEncryption = true
+            } label: {
+                Label("Reset Encryption", systemImage: "exclamationmark.triangle")
+            }
+            .disabled(!viewModel.isSessionUnlocked)
         }
     }
     
@@ -228,6 +260,12 @@ struct SettingsView: View {
                 ToolsSettingsView()
             } label: {
                 Label("Tools", systemImage: "wrench.and.screwdriver")
+            }
+            
+            NavigationLink {
+                AudioSettingsView()
+            } label: {
+                Label("Audio", systemImage: "speaker.wave.2")
             }
             
             #if os(iOS)
@@ -269,6 +307,22 @@ struct SettingsView: View {
                 Label("Appearance", systemImage: "sun.max")
             }
             .accessibilityIdentifier("themeSelector")
+            
+            // OLED Dark mode - only show when Dark mode is selected
+            if selectedColorScheme == 2 {
+                Toggle(isOn: $oledDark) {
+                    Label("OLED Dark", systemImage: "moon.fill")
+                }
+            }
+            
+            // Chat density
+            Picker(selection: $chatDensity) {
+                Text("Compact").tag("compact")
+                Text("Comfortable").tag("comfortable")
+                Text("Spacious").tag("spacious")
+            } label: {
+                Label("Message Spacing", systemImage: "text.line.spacing")
+            }
             
             Link(destination: URL(string: "https://onera.app/privacy")!) {
                 HStack {
@@ -351,6 +405,39 @@ struct SettingsView: View {
         } footer: {
             Text("You'll need your recovery phrase to access your encrypted data on this device again.")
                 .font(OneraTypography.caption)
+        }
+    }
+    
+    // MARK: - Encryption Reset
+    
+    private func performEncryptionReset() async {
+        guard resetConfirmText == "RESET MY ENCRYPTION" else { return }
+        isResetting = true
+        defer { isResetting = false }
+        
+        do {
+            let token = try await dependencies.authService.getToken()
+            
+            struct ResetInput: Encodable {
+                let confirmPhrase: String
+            }
+            struct ResetResponse: Decodable {
+                let success: Bool
+            }
+            
+            let _: ResetResponse = try await dependencies.networkService.call(
+                procedure: "keyShares.resetEncryption",
+                input: ResetInput(confirmPhrase: "RESET MY ENCRYPTION"),
+                token: token
+            )
+            
+            dependencies.secureSession.lock()
+            dependencies.secureSession.clearPersistedSession()
+            
+            showResetEncryption = false
+            resetConfirmText = ""
+        } catch {
+            // Error handling - could show an alert
         }
     }
 }
@@ -814,14 +901,73 @@ struct AppearanceSettingsView: View {
     @AppStorage("colorScheme") private var colorScheme = 0
     
     var body: some View {
-        List {
+        Form {
             Picker("Theme", selection: $colorScheme) {
                 Text("System").tag(0)
                 Text("Light").tag(1)
                 Text("Dark").tag(2)
             }
         }
+        .formStyle(.grouped)
         .navigationTitle("Appearance")
+    }
+}
+
+// MARK: - Reset Encryption Sheet
+
+private struct ResetEncryptionSheet: View {
+    @Binding var confirmText: String
+    let isResetting: Bool
+    let onReset: () async -> Void
+    let onCancel: () -> Void
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.largeTitle)
+                    .foregroundStyle(.red)
+                
+                Text("Reset Encryption")
+                    .font(.title2.bold())
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("This will permanently delete all your encryption keys.")
+                    Text("All your encrypted chats and notes will become unreadable. This cannot be undone.")
+                        .foregroundStyle(.red)
+                }
+                .font(.body)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Type **RESET MY ENCRYPTION** to confirm:")
+                        .font(.callout)
+                    TextField("Confirmation", text: $confirmText)
+                        .textFieldStyle(.roundedBorder)
+                        .autocorrectionDisabled()
+                        #if os(iOS)
+                        .textInputAutocapitalization(.characters)
+                        #endif
+                }
+                
+                Spacer()
+            }
+            .padding(24)
+            .navigationTitle("Reset Encryption")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { onCancel() }
+                }
+                ToolbarItem(placement: .destructiveAction) {
+                    Button("Reset", role: .destructive) {
+                        Task { await onReset() }
+                    }
+                    .disabled(confirmText != "RESET MY ENCRYPTION" || isResetting)
+                }
+            }
+        }
     }
 }
 
@@ -836,6 +982,7 @@ struct AppearanceSettingsView: View {
             networkService: MockNetworkService(),
             cryptoService: CryptoService(),
             extendedCryptoService: CryptoService(),
+            passkeyService: MockPasskeyService(),
             onSignOut: {}
         )
     )

@@ -70,7 +70,7 @@ struct PromptsListView: View {
         Section {
             VStack(spacing: 16) {
                 Image(systemName: "text.quote")
-                    .font(.system(size: 48))
+                    .font(.largeTitle)
                     .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
                 

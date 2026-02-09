@@ -150,7 +150,13 @@ final class ChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
             key: chatKey
         )
         
-        let chatData = ChatData(messages: chat.messages)
+        // Build ChatData preserving branch messages from allMessages
+        let chatData: ChatData
+        if let allMsgs = chat.allMessages {
+            chatData = ChatData(messages: chat.messages, allMessages: allMsgs)
+        } else {
+            chatData = ChatData(messages: chat.messages)
+        }
         let messagesJson = try encoder.encode(chatData)
         let (encryptedChat, chatNonce) = try cryptoService.encrypt(
             plaintext: messagesJson,
@@ -165,7 +171,9 @@ final class ChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
                 titleNonce: titleNonce.base64EncodedString(),
                 encryptedChat: encryptedChat.base64EncodedString(),
                 chatNonce: chatNonce.base64EncodedString(),
-                folderId: nil  // Don't update folder during content updates
+                folderId: nil,  // Don't update folder during content updates
+                pinned: nil,
+                archived: nil
             ),
             token: token
         )
@@ -180,7 +188,43 @@ final class ChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
                 titleNonce: nil,
                 encryptedChat: nil,
                 chatNonce: nil,
-                folderId: folderId
+                folderId: folderId,
+                pinned: nil,
+                archived: nil
+            ),
+            token: token
+        )
+    }
+    
+    func updateChatPinned(chatId: String, pinned: Bool, token: String) async throws {
+        let _: ChatUpdateResponse = try await networkService.call(
+            procedure: APIEndpoint.Chats.update,
+            input: ChatUpdateRequest(
+                chatId: chatId,
+                encryptedTitle: nil,
+                titleNonce: nil,
+                encryptedChat: nil,
+                chatNonce: nil,
+                folderId: nil,
+                pinned: pinned,
+                archived: nil
+            ),
+            token: token
+        )
+    }
+    
+    func updateChatArchived(chatId: String, archived: Bool, token: String) async throws {
+        let _: ChatUpdateResponse = try await networkService.call(
+            procedure: APIEndpoint.Chats.update,
+            input: ChatUpdateRequest(
+                chatId: chatId,
+                encryptedTitle: nil,
+                titleNonce: nil,
+                encryptedChat: nil,
+                chatNonce: nil,
+                folderId: nil,
+                pinned: nil,
+                archived: archived
             ),
             token: token
         )
@@ -229,8 +273,13 @@ final class ChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
             key: chatKey
         )
         
-        // Encrypt messages with chat key
-        let chatData = ChatData(messages: chat.messages)
+        // Encrypt messages with chat key (preserving branch messages)
+        let chatData: ChatData
+        if let allMsgs = chat.allMessages {
+            chatData = ChatData(messages: chat.messages, allMessages: allMsgs)
+        } else {
+            chatData = ChatData(messages: chat.messages)
+        }
         let messagesJson = try encoder.encode(chatData)
         let (encryptedChat, chatNonce) = try cryptoService.encrypt(
             plaintext: messagesJson,
@@ -323,7 +372,10 @@ final class ChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
             createdAt: response.createdAt,
             updatedAt: response.updatedAt,
             folderId: response.folderId,
-            encryptionKey: chatKey
+            pinned: response.pinned,
+            archived: response.archived,
+            encryptionKey: chatKey,
+            allMessages: chatData.allMessages
         )
     }
     
@@ -357,7 +409,9 @@ final class ChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
             title: title,
             createdAt: encrypted.createdAt,
             updatedAt: encrypted.updatedAt,
-            folderId: encrypted.folderId
+            folderId: encrypted.folderId,
+            pinned: encrypted.pinned,
+            archived: encrypted.archived
         )
     }
 }
@@ -481,6 +535,8 @@ struct ChatUpdateRequest: Codable {
     let encryptedChat: String?
     let chatNonce: String?
     let folderId: String?
+    let pinned: Bool?
+    let archived: Bool?
 }
 
 struct ChatUpdateResponse: Codable {
@@ -524,6 +580,14 @@ final class MockChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
     }
     
     func updateChatFolder(chatId: String, folderId: String?, token: String) async throws {
+        if shouldFail { throw ChatError.updateFailed }
+    }
+    
+    func updateChatPinned(chatId: String, pinned: Bool, token: String) async throws {
+        if shouldFail { throw ChatError.updateFailed }
+    }
+    
+    func updateChatArchived(chatId: String, archived: Bool, token: String) async throws {
         if shouldFail { throw ChatError.updateFailed }
     }
     

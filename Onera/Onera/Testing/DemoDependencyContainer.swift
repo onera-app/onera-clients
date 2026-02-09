@@ -62,6 +62,7 @@ final class DemoDependencyContainer: DependencyContaining, @unchecked Sendable {
     var fileProcessingService: FileProcessingServiceProtocol { demoFileProcessingService }
     var passkeyService: PasskeyServiceProtocol { demoPasskeyService }
     var promptRepository: PromptRepositoryProtocol { demoPromptRepository }
+    var webSocketSyncService: WebSocketSyncServiceProtocol { DemoWebSocketSyncService.shared }
     
     // MARK: - Initialization
     
@@ -257,6 +258,22 @@ final class DemoChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
         try await Task.sleep(for: .milliseconds(100))
         if var chat = chats[chatId] {
             chat.folderId = folderId
+            chats[chatId] = chat
+        }
+    }
+    
+    func updateChatPinned(chatId: String, pinned: Bool, token: String) async throws {
+        try await Task.sleep(for: .milliseconds(100))
+        if var chat = chats[chatId] {
+            chat.pinned = pinned
+            chats[chatId] = chat
+        }
+    }
+    
+    func updateChatArchived(chatId: String, archived: Bool, token: String) async throws {
+        try await Task.sleep(for: .milliseconds(100))
+        if var chat = chats[chatId] {
+            chat.archived = archived
             chats[chatId] = chat
         }
     }
@@ -618,6 +635,17 @@ final class DemoPasskeyService: PasskeyServiceProtocol, @unchecked Sendable {
         false
     }
     
+    func listPasskeys(token: String) async throws -> [WebAuthnPasskey] {
+        [
+            WebAuthnPasskey(id: "1", credentialId: "demo-cred-1", name: "MacBook Pro", credentialDeviceType: "multiDevice", credentialBackedUp: true, lastUsedAt: Date(), createdAt: Date().addingTimeInterval(-86400 * 30), deviceType: "platform"),
+            WebAuthnPasskey(id: "2", credentialId: "demo-cred-2", name: "iPhone", credentialDeviceType: "singleDevice", credentialBackedUp: false, lastUsedAt: nil, createdAt: Date().addingTimeInterval(-86400 * 7), deviceType: "platform"),
+        ]
+    }
+    
+    func renamePasskey(credentialId: String, name: String, token: String) async throws {}
+    
+    func deletePasskey(credentialId: String, token: String) async throws {}
+    
     func hasLocalPasskeyKEK() -> Bool {
         false
     }
@@ -798,4 +826,14 @@ final class DemoPromptRepository: PromptRepositoryProtocol, @unchecked Sendable 
         try await Task.sleep(for: .milliseconds(100))
         prompts.removeValue(forKey: id)
     }
+}
+
+// MARK: - Demo WebSocket Sync Service
+
+@MainActor
+final class DemoWebSocketSyncService: WebSocketSyncServiceProtocol {
+    static let shared = DemoWebSocketSyncService()
+    var isConnected = false
+    func connect(token: String) { isConnected = true }
+    func disconnect() { isConnected = false }
 }

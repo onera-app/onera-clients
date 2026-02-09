@@ -23,6 +23,8 @@ struct SidebarDrawerView: View {
     let onNewChat: () -> Void
     let onDeleteChat: (String) async -> Void
     let onMoveChatToFolder: ((String, String?) async -> Void)?
+    var onPinChat: ((String, Bool) async -> Void)?
+    var onArchiveChat: ((String, Bool) async -> Void)?
     let onOpenSettings: () -> Void
     let onRefresh: () async -> Void
     let onOpenNotes: (() -> Void)?
@@ -134,7 +136,8 @@ struct SidebarDrawerView: View {
         }
         .padding(.vertical, OneraSpacing.compact)
         .padding(.horizontal, OneraSpacing.comfortable)
-        .oneraGlass()
+        .background(theme.secondaryBackground)
+        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
     }
     
     // MARK: - Navigation Items
@@ -162,7 +165,7 @@ struct SidebarDrawerView: View {
                 } label: {
                     HStack(spacing: OneraSpacing.iconTextGap) {
                         Image(systemName: "folder")
-                            .font(.system(size: 16))
+                            .font(.body)
                             .foregroundStyle(theme.textSecondary)
                             .accessibilityHidden(true)
                         
@@ -172,7 +175,7 @@ struct SidebarDrawerView: View {
                         Spacer()
                         
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.caption.weight(.semibold))
                             .foregroundStyle(theme.textSecondary)
                             .rotationEffect(.degrees(showingFolders ? 90 : 0))
                             .accessibilityHidden(true)
@@ -261,6 +264,12 @@ struct SidebarDrawerView: View {
                             },
                             onMoveToFolder: {
                                 chatToMoveToFolder = chat
+                            },
+                            onPin: { pinned in
+                                Task { await onPinChat?(chat.id, pinned) }
+                            },
+                            onArchive: { archived in
+                                Task { await onArchiveChat?(chat.id, archived) }
                             }
                         )
                     }
@@ -336,7 +345,7 @@ struct SidebarDrawerView: View {
                         .accessibilityHidden(true)
                 } else {
                     Image(systemName: "person.circle.fill")
-                        .font(.system(size: 28))
+                        .font(.title2)
                         .foregroundStyle(theme.textSecondary)
                         .accessibilityHidden(true)
                 }
@@ -349,7 +358,7 @@ struct SidebarDrawerView: View {
                 
                 // Settings indicator
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.caption2.weight(.semibold))
                     .foregroundStyle(theme.textTertiary)
                     .accessibilityHidden(true)
             }
@@ -402,7 +411,7 @@ private struct NavigationItemRow: View {
         Button(action: action) {
             HStack(spacing: OneraSpacing.iconTextGap) {
                 Image(systemName: icon)
-                    .font(.system(size: 16))
+                    .font(.body)
                     .foregroundStyle(isSelected ? theme.textPrimary : theme.textSecondary)
                     .accessibilityHidden(true)
                 
@@ -439,6 +448,8 @@ private struct ChatHistoryRow: View {
     let onSelect: () -> Void
     let onDelete: () -> Void
     var onMoveToFolder: (() -> Void)?
+    var onPin: ((Bool) -> Void)?
+    var onArchive: ((Bool) -> Void)?
     
     @State private var showDeleteConfirmation = false
     @State private var selectionTrigger = false
@@ -473,6 +484,18 @@ private struct ChatHistoryRow: View {
         .accessibilityHint("Opens this conversation")
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
         .contextMenu {
+            Button {
+                onPin?(!chat.pinned)
+            } label: {
+                Label(chat.pinned ? "Unpin" : "Pin", systemImage: chat.pinned ? "pin.slash" : "pin")
+            }
+            
+            Button {
+                onArchive?(!chat.archived)
+            } label: {
+                Label(chat.archived ? "Unarchive" : "Archive", systemImage: chat.archived ? "tray.and.arrow.up" : "archivebox")
+            }
+            
             if canMoveToFolder {
                 Button {
                     onMoveToFolder?()
@@ -481,11 +504,35 @@ private struct ChatHistoryRow: View {
                 }
             }
             
+            Divider()
+            
             Button(role: .destructive) {
                 showDeleteConfirmation = true
             } label: {
                 Label("Delete", systemImage: "trash")
             }
+        }
+        .swipeActions(edge: .leading) {
+            Button {
+                onPin?(!chat.pinned)
+            } label: {
+                Label(chat.pinned ? "Unpin" : "Pin", systemImage: "pin")
+            }
+            .tint(.orange)
+        }
+        .swipeActions(edge: .trailing) {
+            Button(role: .destructive) {
+                showDeleteConfirmation = true
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+            
+            Button {
+                onArchive?(!chat.archived)
+            } label: {
+                Label("Archive", systemImage: "archivebox")
+            }
+            .tint(.indigo)
         }
         .confirmationDialog(
             "Delete Chat",

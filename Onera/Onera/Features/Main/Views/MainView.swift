@@ -30,6 +30,7 @@ struct MainView: View {
     @State private var folderViewModel: FolderViewModel?
     @State private var notesViewModel: NotesViewModel?
     @State private var settingsViewModel: SettingsViewModel?
+    @State private var promptsViewModel: PromptsViewModel?
     
     let onSignOut: () async -> Void
     
@@ -90,6 +91,16 @@ struct MainView: View {
                         onMoveChatToFolder: { chatId, folderId in
                             await moveChatToFolder(chatId: chatId, folderId: folderId)
                         },
+                        onPinChat: { chatId, pinned in
+                            if let chat = listViewModel.chats.first(where: { $0.id == chatId }) {
+                                await listViewModel.togglePinned(chat)
+                            }
+                        },
+                        onArchiveChat: { chatId, archived in
+                            if let chat = listViewModel.chats.first(where: { $0.id == chatId }) {
+                                await listViewModel.toggleArchived(chat)
+                            }
+                        },
                         onOpenSettings: {
                             showSettings = true
                         },
@@ -115,15 +126,17 @@ struct MainView: View {
                     chatContent
                         .allowsHitTesting(!isDrawerOpen)
                     
-                    // Dimmed overlay - blocks chat interaction when open
-                    Color.black.opacity(overlayOpacity)
+                    // Tap/swipe-to-dismiss overlay - blocks chat interaction when open
+                    Color.clear
                         .ignoresSafeArea()
+                        .contentShape(Rectangle())
                         .allowsHitTesting(isDrawerOpen || isDragging)
                         .onTapGesture {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                 isDrawerOpen = false
                             }
                         }
+                        .gesture(fullScreenDrawerGesture)
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 .offset(x: currentOffset)
@@ -158,6 +171,7 @@ struct MainView: View {
         .task {
             setupViewModels()
             await chatListViewModel?.loadChats()
+            await promptsViewModel?.loadPrompts()
         }
     }
     
@@ -270,7 +284,11 @@ struct MainView: View {
                     }
                 },
                 onNewConversation: createNewChat,
-                showCustomNavBar: true
+                showCustomNavBar: true,
+                promptSummaries: promptsViewModel?.prompts ?? [],
+                onFetchPromptContent: { summary in
+                    await promptsViewModel?.usePrompt(summary)
+                }
             )
         } else {
             // Loading state
@@ -328,7 +346,13 @@ struct MainView: View {
             networkService: dependencies.networkService,
             cryptoService: dependencies.cryptoService,
             extendedCryptoService: dependencies.extendedCryptoService,
+            passkeyService: dependencies.passkeyService,
             onSignOut: onSignOut
+        )
+        
+        promptsViewModel = PromptsViewModel(
+            promptRepository: dependencies.promptRepository,
+            authService: dependencies.authService
         )
     }
     

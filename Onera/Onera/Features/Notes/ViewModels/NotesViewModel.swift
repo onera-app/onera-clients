@@ -131,6 +131,45 @@ final class NotesViewModel {
         }
     }
     
+    /// Toggle the pinned state of a note
+    func togglePinned(_ summary: NoteSummary) async {
+        do {
+            let token = try await authService.getToken()
+            var note = try await noteRepository.fetchNote(id: summary.id, token: token)
+            note.pinned.toggle()
+            try await noteRepository.updateNote(note, token: token)
+            await loadNotes()
+        } catch {
+            self.error = error
+        }
+    }
+    
+    /// Toggle the archived state of a note
+    func toggleArchived(_ summary: NoteSummary) async {
+        do {
+            let token = try await authService.getToken()
+            var note = try await noteRepository.fetchNote(id: summary.id, token: token)
+            note.archived.toggle()
+            try await noteRepository.updateNote(note, token: token)
+            await loadNotes()
+        } catch {
+            self.error = error
+        }
+    }
+    
+    /// Move a note to a folder (or remove from folder with nil)
+    func moveToFolder(_ summary: NoteSummary, folderId: String?) async {
+        do {
+            let token = try await authService.getToken()
+            var note = try await noteRepository.fetchNote(id: summary.id, token: token)
+            note.folderId = folderId
+            try await noteRepository.updateNote(note, token: token)
+            await loadNotes()
+        } catch {
+            self.error = error
+        }
+    }
+    
     // MARK: - Search
     
     var filteredNotes: [NoteSummary] {

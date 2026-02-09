@@ -25,25 +25,71 @@ final class ModelSelectorViewModel {
     var selectedModel: ModelOption? {
         didSet {
             if let model = selectedModel {
-                // Persist the selection
                 UserDefaults.standard.set(model.id, forKey: "selectedModelId")
+                addToRecent(model.id)
             }
         }
     }
+    
+    // MARK: - Pinned & Recent Models
+    
+    /// IDs of pinned models (persisted)
+    private(set) var pinnedModelIds: [String] = [] {
+        didSet {
+            UserDefaults.standard.set(pinnedModelIds, forKey: "pinnedModelIds")
+        }
+    }
+    
+    /// IDs of recently used models (persisted, max 5)
+    private(set) var recentModelIds: [String] = [] {
+        didSet {
+            UserDefaults.standard.set(recentModelIds, forKey: "recentModelIds")
+        }
+    }
+    
+    /// Active provider filter (nil = show all)
+    var connectionFilter: LLMProvider? = nil
+    
+    // MARK: - Computed Properties
     
     /// All available models (regular + private)
     var allModels: [ModelOption] {
         models + privateModels
     }
     
-    /// Models grouped by provider (including private)
+    /// Pinned models (resolved from IDs)
+    var pinnedModels: [ModelOption] {
+        pinnedModelIds.compactMap { id in allModels.first { $0.id == id } }
+    }
+    
+    /// Recently used models (resolved from IDs, excluding pinned, max 5)
+    var recentModels: [ModelOption] {
+        let pinSet = Set(pinnedModelIds)
+        return recentModelIds
+            .filter { !pinSet.contains($0) }
+            .prefix(5)
+            .compactMap { id in allModels.first { $0.id == id } }
+    }
+    
+    /// Models grouped by provider, with optional filter applied
     var groupedModels: [(provider: LLMProvider, models: [ModelOption])] {
-        let allModels = self.allModels
-        let grouped = Dictionary(grouping: allModels) { $0.provider }
+        let source: [ModelOption]
+        if let filter = connectionFilter {
+            source = allModels.filter { $0.provider == filter }
+        } else {
+            source = allModels
+        }
+        let grouped = Dictionary(grouping: source) { $0.provider }
         return LLMProvider.allCases.compactMap { provider in
             guard let providerModels = grouped[provider], !providerModels.isEmpty else { return nil }
             return (provider: provider, models: providerModels)
         }
+    }
+    
+    /// Providers that have at least one model (for filter chips)
+    var availableProviders: [LLMProvider] {
+        let providers = Set(allModels.map(\.provider))
+        return LLMProvider.allCases.filter { providers.contains($0) }
     }
     
     /// Whether any models are available
@@ -76,6 +122,10 @@ final class ModelSelectorViewModel {
         self.llmService = llmService
         self.networkService = networkService
         self.authService = authService
+        
+        // Restore persisted state
+        pinnedModelIds = UserDefaults.standard.stringArray(forKey: "pinnedModelIds") ?? []
+        recentModelIds = UserDefaults.standard.stringArray(forKey: "recentModelIds") ?? []
         
         // Restore last selected model
         if let savedModelId = UserDefaults.standard.string(forKey: "selectedModelId") {
@@ -168,6 +218,29 @@ final class ModelSelectorViewModel {
             }
         }
         selectedModel = model
+    }
+    
+    /// Toggle pin state for a model
+    func togglePin(_ modelId: String) {
+        if let idx = pinnedModelIds.firstIndex(of: modelId) {
+            pinnedModelIds.remove(at: idx)
+        } else {
+            pinnedModelIds.append(modelId)
+        }
+    }
+    
+    /// Whether a model is pinned
+    func isPinned(_ modelId: String) -> Bool {
+        pinnedModelIds.contains(modelId)
+    }
+    
+    /// Add a model to the MRU list
+    private func addToRecent(_ modelId: String) {
+        recentModelIds.removeAll { $0 == modelId }
+        recentModelIds.insert(modelId, at: 0)
+        if recentModelIds.count > 5 {
+            recentModelIds = Array(recentModelIds.prefix(5))
+        }
     }
     
     func getCredentialForSelectedModel() -> DecryptedCredential? {

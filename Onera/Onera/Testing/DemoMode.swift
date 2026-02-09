@@ -106,7 +106,7 @@ struct DemoModeActivationModifier: ViewModifier {
                 if showActivationFeedback {
                     VStack {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 60))
+                            .font(.largeTitle)
                             .foregroundStyle(.green)
                         
                         Text("Demo Mode Activated")

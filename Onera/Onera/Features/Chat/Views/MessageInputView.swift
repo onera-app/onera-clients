@@ -35,11 +35,29 @@ struct MessageInputView: View {
     var onProcessImage: ((PlatformImage, String) -> Void)?
     var onProcessFile: ((Data, String, String) -> Void)?
     
+    // @mention prompt support
+    var promptSummaries: [PromptSummary] = []
+    var onFetchPromptContent: ((PromptSummary) async -> String?)? = nil
+    
+    // Web search
+    var searchEnabled: Binding<Bool>?
+    var isSearching: Bool = false
+    
     @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var showingDocumentPicker = false
     @State private var showingCamera = false
     @State private var showingPhotosPicker = false
     @State private var showingAttachmentOptions = false
+    
+    // @mention state
+    @State private var showMentionPopover = false
+    @State private var mentionQuery = ""
+    @State private var mentionSelectedIndex = 0
+    @State private var pendingPrompt: PromptSummary? = nil
+    @State private var pendingPromptVariables: [String] = []
+    @State private var pendingPromptResolvedContent: String? = nil
+    @State private var variableValues: [String: String] = [:]
+    @State private var showVariableSheet = false
     
     /// Max width for input area on iPad (matches message content width)
     private var maxInputWidth: CGFloat? {
@@ -49,6 +67,16 @@ struct MessageInputView: View {
     /// iPad uses slightly larger touch targets
     private var touchTargetSize: CGFloat {
         horizontalSizeClass == .regular ? 48 : AccessibilitySize.minTouchTarget
+    }
+    
+    /// Prompts filtered by the current @mention query
+    private var filteredMentionPrompts: [PromptSummary] {
+        if mentionQuery.isEmpty {
+            return Array(promptSummaries.prefix(8))
+        }
+        return promptSummaries.filter {
+            $0.name.localizedCaseInsensitiveContains(mentionQuery)
+        }.prefix(8).map { $0 }
     }
     
     var body: some View {
@@ -65,63 +93,72 @@ struct MessageInputView: View {
                     .padding(.bottom, OneraSpacing.sm)
             }
             
-            // Each element floats independently with glass effect
-            HStack(spacing: OneraSpacing.sm) {
-                // Plus Button - floating glass pill
-                attachmentButton
-                
-                // Input Field - floating glass pill
-                HStack(spacing: OneraSpacing.sm) {
-                    TextField("", text: $text, prompt: Text("Ask anything").foregroundStyle(theme.textSecondary))
-                        .font(OneraTypography.body)
-                        .foregroundStyle(theme.textPrimary)
-                        .tint(theme.textPrimary)
-                        .padding(.horizontal, OneraSpacing.lg)
-                        .padding(.vertical, horizontalSizeClass == .regular ? OneraSpacing.lg : OneraSpacing.md)
-                        .accessibilityIdentifier("messageInput")
-                        .accessibilityLabel("Message input")
-                        .accessibilityHint("Type your message here")
-                    
-                    if text.isEmpty && !isRecording {
-                        // Placeholder action icon (decorative)
-                        Image(systemName: "waveform")
-                            .font(OneraTypography.iconLarge)
-                            .foregroundStyle(theme.textSecondary)
-                            .padding(.trailing, OneraSpacing.md)
-                            .accessibilityHidden(true)
-                    } else if !text.isEmpty {
-                        // Send button when text present
-                        let sendEnabled = canSend && !isSending
-                        Button(action: onSend) {
-                            Image(systemName: "arrow.up")
-                                .font(.system(size: horizontalSizeClass == .regular ? 18 : 16, weight: .bold))
-                                .foregroundStyle(sendEnabled ? .white : theme.textSecondary)
-                                .frame(width: touchTargetSize, height: touchTargetSize)
-                                .background(sendEnabled ? theme.accent : theme.textSecondary.opacity(0.3))
-                                .clipShape(Circle())
-                                .animation(.easeInOut(duration: 0.2), value: sendEnabled)
-                        }
-                        .padding(.trailing, OneraSpacing.xs)
-                        .disabled(!sendEnabled)
-                        .sensoryFeedback(.impact(weight: .medium), trigger: text.isEmpty)
-                        .accessibilityIdentifier("sendButton")
-                        .accessibilityLabel("Send message")
-                        .accessibilityHint(canSend ? "Sends your message" : "Cannot send while processing")
-                        .accessibilityAddTraits(.isButton)
+            // Web search indicator bar
+            if let searchEnabled = searchEnabled, searchEnabled.wrappedValue {
+                HStack(spacing: 4) {
+                    Image(systemName: "globe")
+                        .font(.caption2)
+                    Text("Web search · \(currentProviderName)")
+                        .font(.caption2)
+                    Spacer()
+                    Button {
+                        searchEnabled.wrappedValue = false
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.caption2)
                     }
+                    .accessibilityLabel("Disable web search")
                 }
-                .oneraGlass()
-                
-                // Mic Button - floating glass circle
-                if text.isEmpty || isRecording {
-                    micButton
-                }
+                .foregroundStyle(Color.accentColor)
+                .padding(.horizontal, OneraSpacing.lg)
+                .padding(.vertical, 4)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
-            // iPad: Constrain input width and center it
+            
+            // Input pill
+            HStack(alignment: .bottom, spacing: 8) {
+                // Plus button (attachment + search)
+                plusMenu
+                    .frame(width: 32, height: 32)
+                
+                // Native multi-line TextField — grows automatically, no manual height calc
+                TextField("Ask anything", text: $text, axis: .vertical)
+                    .font(.body)
+                    .lineLimit(1...8)
+                    .foregroundStyle(theme.textPrimary)
+                    .tint(theme.textPrimary)
+                    .padding(.vertical, 4)
+                    .accessibilityIdentifier("messageInput")
+                    .accessibilityLabel("Message input")
+                    .accessibilityHint("Type your message here")
+                
+                // Right action button
+                rightActionButton
+                    .frame(width: 32, height: 32)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .oneraGlassRounded(24, showBorder: true, showShadow: true)
             .frame(maxWidth: maxInputWidth)
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, OneraSpacing.lg)
-            .padding(.vertical, horizontalSizeClass == .regular ? OneraSpacing.lg : OneraSpacing.md)
+            .padding(.horizontal, OneraSpacing.md)
+            .padding(.vertical, horizontalSizeClass == .regular ? OneraSpacing.lg : OneraSpacing.sm)
+        }
+        .overlay(alignment: .bottom) {
+            if showMentionPopover && !filteredMentionPrompts.isEmpty {
+                MentionPopupView(
+                    prompts: filteredMentionPrompts,
+                    selectedIndex: mentionSelectedIndex,
+                    onSelect: selectMentionPrompt
+                )
+                .padding(.horizontal, OneraSpacing.lg)
+                .padding(.bottom, 80)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.easeOut(duration: 0.15), value: showMentionPopover)
+        .onChange(of: text) { _, newValue in
+            detectMention(in: newValue)
         }
         .onChange(of: selectedPhotos) { _, newPhotos in
             Task {
@@ -134,23 +171,265 @@ struct MessageInputView: View {
             DocumentPicker(onDocumentPicked: handleDocumentPicked)
         }
         #endif
+        .sheet(isPresented: $showVariableSheet) {
+            if let prompt = pendingPrompt {
+                NavigationStack {
+                    Form {
+                        Section("Fill in variables for \(prompt.name)") {
+                            ForEach(pendingPromptVariables, id: \.self) { variable in
+                                TextField(variable, text: Binding(
+                                    get: { variableValues[variable] ?? "" },
+                                    set: { variableValues[variable] = $0 }
+                                ))
+                            }
+                        }
+                    }
+                    .navigationTitle("Variables")
+                    #if os(iOS)
+                    .navigationBarTitleDisplayMode(.inline)
+                    #endif
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Cancel") {
+                                showVariableSheet = false
+                                pendingPrompt = nil
+                            }
+                        }
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Insert") {
+                                insertPromptContent(prompt, variables: variableValues)
+                                showVariableSheet = false
+                                pendingPrompt = nil
+                            }
+                            .disabled(variableValues.values.contains(where: { $0.isEmpty }))
+                        }
+                    }
+                }
+                .presentationDetents([.medium])
+            }
+        }
     }
     
-    // MARK: - Attachment Button
+    // MARK: - Right Action Button
     
-    private var attachmentButton: some View {
-        Button {
-            showingAttachmentOptions = true
-        } label: {
-            Image(systemName: "plus")
-                .font(horizontalSizeClass == .regular ? .system(size: 24, weight: .medium) : OneraTypography.iconXLarge)
-                .foregroundStyle(theme.textPrimary)
-                .frame(width: touchTargetSize, height: touchTargetSize)
-                .oneraGlassCircle()
+    @ViewBuilder
+    private var rightActionButton: some View {
+        if isStreaming {
+            Button {
+                onStop?()
+            } label: {
+                Image(systemName: "stop.fill")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.white)
+                    .frame(width: 32, height: 32)
+                    .background(theme.error)
+                    .clipShape(Circle())
+            }
+            .accessibilityLabel("Stop generating")
+        } else if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let sendEnabled = canSend && !isSending
+            Button(action: onSend) {
+                Image(systemName: "arrow.up")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(sendEnabled ? .white : theme.textSecondary)
+                    .frame(width: 32, height: 32)
+                    .background(sendEnabled ? theme.accent : theme.textSecondary.opacity(0.3))
+                    .clipShape(Circle())
+            }
+            .disabled(!sendEnabled)
+            .sensoryFeedback(.impact(weight: .medium), trigger: text.isEmpty)
+            .accessibilityIdentifier("sendButton")
+            .accessibilityLabel("Send message")
+            .accessibilityHint(canSend ? "Sends your message" : "Cannot send while processing")
+        } else if isRecording {
+            Button {
+                onStopRecording?()
+            } label: {
+                Image(systemName: "stop.fill")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.white)
+                    .frame(width: 32, height: 32)
+                    .background(theme.error)
+                    .clipShape(Circle())
+            }
+            .accessibilityLabel("Stop recording")
+        } else {
+            Button {
+                onStartRecording?()
+            } label: {
+                Image(systemName: "mic.fill")
+                    .font(.body)
+                    .foregroundStyle(theme.textSecondary)
+                    .frame(width: 32, height: 32)
+            }
+            .accessibilityLabel("Start voice recording")
+            .accessibilityHint("Starts voice recording to dictate your message")
         }
-        .sensoryFeedback(.impact(weight: .light), trigger: showingAttachmentOptions)
-        .accessibilityLabel("Add attachment")
-        .accessibilityHint("Opens menu to attach photos or files")
+    }
+    
+    // MARK: - @Mention Detection
+    
+    private func detectMention(in text: String) {
+        guard let atRange = text.range(of: "@", options: .backwards) else {
+            showMentionPopover = false
+            return
+        }
+        
+        let afterAt = text[atRange.upperBound...]
+        
+        if afterAt.contains("\n") {
+            showMentionPopover = false
+            return
+        }
+        
+        if atRange.lowerBound != text.startIndex {
+            let charBefore = text[text.index(before: atRange.lowerBound)]
+            if !charBefore.isWhitespace && !charBefore.isNewline {
+                showMentionPopover = false
+                return
+            }
+        }
+        
+        mentionQuery = String(afterAt)
+        mentionSelectedIndex = 0
+        showMentionPopover = !filteredMentionPrompts.isEmpty
+    }
+    
+    private func selectMentionPrompt(_ prompt: PromptSummary) {
+        showMentionPopover = false
+        
+        Task {
+            guard let content = await onFetchPromptContent?(prompt) else { return }
+            
+            let variablePattern = "\\{\\{\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\}\\}"
+            let variables: [String]
+            if let regex = try? NSRegularExpression(pattern: variablePattern) {
+                let range = NSRange(content.startIndex..., in: content)
+                let matches = regex.matches(in: content, range: range)
+                variables = matches.compactMap { match in
+                    guard let r = Range(match.range(at: 1), in: content) else { return nil }
+                    return String(content[r])
+                }
+            } else {
+                variables = []
+            }
+            
+            if variables.isEmpty {
+                insertResolvedContent(content)
+            } else {
+                pendingPrompt = prompt
+                pendingPromptVariables = Array(Set(variables))
+                pendingPromptResolvedContent = content
+                variableValues = [:]
+                showVariableSheet = true
+            }
+        }
+    }
+    
+    private func insertResolvedContent(_ content: String) {
+        if let atRange = text.range(of: "@", options: .backwards) {
+            let charBeforeOk: Bool
+            if atRange.lowerBound == text.startIndex {
+                charBeforeOk = true
+            } else {
+                let c = text[text.index(before: atRange.lowerBound)]
+                charBeforeOk = c.isWhitespace || c.isNewline
+            }
+            if charBeforeOk {
+                text = String(text[..<atRange.lowerBound])
+            }
+        }
+        text += content
+    }
+    
+    private func insertPromptContent(_ prompt: PromptSummary, variables: [String: String]) {
+        if let resolved = pendingPromptResolvedContent {
+            var content = resolved
+            for (key, value) in variables {
+                content = content.replacingOccurrences(of: "{{\(key)}}", with: value)
+                content = content.replacingOccurrences(of: "{{ \(key) }}", with: value)
+            }
+            insertResolvedContent(content)
+        }
+        pendingPromptResolvedContent = nil
+    }
+    
+    // MARK: - Plus Menu (Combined Attachment + Search)
+    
+    private var plusMenu: some View {
+        Menu {
+            // Attachment options
+            Section("Attach") {
+                #if os(iOS)
+                if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                    Button {
+                        showingCamera = true
+                    } label: {
+                        Label("Take Photo", systemImage: "camera")
+                    }
+                }
+                #endif
+                Button {
+                    showingPhotosPicker = true
+                } label: {
+                    Label("Photo Library", systemImage: "photo.on.rectangle")
+                }
+                Button {
+                    showingDocumentPicker = true
+                } label: {
+                    Label("Choose File", systemImage: "doc")
+                }
+            }
+            
+            // Web search toggle
+            if let searchEnabled = searchEnabled, hasSearchProvider {
+                Section("Search") {
+                    Button {
+                        searchEnabled.wrappedValue.toggle()
+                    } label: {
+                        Label(
+                            searchEnabled.wrappedValue ? "Disable Web Search" : "Enable Web Search",
+                            systemImage: searchEnabled.wrappedValue ? "globe.badge.chevron.backward" : "globe"
+                        )
+                    }
+                    
+                    if searchEnabled.wrappedValue {
+                        // Provider picker
+                        ForEach(SearchProvider.allCases) { provider in
+                            Button {
+                                UserDefaults.standard.set(provider.rawValue, forKey: "defaultSearchProvider")
+                            } label: {
+                                HStack {
+                                    Text(provider.displayName)
+                                    if provider.rawValue == (UserDefaults.standard.string(forKey: "defaultSearchProvider") ?? "tavily") {
+                                        Spacer()
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } label: {
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: "plus")
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(theme.textPrimary)
+                    .frame(width: 32, height: 32)
+                
+                // Web search enabled indicator dot
+                if let searchEnabled = searchEnabled, searchEnabled.wrappedValue {
+                    Circle()
+                        .fill(Color.accentColor)
+                        .frame(width: 8, height: 8)
+                        .offset(x: 2, y: -2)
+                }
+            }
+        } primaryAction: {
+            showingAttachmentOptions = true
+        }
+        .menuStyle(.borderlessButton)
         .confirmationDialog("Add Attachment", isPresented: $showingAttachmentOptions, titleVisibility: .visible) {
             #if os(iOS)
             if UIImagePickerController.isSourceTypeAvailable(.camera) {
@@ -176,6 +455,8 @@ struct MessageInputView: View {
             .ignoresSafeArea()
         }
         #endif
+        .accessibilityLabel("Add attachment or toggle search")
+        .accessibilityHint("Tap to attach, hold for more options")
     }
     
     #if os(iOS)
@@ -333,27 +614,83 @@ struct MessageInputView: View {
         .padding(.horizontal, OneraSpacing.md)
     }
     
-    // MARK: - Mic Button
+    // MARK: - Search Helpers
     
-    private var micButton: some View {
-        Button {
-            if isRecording {
-                onStopRecording?()
-            } else {
-                onStartRecording?()
+    private var hasSearchProvider: Bool {
+        let providerRaw = UserDefaults.standard.string(forKey: "defaultSearchProvider") ?? "tavily"
+        let apiKey = UserDefaults.standard.string(forKey: "search.\(providerRaw).apiKey") ?? ""
+        return !apiKey.isEmpty
+    }
+    
+    private var currentProviderName: String {
+        let providerRaw = UserDefaults.standard.string(forKey: "defaultSearchProvider") ?? "tavily"
+        return SearchProvider(rawValue: providerRaw)?.displayName ?? "Tavily"
+    }
+}
+
+// MARK: - Mention Popup View
+
+private struct MentionPopupView: View {
+    @Environment(\.theme) private var theme
+    let prompts: [PromptSummary]
+    let selectedIndex: Int
+    let onSelect: (PromptSummary) -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 4) {
+                Image(systemName: "at")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Text("Prompts")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-        } label: {
-            Image(systemName: isRecording ? "stop.fill" : "mic.fill")
-                .font(horizontalSizeClass == .regular ? OneraTypography.iconXLarge : OneraTypography.iconLarge)
-                .foregroundStyle(isRecording ? theme.error : theme.textPrimary)
-                .frame(width: touchTargetSize, height: touchTargetSize)
-                .oneraGlassCircle()
+            .padding(.horizontal, 8)
+            .padding(.top, 6)
+            
+            ForEach(Array(prompts.enumerated()), id: \.element.id) { index, prompt in
+                Button {
+                    onSelect(prompt)
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "text.quote")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                            .frame(width: 16)
+                        
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(prompt.name)
+                                .font(.subheadline)
+                                .foregroundStyle(theme.textPrimary)
+                                .lineLimit(1)
+                            
+                            if let desc = prompt.description, !desc.isEmpty {
+                                Text(desc)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                        }
+                        
+                        Spacer()
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(index == selectedIndex ? Color.accentColor.opacity(0.15) : Color.clear)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Insert prompt: \(prompt.name)")
+            }
         }
-        .buttonStyle(.plain)
-        .sensoryFeedback(.impact(weight: .medium), trigger: isRecording)
-        .animateWithReducedMotion(OneraAnimation.fast, value: isRecording)
-        .accessibilityLabel(isRecording ? "Stop recording" : "Start voice recording")
-        .accessibilityHint(isRecording ? "Stops voice recording" : "Starts voice recording to dictate your message")
+        .padding(6)
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.15), radius: 8, y: 2)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Prompt suggestions")
     }
 }
 
@@ -536,3 +873,5 @@ struct CameraPicker: UIViewControllerRepresentable {
     }
 }
 #endif
+
+

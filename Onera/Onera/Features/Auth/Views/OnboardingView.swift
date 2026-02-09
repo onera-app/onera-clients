@@ -118,7 +118,7 @@ private struct WelcomeContent: View {
         VStack(spacing: 32) {
             // Icon
             Image(systemName: "sparkles")
-                .font(.system(size: 60))
+                .font(.largeTitle)
                 .foregroundStyle(.blue)
                 .frame(width: 100, height: 100)
                 .background(Color.blue.opacity(0.1))
@@ -166,7 +166,7 @@ private struct SecurityContent: View {
         VStack(spacing: 32) {
             // Icon
             Image(systemName: "lock.shield.fill")
-                .font(.system(size: 60))
+                .font(.largeTitle)
                 .foregroundStyle(.green)
                 .frame(width: 100, height: 100)
                 .background(Color.green.opacity(0.1))
@@ -266,7 +266,7 @@ private struct ReadyContent: View {
         VStack(spacing: 32) {
             // Icon
             Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 60))
+                .font(.largeTitle)
                 .foregroundStyle(.green)
                 .frame(width: 100, height: 100)
                 .background(Color.green.opacity(0.1))

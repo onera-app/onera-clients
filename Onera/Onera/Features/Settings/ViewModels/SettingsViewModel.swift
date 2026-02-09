@@ -26,6 +26,7 @@ final class SettingsViewModel {
     // MARK: - Child ViewModels
     
     let credentialsViewModel: CredentialsViewModel
+    let passkeyManagementViewModel: PasskeyManagementViewModel
     
     // MARK: - Dependencies
     
@@ -44,6 +45,7 @@ final class SettingsViewModel {
         networkService: NetworkServiceProtocol,
         cryptoService: CryptoServiceProtocol,
         extendedCryptoService: ExtendedCryptoServiceProtocol,
+        passkeyService: PasskeyServiceProtocol,
         onSignOut: @escaping () async -> Void
     ) {
         self.authService = authService
@@ -58,6 +60,12 @@ final class SettingsViewModel {
             extendedCryptoService: extendedCryptoService,
             secureSession: secureSession,
             authService: authService
+        )
+        
+        self.passkeyManagementViewModel = PasskeyManagementViewModel(
+            passkeyService: passkeyService,
+            authService: authService,
+            secureSession: secureSession
         )
     }
     

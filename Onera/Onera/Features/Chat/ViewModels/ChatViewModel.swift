@@ -69,6 +69,33 @@ final class ChatViewModel {
         credentialService.isLoading
     }
     
+    // MARK: - Follow-ups
+    
+    /// Suggested follow-up prompts after an assistant response
+    private(set) var followUps: [String] = []
+    
+    // MARK: - Artifacts
+    
+    /// Whether the artifacts panel is visible
+    var showArtifactsPanel = false
+    
+    /// Extracted code/text artifacts from assistant messages
+    private(set) var artifacts: [CodeArtifact] = []
+    
+    /// Currently selected artifact ID
+    var activeArtifactId: String?
+    
+    // MARK: - Web Search
+    
+    /// Whether web search is enabled for the next message
+    var searchEnabled: Bool = UserDefaults.standard.bool(forKey: "searchEnabledByDefault")
+    
+    /// Whether a search is currently in progress
+    private(set) var isSearching = false
+    
+    /// The web search service
+    private let webSearchService: WebSearchServiceProtocol
+    
     // MARK: - Dependencies
     
     private let authService: AuthServiceProtocol
@@ -78,10 +105,13 @@ final class ChatViewModel {
     private let networkService: NetworkServiceProtocol
     private let speechService: SpeechServiceProtocol
     private var speechRecognitionService: SpeechRecognitionServiceProtocol
+    private let chatTasksService: ChatTasksServiceProtocol
     let modelSelector: ModelSelectorViewModel
     private let onChatUpdated: (ChatSummary) -> Void
     
     private var streamingTask: Task<Void, Never>?
+    private var titleGenerationTask: Task<Void, Never>?
+    private var followUpTask: Task<Void, Never>?
     
     // MARK: - Streaming Buffer (to avoid exclusivity violations)
     
@@ -111,6 +141,8 @@ final class ChatViewModel {
         networkService: NetworkServiceProtocol,
         speechService: SpeechServiceProtocol,
         speechRecognitionService: SpeechRecognitionServiceProtocol,
+        chatTasksService: ChatTasksServiceProtocol? = nil,
+        webSearchService: WebSearchServiceProtocol? = nil,
         onChatUpdated: @escaping (ChatSummary) -> Void
     ) {
         self.authService = authService
@@ -120,6 +152,8 @@ final class ChatViewModel {
         self.networkService = networkService
         self.speechService = speechService
         self.speechRecognitionService = speechRecognitionService
+        self.chatTasksService = chatTasksService ?? ChatTasksService()
+        self.webSearchService = webSearchService ?? WebSearchService()
         self.modelSelector = ModelSelectorViewModel(
             credentialService: credentialService,
             llmService: llmService,
@@ -144,12 +178,66 @@ final class ChatViewModel {
         
         do {
             let token = try await authService.getToken()
-            chat = try await chatRepository.fetchChat(id: id, token: token)
+            let loadedChat = try await chatRepository.fetchChat(id: id, token: token)
+            chat = loadedChat
+            
+            // Restore branches from the full message tree
+            restoreBranches(from: loadedChat)
         } catch {
             self.error = error
         }
         
         isLoading = false
+    }
+    
+    /// Update chat.allMessages to include all branch messages for persistence
+    private func updateAllMessages() {
+        guard var currentChat = chat else { return }
+        
+        var allMsgs = currentChat.allMessages ?? [:]
+        
+        // Add all active messages
+        for msg in currentChat.messages {
+            allMsgs[msg.id] = msg
+        }
+        
+        // Add all branch messages, preserving parentId/childrenIds
+        for (userMessageId, branches) in responseBranches {
+            for var branchMsg in branches {
+                // Set parentId to the user message (the parent node)
+                branchMsg.parentId = userMessageId
+                allMsgs[branchMsg.id] = branchMsg
+                
+                // Ensure user message knows about this child
+                if var userMsg = allMsgs[userMessageId] {
+                    var children = userMsg.childrenIds ?? []
+                    if !children.contains(branchMsg.id) {
+                        children.append(branchMsg.id)
+                        userMsg.childrenIds = children
+                        allMsgs[userMessageId] = userMsg
+                    }
+                }
+            }
+        }
+        
+        currentChat.allMessages = allMsgs
+        chat = currentChat
+    }
+    
+    /// Reconstruct responseBranches from the stored message tree
+    private func restoreBranches(from loadedChat: Chat) {
+        responseBranches = [:]
+        currentBranchIndex = [:]
+        
+        guard let allMsgs = loadedChat.allMessages else { return }
+        
+        let extracted = ChatData.extractBranches(
+            activeMessages: loadedChat.messages,
+            allMessages: allMsgs
+        )
+        
+        responseBranches = extracted.branches
+        currentBranchIndex = extracted.activeIndices
     }
     
     func createNewChat() async {
@@ -164,17 +252,17 @@ final class ChatViewModel {
     /// Load credentials and available models
     func loadModels() async {
         do {
-            print("[ChatViewModel] Loading models...")
             let token = try await authService.getToken()
-            print("[ChatViewModel] Got token, fetching credentials...")
             try await credentialService.fetchCredentials(token: token)
-            print("[ChatViewModel] Got \(credentialService.credentials.count) credentials, fetching models...")
             await modelSelector.fetchModels()
-            print("[ChatViewModel] Models loaded")
         } catch {
-            print("[ChatViewModel] Error loading models: \(error)")
             self.error = error
         }
+    }
+    
+    /// Read current model parameters from user settings
+    private func currentModelParameters() -> ModelParameters {
+        ModelParameters.fromUserDefaults()
     }
     
     func sendMessage() async {
@@ -196,9 +284,10 @@ final class ChatViewModel {
         let messageContent = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         let messageAttachments = attachments
         
-        // Clear input
+        // Clear input and follow-ups
         inputText = ""
         attachments = []
+        followUps = []
         
         // Create user message
         let userMessage = Message(
@@ -216,13 +305,17 @@ final class ChatViewModel {
         chat?.messages.append(userMessage)
         chat?.updatedAt = Date()
         
-        // Generate title from first message if this is a new chat
-        if chat?.title == "New Chat" {
+        // Set a quick placeholder title, will be replaced by LLM-generated title
+        let isFirstMessage = chat?.title == "New Chat"
+        if isFirstMessage {
             chat?.title = generateTitle(from: messageContent)
         }
         
         isSending = true
         error = nil
+        
+        // Read model parameters from settings
+        let params = currentModelParameters()
         
         do {
             // Save chat first
@@ -235,21 +328,34 @@ final class ChatViewModel {
             let assistantMessage = Message(
                 role: .assistant,
                 content: "",
-                isStreaming: true
+                isStreaming: true,
+                model: selectedModel.id
             )
             chat?.messages.append(assistantMessage)
             
             // Stream response from LLM
             isStreaming = true
             
+            // Web search injection: prepend search results to the user's message
+            var searchContext: String? = nil
+            if searchEnabled {
+                searchContext = await performWebSearch(query: messageContent)
+            }
+            
             // Convert messages to LLM format with attachments (capture before streaming)
             let chatMessages = messages.dropLast().map { msg -> ChatMessage in
                 let chatAttachments = msg.attachments.map { attachment in
                     ChatAttachment(from: attachment)
                 }
+                // Inject search context into the last user message
+                var content = msg.content
+                if let ctx = searchContext,
+                   msg.id == userMessage.id {
+                    content = ctx + "\n\n" + content
+                }
                 return ChatMessage(
                     role: msg.role == .user ? .user : .assistant,
-                    content: msg.content,
+                    content: content,
                     attachments: chatAttachments.isEmpty ? nil : chatAttachments
                 )
             }
@@ -260,13 +366,12 @@ final class ChatViewModel {
                 enclaveConfig = try await modelSelector.requestEnclaveForCurrentModel(sessionId: chatId)
             }
             
-            // Stream to buffers (callback only touches buffers, not chat)
+            // Stream to buffers using full model parameters
             try await llmService.streamChat(
                 messages: Array(chatMessages),
                 credential: credential,
                 model: selectedModel.id,
-                systemPrompt: nil,
-                maxTokens: 4096,
+                parameters: params,
                 enclaveConfig: enclaveConfig
             ) { [weak self] event in
                 DispatchQueue.main.async {
@@ -285,6 +390,26 @@ final class ChatViewModel {
             // Save final state
             try await saveChat()
             
+            // After successful response, fire background tasks:
+            // 1. LLM-based title generation (if first message)
+            if isFirstMessage, let credential = credential {
+                startTitleGeneration(
+                    chatMessages: Array(chatMessages) + [ChatMessage(role: .assistant, content: streamingContentBuffer)],
+                    credential: credential,
+                    model: selectedModel.id
+                )
+            }
+            
+            // 2. Follow-up suggestions
+            if let credential = credential {
+                let allMessages = Array(chatMessages) + [ChatMessage(role: .assistant, content: streamingContentBuffer)]
+                startFollowUpGeneration(
+                    chatMessages: allMessages,
+                    credential: credential,
+                    model: selectedModel.id
+                )
+            }
+            
         } catch is CancellationError {
             // User cancelled - apply whatever we have
             applyStreamingBuffers()
@@ -301,6 +426,36 @@ final class ChatViewModel {
         }
         
         isSending = false
+    }
+    
+    // MARK: - Web Search
+    
+    /// Perform a web search and return formatted context, or nil on failure
+    private func performWebSearch(query: String) async -> String? {
+        let providerRaw = UserDefaults.standard.string(forKey: "defaultSearchProvider") ?? "tavily"
+        guard let provider = SearchProvider(rawValue: providerRaw) else { return nil }
+        
+        let apiKeyKey = "search.\(providerRaw).apiKey"
+        guard let apiKey = UserDefaults.standard.string(forKey: apiKeyKey), !apiKey.isEmpty else {
+            print("[ChatViewModel] No API key for search provider \(providerRaw)")
+            return nil
+        }
+        
+        isSearching = true
+        defer { isSearching = false }
+        
+        do {
+            let searchResult = try await webSearchService.search(
+                query: query,
+                provider: provider,
+                apiKey: apiKey,
+                maxResults: 5
+            )
+            return WebSearchService.formatResultsForContext(results: searchResult.results, query: query)
+        } catch {
+            print("[ChatViewModel] Web search failed: \(error)")
+            return nil
+        }
     }
     
     /// Stop the current streaming response
@@ -330,7 +485,10 @@ final class ChatViewModel {
     }
     
     /// Regenerate a specific assistant message (preserves old response as alternative branch)
-    func regenerateMessage(messageId: String) async {
+    /// - Parameters:
+    ///   - messageId: The assistant message ID to regenerate
+    ///   - modifier: Optional instruction appended to the user message (e.g. "Please be more concise")
+    func regenerateMessage(messageId: String, modifier: String? = nil) async {
         guard !isSending, !isStreaming else { return }
         guard var chat = chat,
               let index = chat.messages.firstIndex(where: { $0.id == messageId }),
@@ -359,10 +517,23 @@ final class ChatViewModel {
         // Remove the assistant message and everything after it from chat
         // but keep the user message
         chat.messages = Array(chat.messages.prefix(index))
-        self.chat = chat
         
-        // Stream the new response (streamLLMResponse creates the assistant message)
-        await streamLLMResponse()
+        // If a modifier is provided, temporarily append it to the user message content
+        // (matching web behavior: userContent + "\n\n" + modifier)
+        if let modifier = modifier, !modifier.isEmpty {
+            let originalContent = chat.messages[userMessageIndex].content
+            chat.messages[userMessageIndex].content = originalContent + "\n\n" + modifier
+            self.chat = chat
+            
+            // Stream with modified content
+            await streamLLMResponse()
+            
+            // Restore original user message content (modifier is transient, not persisted)
+            self.chat?.messages[userMessageIndex].content = originalContent
+        } else {
+            self.chat = chat
+            await streamLLMResponse()
+        }
         
         // After streaming completes, store the new response in branches
         if let lastMessage = self.chat?.messages.last, lastMessage.role == .assistant {
@@ -371,6 +542,9 @@ final class ChatViewModel {
             responseBranches[userMessage.id] = branches
             // Set current index to the newest response
             currentBranchIndex[userMessage.id] = branches.count - 1
+            
+            // Update allMessages tree for persistence
+            updateAllMessages()
         }
     }
     
@@ -418,6 +592,7 @@ final class ChatViewModel {
         // Replace the current response with the previous branch
         chat.messages[messageIndex] = branches[currentIdx]
         self.chat = chat
+        updateAllMessages()
     }
     
     /// Switch to next response branch
@@ -443,6 +618,7 @@ final class ChatViewModel {
         // Replace the current response with the next branch
         chat.messages[messageIndex] = branches[currentIdx]
         self.chat = chat
+        updateAllMessages()
     }
     
     /// Edit a user message with optional regeneration
@@ -501,6 +677,10 @@ final class ChatViewModel {
         
         isSending = true
         error = nil
+        followUps = []
+        
+        // Read model parameters from settings
+        let params = currentModelParameters()
         
         do {
             // Reset streaming buffers
@@ -510,7 +690,8 @@ final class ChatViewModel {
             let assistantMessage = Message(
                 role: .assistant,
                 content: "",
-                isStreaming: true
+                isStreaming: true,
+                model: selectedModel.id
             )
             chat?.messages.append(assistantMessage)
             
@@ -535,13 +716,12 @@ final class ChatViewModel {
                 enclaveConfig = try await modelSelector.requestEnclaveForCurrentModel(sessionId: chatId)
             }
             
-            // Stream to buffers (callback only touches buffers, not chat)
+            // Stream to buffers using full model parameters
             try await llmService.streamChat(
                 messages: Array(chatMessages),
                 credential: credential,
                 model: selectedModel.id,
-                systemPrompt: nil,
-                maxTokens: 4096,
+                parameters: params,
                 enclaveConfig: enclaveConfig
             ) { [weak self] event in
                 DispatchQueue.main.async {
@@ -560,6 +740,16 @@ final class ChatViewModel {
             // Save final state
             try await saveChat()
             
+            // Generate follow-up suggestions
+            if let credential = credential {
+                let allMessages = Array(chatMessages) + [ChatMessage(role: .assistant, content: streamingContentBuffer)]
+                startFollowUpGeneration(
+                    chatMessages: allMessages,
+                    credential: credential,
+                    model: selectedModel.id
+                )
+            }
+            
         } catch is CancellationError {
             applyStreamingBuffers()
             isStreaming = false
@@ -575,6 +765,34 @@ final class ChatViewModel {
         }
         
         isSending = false
+    }
+    
+    /// Delete an individual message from the chat
+    func deleteMessage(messageId: String) async {
+        guard var chat = chat,
+              let index = chat.messages.firstIndex(where: { $0.id == messageId }) else {
+            return
+        }
+        
+        let message = chat.messages[index]
+        
+        // If deleting an assistant message, also remove its branches
+        if message.role == .assistant, index > 0 {
+            let userMessageId = chat.messages[index - 1].id
+            responseBranches.removeValue(forKey: userMessageId)
+            currentBranchIndex.removeValue(forKey: userMessageId)
+        }
+        
+        // Remove the message
+        chat.messages.remove(at: index)
+        self.chat = chat
+        
+        // Save the updated chat
+        do {
+            try await saveChat()
+        } catch {
+            self.error = error
+        }
     }
     
     func deleteCurrentChat() async {
@@ -744,5 +962,51 @@ final class ChatViewModel {
         }
         
         return content.truncatedAtWord(to: maxLength)
+    }
+    
+    // MARK: - Background AI Tasks
+    
+    /// Start async LLM-based title generation after first assistant response
+    private func startTitleGeneration(chatMessages: [ChatMessage], credential: DecryptedCredential, model: String) {
+        titleGenerationTask?.cancel()
+        titleGenerationTask = Task { [weak self] in
+            guard let self else { return }
+            
+            let generatedTitle = await self.chatTasksService.generateTitle(
+                for: chatMessages,
+                credential: credential,
+                model: model
+            )
+            
+            guard !Task.isCancelled, let title = generatedTitle, !title.isEmpty else { return }
+            
+            self.chat?.title = title
+            
+            // Save updated title and notify list
+            do {
+                try await self.saveChat()
+            } catch {
+                print("[ChatViewModel] Failed to save AI-generated title: \(error)")
+            }
+        }
+    }
+    
+    /// Start async follow-up suggestion generation after assistant response
+    private func startFollowUpGeneration(chatMessages: [ChatMessage], credential: DecryptedCredential, model: String) {
+        followUpTask?.cancel()
+        followUpTask = Task { [weak self] in
+            guard let self else { return }
+            
+            let suggestions = await self.chatTasksService.generateFollowUps(
+                for: chatMessages,
+                credential: credential,
+                model: model,
+                count: 3
+            )
+            
+            guard !Task.isCancelled else { return }
+            
+            self.followUps = suggestions
+        }
     }
 }

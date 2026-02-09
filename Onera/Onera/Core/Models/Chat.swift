@@ -19,8 +19,18 @@ struct Chat: Identifiable, Equatable, Sendable {
     /// The folder this chat belongs to (nil = no folder)
     var folderId: String?
     
+    /// Whether the chat is pinned to the top
+    var pinned: Bool
+    
+    /// Whether the chat is archived
+    var archived: Bool
+    
     /// The chat's symmetric encryption key (only in memory, never persisted)
     var encryptionKey: Data?
+    
+    /// Full message tree for branch persistence (only in memory, restored from encrypted data)
+    /// Contains all messages including alternative branches from regeneration/edits.
+    var allMessages: [String: Message]?
     
     /// Whether this chat has been persisted to the server
     var isPersisted: Bool {
@@ -34,7 +44,10 @@ struct Chat: Identifiable, Equatable, Sendable {
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         folderId: String? = nil,
-        encryptionKey: Data? = nil
+        pinned: Bool = false,
+        archived: Bool = false,
+        encryptionKey: Data? = nil,
+        allMessages: [String: Message]? = nil
     ) {
         self.id = id
         self.title = title
@@ -42,7 +55,10 @@ struct Chat: Identifiable, Equatable, Sendable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.folderId = folderId
+        self.pinned = pinned
+        self.archived = archived
         self.encryptionKey = encryptionKey
+        self.allMessages = allMessages
     }
     
     var isEmpty: Bool {
@@ -66,6 +82,8 @@ struct ChatSummary: Identifiable, Equatable, Sendable {
     let createdAt: Date
     let updatedAt: Date
     let folderId: String?
+    let pinned: Bool
+    let archived: Bool
     
     var group: ChatGroup {
         ChatGroup.for(date: updatedAt)
@@ -76,13 +94,17 @@ struct ChatSummary: Identifiable, Equatable, Sendable {
         title: String,
         createdAt: Date,
         updatedAt: Date,
-        folderId: String? = nil
+        folderId: String? = nil,
+        pinned: Bool = false,
+        archived: Bool = false
     ) {
         self.id = id
         self.title = title
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.folderId = folderId
+        self.pinned = pinned
+        self.archived = archived
     }
 }
 

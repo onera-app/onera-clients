@@ -302,7 +302,7 @@ enum AccessibilityAnnouncement {
         // Icon button with proper touch target
         Button { } label: {
             Image(systemName: "plus")
-                .font(.system(size: 20))
+                .font(.title3)
         }
         .iconButton(label: "Add new item", hint: "Creates a new conversation")
         .oneraGlassCircle()
@@ -310,7 +310,7 @@ enum AccessibilityAnnouncement {
         // Toggle button
         Button { } label: {
             Image(systemName: "eye.fill")
-                .font(.system(size: 16))
+                .font(.body)
         }
         .touchTarget()
         .accessibilityToggle(

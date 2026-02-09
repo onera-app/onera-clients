@@ -156,3 +156,36 @@ struct DefaultThemeColors: ThemeColors {
     // Special
     var reasoning: Color { Color.purple }
 }
+
+// MARK: - OLED Dark Theme Wrapper
+
+/// Wraps any ThemeColors and overrides backgrounds to pure black for OLED displays.
+/// Only used when the user enables "OLED Black" in appearance settings while in dark mode.
+struct OLEDDarkThemeColors: ThemeColors {
+    private let base: ThemeColors
+    
+    init(wrapping base: ThemeColors) {
+        self.base = base
+    }
+    
+    // Override backgrounds to pure black / near-black
+    var background: Color { .black }
+    var secondaryBackground: Color { Color(white: 0.06) } // #0F0F0F
+    var tertiaryBackground: Color { Color(white: 0.10) }  // #1A1A1A
+    
+    // Pass through everything else from the base theme
+    var textPrimary: Color { base.textPrimary }
+    var textSecondary: Color { base.textSecondary }
+    var textTertiary: Color { base.textTertiary }
+    var accent: Color { base.accent }
+    var tint: Color { base.tint }
+    var userBubble: Color { Color(white: 0.08) } // Slightly elevated on OLED
+    var assistantBubble: Color { .black }
+    var success: Color { base.success }
+    var warning: Color { base.warning }
+    var error: Color { base.error }
+    var info: Color { base.info }
+    var border: Color { base.border }
+    var placeholder: Color { base.placeholder }
+    var reasoning: Color { base.reasoning }
+}

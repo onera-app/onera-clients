@@ -114,6 +114,7 @@ final class TestDependencyContainer: DependencyContaining, @unchecked Sendable {
     var fileProcessingService: FileProcessingServiceProtocol { mockFileProcessingService }
     var passkeyService: PasskeyServiceProtocol { mockPasskeyService }
     var promptRepository: PromptRepositoryProtocol { mockPromptRepository }
+    var webSocketSyncService: WebSocketSyncServiceProtocol { MockWebSocketSyncService() }
     
     // MARK: - Initialization
     

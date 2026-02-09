@@ -75,7 +75,7 @@ struct CredentialsListView: View {
         Section {
             VStack(spacing: 16) {
                 Image(systemName: "key.horizontal")
-                    .font(.system(size: 48))
+                    .font(.largeTitle)
                     .foregroundStyle(.secondary)
                 
                 Text("No API Connections")

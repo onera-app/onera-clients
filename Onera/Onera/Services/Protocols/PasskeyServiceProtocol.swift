@@ -38,6 +38,15 @@ protocol PasskeyServiceProtocol: Sendable {
     /// Checks if user has any passkeys registered on server
     func hasPasskeys(token: String) async throws -> Bool
     
+    /// Lists all registered passkeys for the current user
+    func listPasskeys(token: String) async throws -> [WebAuthnPasskey]
+    
+    /// Renames a passkey
+    func renamePasskey(credentialId: String, name: String, token: String) async throws
+    
+    /// Deletes a passkey
+    func deletePasskey(credentialId: String, token: String) async throws
+    
     /// Checks if this device has a passkey KEK stored locally
     func hasLocalPasskeyKEK() -> Bool
     

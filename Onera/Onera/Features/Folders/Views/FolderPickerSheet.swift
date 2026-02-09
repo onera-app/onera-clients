@@ -52,7 +52,7 @@ struct FolderPickerSheet: View {
                         } label: {
                             HStack(spacing: 12) {
                                 Image(systemName: "folder.badge.plus")
-                                    .font(.system(size: 16))
+                                    .font(.body)
                                     .foregroundStyle(.blue)
                                 
                                 Text("Create new folder")
@@ -69,7 +69,7 @@ struct FolderPickerSheet: View {
                         // New folder creation row
                         HStack(spacing: 12) {
                             Image(systemName: "folder.badge.plus")
-                                .font(.system(size: 16))
+                                .font(.body)
                                 .foregroundStyle(.secondary)
                             
                             TextField("Folder name", text: $viewModel.newFolderName)
@@ -82,7 +82,7 @@ struct FolderPickerSheet: View {
                                 }
                             } label: {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 24))
+                                    .font(.title2)
                                     .foregroundStyle(.green)
                             }
                             .disabled(viewModel.newFolderName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -91,7 +91,7 @@ struct FolderPickerSheet: View {
                                 viewModel.cancelCreatingFolder()
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
-                                    .font(.system(size: 24))
+                                    .font(.title2)
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -133,7 +133,7 @@ private struct FolderPickerRow: View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
-                    .font(.system(size: 16))
+                    .font(.body)
                     .foregroundStyle(isSelected ? .blue : .secondary)
                 
                 Text(name)
@@ -143,7 +143,7 @@ private struct FolderPickerRow: View {
                 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.blue)
                 }
             }
@@ -192,7 +192,7 @@ private struct FolderPickerNodeView: View {
                             viewModel.toggleExpanded(folderId: node.id)
                         } label: {
                             Image(systemName: "chevron.right")
-                                .font(.system(size: 10, weight: .semibold))
+                                .font(.caption2.weight(.semibold))
                                 .rotationEffect(.degrees(isExpanded ? 90 : 0))
                                 .foregroundStyle(.secondary)
                         }
@@ -202,7 +202,7 @@ private struct FolderPickerNodeView: View {
                     }
                     
                     Image(systemName: "folder.fill")
-                        .font(.system(size: 16))
+                        .font(.body)
                         .foregroundStyle(isSelected ? .blue : .secondary)
                     
                     Text(node.name)
@@ -212,7 +212,7 @@ private struct FolderPickerNodeView: View {
                     
                     if isSelected {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.blue)
                     }
                 }

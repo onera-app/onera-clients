@@ -129,7 +129,7 @@ struct E2EESetupView: View {
             Section {
                 VStack(spacing: 16) {
                     Image(systemName: "lock.shield.fill")
-                        .font(.system(size: 56))
+                        .font(.largeTitle)
                         .foregroundStyle(.blue)
                     
                     Text("Choose how you want to unlock your encrypted data.")
@@ -267,7 +267,7 @@ struct E2EESetupView: View {
             Section {
                 VStack(spacing: 20) {
                     Image(systemName: "person.badge.key.fill")
-                        .font(.system(size: 56))
+                        .font(.largeTitle)
                         .foregroundStyle(.blue)
                     
                     VStack(spacing: 8) {
@@ -362,7 +362,7 @@ struct E2EESetupView: View {
             Section {
                 VStack(spacing: 20) {
                     Image(systemName: "key.fill")
-                        .font(.system(size: 56))
+                        .font(.largeTitle)
                         .foregroundStyle(.orange)
                     
                     VStack(spacing: 8) {
@@ -458,7 +458,7 @@ struct E2EESetupView: View {
             Section {
                 VStack(spacing: 16) {
                     Image(systemName: "lock.doc.fill")
-                        .font(.system(size: 56))
+                        .font(.largeTitle)
                         .foregroundStyle(.orange)
                     
                     VStack(spacing: 8) {
@@ -559,7 +559,7 @@ struct E2EESetupView: View {
             Spacer()
             
             Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 72))
+                .font(.largeTitle)
                 .foregroundStyle(.green)
             
             VStack(spacing: 12) {

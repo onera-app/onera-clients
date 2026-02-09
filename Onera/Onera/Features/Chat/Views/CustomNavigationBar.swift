@@ -114,7 +114,7 @@ struct CustomNavigationBar: View {
                     .lineLimit(1)
                 
                 Image(systemName: "chevron.up.chevron.down")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.caption2.bold())
                     .foregroundStyle(theme.textSecondary)
                     .accessibilityHidden(true)
             }

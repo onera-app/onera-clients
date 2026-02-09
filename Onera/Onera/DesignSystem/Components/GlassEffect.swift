@@ -292,7 +292,7 @@ struct AdaptiveGlassProminentButtonStyle: ButtonStyle {
         
         // Circle glass effect
         Image(systemName: "plus")
-            .font(.system(size: 20, weight: .medium))
+            .font(.title3.weight(.medium))
             .frame(width: 44, height: 44)
             .oneraGlassCircle()
         
@@ -319,7 +319,7 @@ struct AdaptiveGlassProminentButtonStyle: ButtonStyle {
         
         // Circle glass effect
         Image(systemName: "plus")
-            .font(.system(size: 20, weight: .medium))
+            .font(.title3.weight(.medium))
             .frame(width: 44, height: 44)
             .oneraGlassCircle()
         

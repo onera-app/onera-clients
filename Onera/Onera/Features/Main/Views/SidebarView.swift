@@ -102,7 +102,7 @@ struct SidebarView: View {
                             .frame(width: 32, height: 32)
                         
                         Text(user.initials)
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.caption.weight(.semibold))
                             .foregroundStyle(theme.accent)
                     }
                     

@@ -219,3 +219,84 @@ extension Task where Success == Never, Failure == Never {
     }
 }
 
+// MARK: - Thinking Tag Parser
+
+/// Parsed message content with thinking blocks extracted
+struct ParsedMessageContent {
+    let displayContent: String
+    let thinkingContent: String?
+    let isThinking: Bool
+}
+
+/// Shared utility for parsing thinking/reasoning blocks from LLM output
+enum ThinkingTagParser {
+    
+    /// Supported thinking tags
+    static let thinkingTags = ["think", "thinking", "reason", "reasoning"]
+    
+    /// Parse content and extract thinking blocks
+    static func parse(_ content: String) -> ParsedMessageContent {
+        guard !content.isEmpty else {
+            return ParsedMessageContent(displayContent: "", thinkingContent: nil, isThinking: false)
+        }
+        
+        var displayContent = content
+        var thinkingBlocks: [String] = []
+        var isThinking = false
+        
+        // Build regex pattern for complete blocks: <tag>content</tag>
+        let tagsPattern = thinkingTags.joined(separator: "|")
+        let completeBlockPattern = "<(\(tagsPattern))>([\\s\\S]*?)</\\1>"
+        
+        // Find and extract complete thinking blocks
+        if let regex = try? NSRegularExpression(pattern: completeBlockPattern, options: [.caseInsensitive]) {
+            let nsContent = content as NSString
+            let matches = regex.matches(in: content, options: [], range: NSRange(location: 0, length: nsContent.length))
+            
+            // Process matches in reverse order to preserve indices
+            for match in matches.reversed() {
+                if match.numberOfRanges >= 3 {
+                    let contentRange = match.range(at: 2)
+                    let thinkingText = nsContent.substring(with: contentRange).trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !thinkingText.isEmpty {
+                        thinkingBlocks.insert(thinkingText, at: 0)
+                    }
+                    // Remove the block from display content
+                    displayContent = (displayContent as NSString).replacingCharacters(in: match.range, with: "")
+                }
+            }
+        }
+        
+        // Check for incomplete (still streaming) thinking block: <tag>content (no closing tag)
+        let openTagPattern = "<(\(tagsPattern))>([\\s\\S]*)$"
+        if let regex = try? NSRegularExpression(pattern: openTagPattern, options: [.caseInsensitive]) {
+            let nsDisplay = displayContent as NSString
+            if let match = regex.firstMatch(in: displayContent, options: [], range: NSRange(location: 0, length: nsDisplay.length)) {
+                if match.numberOfRanges >= 3 {
+                    let contentRange = match.range(at: 2)
+                    let thinkingText = nsDisplay.substring(with: contentRange).trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !thinkingText.isEmpty {
+                        thinkingBlocks.append(thinkingText)
+                    }
+                    // Remove the incomplete block from display content
+                    displayContent = (displayContent as NSString).replacingCharacters(in: match.range, with: "")
+                    isThinking = true
+                }
+            }
+        }
+        
+        // Clean up display content
+        displayContent = displayContent
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "\n{3,}", with: "\n\n", options: .regularExpression)
+        
+        let combinedThinking = thinkingBlocks.isEmpty ? nil : thinkingBlocks.joined(separator: "\n\n")
+        
+        return ParsedMessageContent(
+            displayContent: displayContent,
+            thinkingContent: combinedThinking,
+            isThinking: isThinking
+        )
+    }
+}
+

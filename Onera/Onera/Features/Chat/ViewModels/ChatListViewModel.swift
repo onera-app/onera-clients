@@ -111,4 +111,69 @@ final class ChatListViewModel {
     func removeChat(_ id: String) {
         chats.removeAll { $0.id == id }
     }
+    
+    func togglePinned(_ chat: ChatSummary) async {
+        let newPinned = !chat.pinned
+        do {
+            let token = try await authService.getToken()
+            try await chatRepository.updateChatPinned(chatId: chat.id, pinned: newPinned, token: token)
+            // Update local state
+            if let index = chats.firstIndex(where: { $0.id == chat.id }) {
+                chats[index] = ChatSummary(
+                    id: chat.id,
+                    title: chat.title,
+                    createdAt: chat.createdAt,
+                    updatedAt: chat.updatedAt,
+                    folderId: chat.folderId,
+                    pinned: newPinned,
+                    archived: chat.archived
+                )
+            }
+        } catch {
+            self.error = error
+        }
+    }
+    
+    func toggleArchived(_ chat: ChatSummary) async {
+        let newArchived = !chat.archived
+        do {
+            let token = try await authService.getToken()
+            try await chatRepository.updateChatArchived(chatId: chat.id, archived: newArchived, token: token)
+            // Update local state
+            if let index = chats.firstIndex(where: { $0.id == chat.id }) {
+                chats[index] = ChatSummary(
+                    id: chat.id,
+                    title: chat.title,
+                    createdAt: chat.createdAt,
+                    updatedAt: chat.updatedAt,
+                    folderId: chat.folderId,
+                    pinned: chat.pinned,
+                    archived: newArchived
+                )
+            }
+        } catch {
+            self.error = error
+        }
+    }
+    
+    func moveChatToFolder(_ chat: ChatSummary, folderId: String?) async {
+        do {
+            let token = try await authService.getToken()
+            try await chatRepository.updateChatFolder(chatId: chat.id, folderId: folderId, token: token)
+            // Update local state
+            if let index = chats.firstIndex(where: { $0.id == chat.id }) {
+                chats[index] = ChatSummary(
+                    id: chat.id,
+                    title: chat.title,
+                    createdAt: chat.createdAt,
+                    updatedAt: chat.updatedAt,
+                    folderId: folderId,
+                    pinned: chat.pinned,
+                    archived: chat.archived
+                )
+            }
+        } catch {
+            self.error = error
+        }
+    }
 }

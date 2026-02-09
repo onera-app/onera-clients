@@ -58,6 +58,9 @@ TRPC_PATH = /trpc
 // Clerk Configuration
 CLERK_PUBLISHABLE_KEY = ${PROD_CLERK_KEY}
 
+// Clerk OAuth Callback Scheme (registered as URL scheme for OAuth redirects)
+CLERK_CALLBACK_SCHEME = ${PROD_CLERK_CALLBACK_SCHEME:-clerk.onera.chat}
+
 // WebAuthn Configuration
 WEBAUTHN_RP_ID = ${PROD_WEBAUTHN_RP_ID:-onera.chat}
 WEBAUTHN_RP_NAME = ${PROD_WEBAUTHN_RP_NAME:-Onera}
@@ -95,6 +98,9 @@ TRPC_PATH = /trpc
 
 // Clerk Configuration
 CLERK_PUBLISHABLE_KEY = ${STAGING_CLERK_KEY}
+
+// Clerk OAuth Callback Scheme
+CLERK_CALLBACK_SCHEME = clerk.humorous-toucan-95
 
 // WebAuthn Configuration
 WEBAUTHN_RP_ID = staging.onera.chat

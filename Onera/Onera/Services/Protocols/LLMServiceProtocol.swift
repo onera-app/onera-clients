@@ -221,18 +221,100 @@ enum StreamEvent: Sendable {
     case done
 }
 
+// MARK: - Model Parameters
+
+/// Parameters for controlling LLM generation behavior.
+/// Matches the web app's `useModelParamsStore` settings.
+struct ModelParameters: Sendable, Equatable {
+    var systemPrompt: String?
+    var maxTokens: Int?
+    var temperature: Double?
+    var topP: Double?
+    var topK: Int?
+    var frequencyPenalty: Double?
+    var presencePenalty: Double?
+    var streamResponse: Bool
+    
+    // Provider-specific
+    var openAIReasoningEffort: String?       // "low", "medium", "high"
+    var openAIReasoningSummary: String?      // "auto", "detailed", "none"
+    var anthropicExtendedThinking: Bool
+    
+    // Advanced
+    var seed: Int?                           // nil = random
+    
+    nonisolated init(
+        systemPrompt: String? = nil,
+        maxTokens: Int? = nil,
+        temperature: Double? = nil,
+        topP: Double? = nil,
+        topK: Int? = nil,
+        frequencyPenalty: Double? = nil,
+        presencePenalty: Double? = nil,
+        streamResponse: Bool = true,
+        openAIReasoningEffort: String? = nil,
+        openAIReasoningSummary: String? = nil,
+        anthropicExtendedThinking: Bool = false,
+        seed: Int? = nil
+    ) {
+        self.systemPrompt = systemPrompt
+        self.maxTokens = maxTokens
+        self.temperature = temperature
+        self.topP = topP
+        self.topK = topK
+        self.frequencyPenalty = frequencyPenalty
+        self.presencePenalty = presencePenalty
+        self.streamResponse = streamResponse
+        self.openAIReasoningEffort = openAIReasoningEffort
+        self.openAIReasoningSummary = openAIReasoningSummary
+        self.anthropicExtendedThinking = anthropicExtendedThinking
+        self.seed = seed
+    }
+    
+    /// Default parameters (matches GeneralSettingsView defaults)
+    static let `default` = ModelParameters(
+        maxTokens: nil,
+        temperature: 0.7,
+        topP: 1.0,
+        topK: 40,
+        frequencyPenalty: 0.0,
+        presencePenalty: 0.0,
+        streamResponse: true,
+        openAIReasoningEffort: "medium",
+        openAIReasoningSummary: "detailed",
+        anthropicExtendedThinking: false,
+        seed: nil
+    )
+    
+    /// Read current parameters from UserDefaults (@AppStorage keys)
+    @MainActor static func fromUserDefaults() -> ModelParameters {
+        let defaults = UserDefaults.standard
+        let systemPrompt = defaults.string(forKey: "systemPrompt")
+        let maxTokensValue = defaults.integer(forKey: "maxTokens")
+        let seedValue = defaults.integer(forKey: "seed")
+        
+        return ModelParameters(
+            systemPrompt: (systemPrompt?.isEmpty == false) ? systemPrompt : nil,
+            maxTokens: maxTokensValue > 0 ? maxTokensValue : nil,
+            temperature: defaults.object(forKey: "temperature") != nil ? defaults.double(forKey: "temperature") : 0.7,
+            topP: defaults.object(forKey: "topP") != nil ? defaults.double(forKey: "topP") : 1.0,
+            topK: defaults.object(forKey: "topK") != nil ? defaults.integer(forKey: "topK") : 40,
+            frequencyPenalty: defaults.object(forKey: "frequencyPenalty") != nil ? defaults.double(forKey: "frequencyPenalty") : 0.0,
+            presencePenalty: defaults.object(forKey: "presencePenalty") != nil ? defaults.double(forKey: "presencePenalty") : 0.0,
+            streamResponse: defaults.object(forKey: "streamResponse") != nil ? defaults.bool(forKey: "streamResponse") : true,
+            openAIReasoningEffort: defaults.string(forKey: "openai.reasoningEffort") ?? "medium",
+            openAIReasoningSummary: defaults.string(forKey: "openai.reasoningSummary") ?? "detailed",
+            anthropicExtendedThinking: defaults.bool(forKey: "anthropic.extendedThinking"),
+            seed: seedValue > 0 ? seedValue : nil
+        )
+    }
+}
+
 // MARK: - LLM Service Protocol
 
 protocol LLMServiceProtocol: Sendable {
     
     /// Streams a chat completion response
-    /// - Parameters:
-    ///   - messages: The conversation messages
-    ///   - credential: The decrypted credential to use
-    ///   - model: The model name to use
-    ///   - systemPrompt: Optional system prompt
-    ///   - maxTokens: Maximum tokens to generate
-    ///   - onEvent: Callback for each stream event
     func streamChat(
         messages: [ChatMessage],
         credential: DecryptedCredential,
@@ -242,15 +324,16 @@ protocol LLMServiceProtocol: Sendable {
         onEvent: @escaping @Sendable (StreamEvent) -> Void
     ) async throws
     
+    /// Streams a chat completion response with full model parameters
+    func streamChat(
+        messages: [ChatMessage],
+        credential: DecryptedCredential,
+        model: String,
+        parameters: ModelParameters,
+        onEvent: @escaping @Sendable (StreamEvent) -> Void
+    ) async throws
+    
     /// Streams a chat completion response with optional private inference
-    /// - Parameters:
-    ///   - messages: The conversation messages
-    ///   - credential: The decrypted credential to use (nil for private inference)
-    ///   - model: The model name to use (format: "private:modelId" for private inference)
-    ///   - systemPrompt: Optional system prompt
-    ///   - maxTokens: Maximum tokens to generate
-    ///   - enclaveConfig: Configuration for private inference (required if model is private)
-    ///   - onEvent: Callback for each stream event
     func streamChat(
         messages: [ChatMessage],
         credential: DecryptedCredential?,
@@ -261,13 +344,64 @@ protocol LLMServiceProtocol: Sendable {
         onEvent: @escaping @Sendable (StreamEvent) -> Void
     ) async throws
     
+    /// Streams a chat completion response with optional private inference and full parameters
+    func streamChat(
+        messages: [ChatMessage],
+        credential: DecryptedCredential?,
+        model: String,
+        parameters: ModelParameters,
+        enclaveConfig: EnclaveConfig?,
+        onEvent: @escaping @Sendable (StreamEvent) -> Void
+    ) async throws
+    
     /// Fetches available models for a credential
-    /// - Parameter credential: The decrypted credential
-    /// - Returns: Array of available model options
     func fetchModels(credential: DecryptedCredential) async throws -> [ModelOption]
     
     /// Cancels any ongoing stream
     func cancelStream() async
+}
+
+// MARK: - Default Implementations (backwards compatibility)
+
+extension LLMServiceProtocol {
+    
+    /// Default: delegates to the simple overload for backwards compatibility
+    func streamChat(
+        messages: [ChatMessage],
+        credential: DecryptedCredential,
+        model: String,
+        parameters: ModelParameters,
+        onEvent: @escaping @Sendable (StreamEvent) -> Void
+    ) async throws {
+        try await streamChat(
+            messages: messages,
+            credential: credential,
+            model: model,
+            systemPrompt: parameters.systemPrompt,
+            maxTokens: parameters.maxTokens ?? 4096,
+            onEvent: onEvent
+        )
+    }
+    
+    /// Default: delegates to the simple overload for backwards compatibility
+    func streamChat(
+        messages: [ChatMessage],
+        credential: DecryptedCredential?,
+        model: String,
+        parameters: ModelParameters,
+        enclaveConfig: EnclaveConfig?,
+        onEvent: @escaping @Sendable (StreamEvent) -> Void
+    ) async throws {
+        try await streamChat(
+            messages: messages,
+            credential: credential,
+            model: model,
+            systemPrompt: parameters.systemPrompt,
+            maxTokens: parameters.maxTokens ?? 4096,
+            enclaveConfig: enclaveConfig,
+            onEvent: onEvent
+        )
+    }
 }
 
 // MARK: - LLM Error

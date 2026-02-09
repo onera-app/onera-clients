@@ -60,6 +60,16 @@ enum Configuration {
         InfoPlist.string(forKey: "TRPC_PATH", default: "/trpc")
     }
     
+    /// WebSocket URL for real-time sync (Socket.IO server)
+    /// Defaults to the same origin as apiBaseURL
+    static var wsBaseURL: URL {
+        let urlString = InfoPlist.string(forKey: "WS_BASE_URL") ?? apiBaseURL.absoluteString
+        guard let url = URL(string: urlString) else {
+            fatalError("Invalid WS_BASE_URL in Info.plist: \(urlString)")
+        }
+        return url
+    }
+    
     // MARK: - Clerk Configuration
     
     static var clerkPublishableKey: String {

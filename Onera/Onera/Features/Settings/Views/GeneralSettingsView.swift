@@ -21,18 +21,23 @@ struct GeneralSettingsView: View {
     
     // Provider-specific settings
     @AppStorage("openai.reasoningEffort") private var openAIReasoningEffort = "medium"
+    @AppStorage("openai.reasoningSummary") private var openAIReasoningSummary = "detailed"
     @AppStorage("anthropic.extendedThinking") private var anthropicExtendedThinking = false
+    
+    // Advanced
+    @AppStorage("seed") private var seed = 0
     
     @State private var showAdvanced = false
     @State private var showProviderSettings = false
     
     var body: some View {
-        List {
+        Form {
             systemPromptSection
             streamingSection
             providerSettingsSection
             advancedParametersSection
         }
+        .formStyle(.grouped)
         .navigationTitle("General")
     }
     
@@ -93,6 +98,16 @@ struct GeneralSettingsView: View {
                     }
                     
                     Text("Controls reasoning for o1, o3, and gpt-5 models")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    Picker("Reasoning Summary", selection: $openAIReasoningSummary) {
+                        Text("Detailed").tag("detailed")
+                        Text("Auto").tag("auto")
+                        Text("None").tag("none")
+                    }
+                    
+                    Text("Controls reasoning output visibility for reasoning models")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -219,6 +234,22 @@ struct GeneralSettingsView: View {
                 }
                 .padding(.vertical, 4)
                 
+                // Seed
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Seed")
+                        Spacer()
+                        TextField("Random", value: $seed, format: .number)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 120)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    Text("Set for reproducible outputs (0 = random)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 4)
+                
                 // Reset Button
                 Button {
                     resetToDefaults()
@@ -242,7 +273,9 @@ struct GeneralSettingsView: View {
         frequencyPenalty = 0.0
         presencePenalty = 0.0
         openAIReasoningEffort = "medium"
+        openAIReasoningSummary = "detailed"
         anthropicExtendedThinking = false
+        seed = 0
     }
 }
 

@@ -249,7 +249,7 @@ struct GlobalSearchView: View {
             Spacer()
             
             Image(systemName: searchText.isEmpty ? "magnifyingglass" : "magnifyingglass.circle")
-                .font(.system(size: 48, weight: .light))
+                .font(.largeTitle.weight(.light))
                 .foregroundStyle(.tertiary)
             
             if searchText.isEmpty {

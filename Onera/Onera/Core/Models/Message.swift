@@ -240,10 +240,20 @@ enum AttachmentType: String, Codable, Equatable, Sendable {
 
 /// Chat data structure that's compatible with web format
 /// Web stores messages as a tree structure: { currentId: string, messages: Record<string, ChatMessage> }
+///
+/// The web client stores ALL messages (including alternative branches from regeneration/edits)
+/// in a single `Record<string, ChatMessage>` dictionary. The `currentId` points to the leaf
+/// of the active branch. We preserve the full tree to support branch persistence.
 struct ChatData: Codable, Sendable {
+    /// The active branch messages (linear array for display)
     let messages: [Message]
     
-    // For tree structure (web format)
+    /// The full message tree including all branches (for persistence)
+    /// Populated when decoding from web/tree format, or when branches are provided at init.
+    /// Not encoded directly — folded into the tree dictionary during encode.
+    let allMessages: [String: Message]?
+    
+    /// The ID of the current leaf message
     var currentId: String?
     
     enum CodingKeys: String, CodingKey {
@@ -251,9 +261,10 @@ struct ChatData: Codable, Sendable {
         case currentId
     }
     
-    init(messages: [Message], currentId: String? = nil) {
+    init(messages: [Message], currentId: String? = nil, allMessages: [String: Message]? = nil) {
         self.messages = messages
         self.currentId = currentId
+        self.allMessages = allMessages
     }
     
     init(from decoder: Decoder) throws {
@@ -265,26 +276,107 @@ struct ChatData: Codable, Sendable {
             let currentId = try container.decodeIfPresent(String.self, forKey: .currentId)
             self.currentId = currentId
             
+            // Store the full tree for branch reconstruction
+            self.allMessages = messageDict
+            
             // Convert tree to linear array by walking up from currentId
             self.messages = ChatData.treeToArray(messages: messageDict, currentId: currentId)
         } else if let messageArray = try? container.decode([Message].self, forKey: .messages) {
             // Mobile format: messages is an array
             self.messages = messageArray
             self.currentId = nil
+            self.allMessages = nil
         } else {
             // Empty messages
             self.messages = []
             self.currentId = nil
+            self.allMessages = nil
         }
     }
     
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         
-        // Convert array back to tree structure for web compatibility
-        let (messageDict, currentId) = ChatData.arrayToTree(messages: messages)
+        // Build tree from active chain, then merge in branch messages
+        var (messageDict, currentId) = ChatData.arrayToTree(messages: messages)
+        
+        // Merge branch messages into the tree (preserving parentId/childrenIds)
+        if let allMsgs = allMessages {
+            for (id, msg) in allMsgs {
+                if messageDict[id] == nil {
+                    // This is a branch message not in the active chain — add it
+                    messageDict[id] = msg
+                    
+                    // Ensure parent knows about this child
+                    if let parentId = msg.parentId, var parent = messageDict[parentId] {
+                        var children = parent.childrenIds ?? []
+                        if !children.contains(id) {
+                            children.append(id)
+                            parent.childrenIds = children
+                            messageDict[parentId] = parent
+                        }
+                    }
+                }
+            }
+        }
+        
         try container.encode(messageDict, forKey: .messages)
         try container.encodeIfPresent(currentId, forKey: .currentId)
+    }
+    
+    // MARK: - Branch Extraction
+    
+    /// Extract response branches from the full message tree.
+    /// Returns a dictionary: [userMessageId: [alternativeAssistantMessages]]
+    /// and a dictionary: [userMessageId: activeIndex]
+    static func extractBranches(
+        activeMessages: [Message],
+        allMessages: [String: Message]
+    ) -> (branches: [String: [Message]], activeIndices: [String: Int]) {
+        var branches: [String: [Message]] = [:]
+        var activeIndices: [String: Int] = [:]
+        
+        // Build a set of active message IDs for quick lookup
+        let activeIds = Set(activeMessages.map(\.id))
+        
+        // For each user message in the active chain, find sibling assistant responses
+        for (i, message) in activeMessages.enumerated() {
+            guard message.role == .user else { continue }
+            
+            // Find the assistant message following this user message in the active chain
+            let nextIndex = i + 1
+            guard nextIndex < activeMessages.count,
+                  activeMessages[nextIndex].role == .assistant else { continue }
+            
+            let activeAssistantId = activeMessages[nextIndex].id
+            
+            // Look for siblings: other messages that share the same parentId as the active assistant
+            // (In the web tree, when you regenerate, the new response gets the same parentId as the old one)
+            let parentId = message.id // The user message is the parent
+            
+            // Find all children of this user message that are assistant responses
+            if let children = allMessages[parentId]?.childrenIds {
+                let siblingAssistants = children.compactMap { childId -> Message? in
+                    guard let child = allMessages[childId], child.role == .assistant else { return nil }
+                    return child
+                }
+                
+                if siblingAssistants.count > 1 {
+                    // Sort by createdAt to maintain chronological order
+                    let sorted = siblingAssistants.sorted { $0.createdAt < $1.createdAt }
+                    branches[parentId] = sorted
+                    
+                    // Find the index of the currently active assistant in this list
+                    if let idx = sorted.firstIndex(where: { $0.id == activeAssistantId }) {
+                        activeIndices[parentId] = idx
+                    } else {
+                        activeIndices[parentId] = sorted.count - 1
+                    }
+                }
+            }
+        }
+        
+        return (branches, activeIndices)
     }
     
     /// Convert message tree (dictionary) to linear array by walking from currentId to root

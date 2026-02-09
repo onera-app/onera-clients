@@ -20,10 +20,18 @@ struct ChatView: View {
     @FocusState private var isInputFocused: Bool
     @State private var showingError = false
     @State private var ttsStartTime: Date?
+    #if os(iOS)
+    @State private var showArtifacts = false
+    @State private var activeArtifactId: String?
+    #endif
     
     var onMenuTap: (() -> Void)?
     var onNewConversation: (() -> Void)?
     var showCustomNavBar: Bool = false
+    
+    // @mention prompt support
+    var promptSummaries: [PromptSummary] = []
+    var onFetchPromptContent: ((PromptSummary) async -> String?)? = nil
     
     /// Max width for message content on larger screens (iPad)
     private var maxMessageWidth: CGFloat? {
@@ -34,6 +42,12 @@ struct ChatView: View {
     private var maxContentWidth: CGFloat? {
         horizontalSizeClass == .regular ? 800 : nil
     }
+    
+    #if os(iOS)
+    private var artifacts: [CodeArtifact] {
+        ArtifactExtractor.extractArtifacts(from: viewModel.messages)
+    }
+    #endif
     
     var body: some View {
         ZStack {
@@ -92,6 +106,27 @@ struct ChatView: View {
                 ttsStartTime = nil
             }
         }
+        #if os(iOS)
+        .toolbar {
+            if !artifacts.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showArtifacts = true
+                    } label: {
+                        Image(systemName: "chevron.left.forwardslash.chevron.right")
+                    }
+                    .accessibilityLabel("View code artifacts")
+                }
+            }
+        }
+        .sheet(isPresented: $showArtifacts) {
+            iOSArtifactsSheet(
+                artifacts: artifacts,
+                activeArtifactId: $activeArtifactId,
+                onClose: { showArtifacts = false }
+            )
+        }
+        #endif
     }
     
     // MARK: - Messages View
@@ -144,7 +179,7 @@ struct ChatView: View {
             
             // Minimal icon
             Image(systemName: "bubble.left.and.text.bubble.right")
-                .font(.system(size: 48, weight: .light))
+                .font(.largeTitle.weight(.light))
                 .foregroundStyle(.secondary.opacity(0.6))
             
             VStack(spacing: 8) {
@@ -162,6 +197,10 @@ struct ChatView: View {
                 .foregroundStyle(.secondary)
             }
             
+            // Starter prompts
+            starterPromptsGrid
+                .padding(.top, 8)
+            
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -169,6 +208,41 @@ struct ChatView: View {
         .onTapGesture {
             dismissSelection()
         }
+    }
+    
+    private var starterPromptsGrid: some View {
+        let prompts: [(icon: String, title: String, prompt: String)] = [
+            ("lightbulb", "Explain a concept", "Explain the concept of"),
+            ("envelope", "Draft an email", "Help me draft a professional email about"),
+            ("chevron.left.forwardslash.chevron.right", "Write code", "Write a function that"),
+            ("chart.bar", "Analyze data", "Help me analyze the following data:")
+        ]
+        
+        return LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+            ForEach(Array(prompts.enumerated()), id: \.offset) { _, item in
+                Button {
+                    viewModel.inputText = item.prompt + " "
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: item.icon)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Text(item.title)
+                            .font(.subheadline)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(theme.secondaryBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 24)
+        .frame(maxWidth: 500)
     }
     
     // MARK: - Input Section
@@ -190,6 +264,7 @@ struct ChatView: View {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(.secondary)
                     }
+                    .accessibilityLabel("Dismiss error")
                 }
                 .padding(.horizontal)
                 .padding(.vertical, 8)
@@ -219,7 +294,11 @@ struct ChatView: View {
                 onStop: { viewModel.stopStreaming() },
                 isRecording: viewModel.isRecording,
                 onStartRecording: { handleStartRecording() },
-                onStopRecording: { viewModel.stopRecording() }
+                onStopRecording: { viewModel.stopRecording() },
+                promptSummaries: promptSummaries,
+                onFetchPromptContent: onFetchPromptContent,
+                searchEnabled: $viewModel.searchEnabled,
+                isSearching: viewModel.isSearching
             )
             .focused($isInputFocused)
         }
@@ -250,8 +329,8 @@ struct ChatView: View {
             onEdit: message.isUser ? { newContent, regenerate in
                 handleEdit(messageId: message.id, newContent: newContent, regenerate: regenerate)
             } : nil,
-            onRegenerate: message.isAssistant && !message.isStreaming ? {
-                handleRegenerate(messageId: message.id)
+            onRegenerate: message.isAssistant && !message.isStreaming ? { modifier in
+                handleRegenerate(messageId: message.id, modifier: modifier)
             } : nil,
             onSpeak: message.isAssistant && !message.isStreaming ? { text in
                 handleSpeak(text: text, messageId: message.id)
@@ -277,9 +356,9 @@ struct ChatView: View {
         }
     }
     
-    private func handleRegenerate(messageId: String) {
+    private func handleRegenerate(messageId: String, modifier: String? = nil) {
         Task {
-            await viewModel.regenerateMessage(messageId: messageId)
+            await viewModel.regenerateMessage(messageId: messageId, modifier: modifier)
         }
     }
     

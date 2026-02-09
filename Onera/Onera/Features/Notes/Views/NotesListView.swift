@@ -179,7 +179,7 @@ struct NotesListView: View {
         Section {
             VStack(spacing: 16) {
                 Image(systemName: "note.text")
-                    .font(.system(size: 48))
+                    .font(.largeTitle)
                     .foregroundStyle(.secondary)
                 
                 Text(viewModel.showArchived ? "No Archived Notes" : "No Notes")

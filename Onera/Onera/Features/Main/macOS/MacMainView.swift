@@ -16,6 +16,7 @@ struct MacMainView: View {
     @Bindable var coordinator: AppCoordinator
     @Environment(\.dependencies) private var dependencies
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
     
     // Navigation state
     @State private var selectedFolder: String? = "all"
@@ -58,6 +59,15 @@ struct MacMainView: View {
         }
         .task {
             await coordinator.determineInitialState()
+            // Once auth state is determined, initialize if authenticated
+            if case .authenticated = coordinator.state {
+                await initializeViewModels()
+            }
+        }
+        .onChange(of: coordinator.state) { _, newState in
+            if case .authenticated = newState {
+                Task { await initializeViewModels() }
+            }
         }
     }
     
@@ -77,12 +87,11 @@ struct MacMainView: View {
         .toolbar {
             macToolbar
         }
-        .task {
-            setupViewModels()
-            await chatListViewModel?.loadChats()
-            await folderViewModel?.loadFolders()
-            await notesViewModel?.loadNotes()
-            await promptsViewModel?.loadPrompts()
+        .onAppear {
+            // Fallback: if view appears without task having fired (e.g., state restoration)
+            if chatViewModel == nil {
+                Task { await initializeViewModels() }
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: WindowManager.toggleSidebarNotification)) { _ in
             withAnimation {
@@ -97,6 +106,29 @@ struct MacMainView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: WindowManager.focusSearchNotification)) { _ in
             showGlobalSearch = true
+        }
+        // WebSocket sync: refetch when server pushes entity changes
+        .onReceive(NotificationCenter.default.publisher(for: .syncChatsInvalidated)) { _ in
+            Task { await chatListViewModel?.loadChats() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .syncNotesInvalidated)) { _ in
+            Task { await notesViewModel?.loadNotes() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .syncFoldersInvalidated)) { _ in
+            Task { await folderViewModel?.loadFolders() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .syncPromptsInvalidated)) { _ in
+            Task { await promptsViewModel?.loadPrompts() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .syncCredentialsInvalidated)) { _ in
+            Task {
+                // Refetch credentials, then refresh available models
+                let token = try? await dependencies.authService.getToken()
+                if let token {
+                    try? await dependencies.credentialService.fetchCredentials(token: token)
+                    await chatViewModel?.modelSelector.fetchModels()
+                }
+            }
         }
         .sheet(isPresented: $showGlobalSearch) {
             GlobalSearchView(
@@ -131,6 +163,7 @@ struct MacMainView: View {
             titleVisibility: .visible
         ) {
             Button("Sign Out", role: .destructive) {
+                dependencies.webSocketSyncService.disconnect()
                 Task { await coordinator.handleSignOut() }
             }
             Button("Cancel", role: .cancel) {}
@@ -169,6 +202,20 @@ struct MacMainView: View {
                     .tag(SidebarItem.prompts)
             }
             
+            // Folder tree section (visible when viewing chats or notes)
+            if !showingPrompts, let folderVM = folderViewModel {
+                Section("Folders") {
+                    FolderTreeView(
+                        viewModel: folderVM,
+                        selectedFolderId: selectedFolder == "all" ? nil : selectedFolder,
+                        onSelectFolder: { folderId in
+                            selectedFolder = folderId ?? "all"
+                        },
+                        showAllOption: true
+                    )
+                }
+            }
+            
             // Items section based on current view
             if showingNotes {
                 notesListSection
@@ -179,6 +226,7 @@ struct MacMainView: View {
             }
         }
         .listStyle(.sidebar)
+        .scrollIndicators(.hidden)
         .searchable(text: $searchText, placement: .sidebar, prompt: "Search")
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
@@ -271,8 +319,8 @@ struct MacMainView: View {
     @ViewBuilder
     private var chatsListSection: some View {
         if let listViewModel = chatListViewModel {
-            let chats = filteredChats(from: listViewModel)
-            if chats.isEmpty {
+            let grouped = filteredGroupedChats(from: listViewModel)
+            if grouped.isEmpty {
                 Section {
                     Text("No chats yet")
                         .foregroundStyle(.secondary)
@@ -280,13 +328,15 @@ struct MacMainView: View {
                         .padding(.vertical, 20)
                 }
             } else {
-                Section("Recent") {
-                    ForEach(chats, id: \.id) { chat in
-                        MacChatListRow(chat: chat)
-                            .tag(SidebarItem.chat(chat.id))
-                            .contextMenu {
-                                chatContextMenu(chat: chat, listViewModel: listViewModel)
-                            }
+                ForEach(grouped, id: \.0) { group, chats in
+                    Section(group.displayName) {
+                        ForEach(chats, id: \.id) { chat in
+                            MacChatListRow(chat: chat)
+                                .tag(SidebarItem.chat(chat.id))
+                                .contextMenu {
+                                    chatContextMenu(chat: chat, listViewModel: listViewModel)
+                                }
+                        }
                     }
                 }
             }
@@ -312,6 +362,40 @@ struct MacMainView: View {
                         MacNoteListRow(note: note)
                             .tag(SidebarItem.note(note.id))
                             .contextMenu {
+                                Button {
+                                    Task { await notesVM.togglePinned(note) }
+                                } label: {
+                                    Label(note.pinned ? "Unpin" : "Pin", systemImage: note.pinned ? "pin.slash" : "pin")
+                                }
+                                
+                                Button {
+                                    Task { await notesVM.toggleArchived(note) }
+                                } label: {
+                                    Label(note.archived ? "Unarchive" : "Archive", systemImage: note.archived ? "tray.and.arrow.up" : "archivebox")
+                                }
+                                
+                                if let folderVM = folderViewModel {
+                                    Menu {
+                                        Button {
+                                            Task { await notesVM.moveToFolder(note, folderId: nil) }
+                                        } label: {
+                                            Label("No Folder", systemImage: "tray")
+                                        }
+                                        
+                                        ForEach(folderVM.folders) { folder in
+                                            Button {
+                                                Task { await notesVM.moveToFolder(note, folderId: folder.id) }
+                                            } label: {
+                                                Label(folder.name, systemImage: "folder")
+                                            }
+                                        }
+                                    } label: {
+                                        Label("Move to Folder", systemImage: "folder")
+                                    }
+                                }
+                                
+                                Divider()
+                                
                                 Button(role: .destructive) {
                                     Task { await notesVM.deleteNote(note) }
                                 } label: {
@@ -375,7 +459,7 @@ struct MacMainView: View {
     private var userProfileButton: some View {
         Menu {
             Button {
-                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                openSettings()
             } label: {
                 Label("Settings...", systemImage: "gearshape")
             }
@@ -396,13 +480,13 @@ struct MacMainView: View {
                     .frame(width: avatarSize, height: avatarSize)
                     .overlay {
                         Text(currentUserInitials)
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.caption.weight(.semibold))
                             .foregroundColor(Color.accentColor)
                     }
                 
                 // User name
                 Text(currentUserName)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.subheadline.weight(.medium))
                     .foregroundColor(.primary)
                     .lineLimit(1)
                 
@@ -452,7 +536,7 @@ struct MacMainView: View {
             Spacer()
             
             Image(systemName: "text.quote")
-                .font(.system(size: 48, weight: .light))
+                .font(.largeTitle.weight(.light))
                 .foregroundStyle(.tertiary)
             
             Text("Select a prompt")
@@ -478,7 +562,31 @@ struct MacMainView: View {
     @ViewBuilder
     private var chatsDetailColumn: some View {
         if let viewModel = chatViewModel, viewModel.chat != nil || !viewModel.messages.isEmpty {
-            MacChatView(viewModel: viewModel)
+            HStack(spacing: 0) {
+                MacChatView(
+                    viewModel: viewModel,
+                    promptSummaries: promptsViewModel?.prompts ?? [],
+                    onFetchPromptContent: { summary in
+                        await promptsViewModel?.usePrompt(summary)
+                    }
+                )
+                
+                if viewModel.showArtifactsPanel {
+                    Divider()
+                    
+                    ArtifactsPanelView(
+                        artifacts: ArtifactExtractor.extractArtifacts(from: viewModel.messages),
+                        activeArtifactId: Binding(
+                            get: { viewModel.activeArtifactId },
+                            set: { viewModel.activeArtifactId = $0 }
+                        ),
+                        onClose: { viewModel.showArtifactsPanel = false }
+                    )
+                    .frame(width: 400)
+                    .transition(.move(edge: .trailing))
+                }
+            }
+            .animation(.easeInOut(duration: 0.25), value: viewModel.showArtifactsPanel)
         } else {
             emptyDetailView
         }
@@ -498,7 +606,7 @@ struct MacMainView: View {
             Spacer()
             
             Image(systemName: "note.text")
-                .font(.system(size: 48, weight: .light))
+                .font(.largeTitle.weight(.light))
                 .foregroundStyle(.tertiary)
             
             Text("Select a note")
@@ -526,7 +634,7 @@ struct MacMainView: View {
             Spacer()
             
             Image(systemName: "bubble.left.and.bubble.right")
-                .font(.system(size: 48, weight: .light))
+                .font(.largeTitle.weight(.light))
                 .foregroundStyle(.tertiary)
             
             Text("Start a conversation")
@@ -564,12 +672,30 @@ struct MacMainView: View {
                 Image(systemName: "square.and.pencil")
             }
             .help(showingNotes ? "New Note (⌘N)" : showingPrompts ? "New Prompt (⌘N)" : "New Chat (⌘N)")
+            .accessibilityLabel(showingNotes ? "New note" : showingPrompts ? "New prompt" : "New chat")
         }
         
         // Model selector (only for chats)
         ToolbarItem(placement: .principal) {
             if !showingNotes && !showingPrompts, let chatVM = chatViewModel {
                 MacModelSelectorButton(viewModel: chatVM.modelSelector)
+            }
+        }
+        
+        // Artifacts toggle (only for chats with code)
+        ToolbarItem(placement: .primaryAction) {
+            if !showingNotes && !showingPrompts, let chatVM = chatViewModel,
+               !ArtifactExtractor.extractArtifacts(from: chatVM.messages).isEmpty {
+                Button {
+                    withAnimation {
+                        chatVM.showArtifactsPanel.toggle()
+                    }
+                } label: {
+                    Image(systemName: chatVM.showArtifactsPanel ? "sidebar.trailing" : "sidebar.trailing")
+                        .foregroundStyle(chatVM.showArtifactsPanel ? Color.accentColor : .secondary)
+                }
+                .help(chatVM.showArtifactsPanel ? "Hide Artifacts" : "Show Artifacts")
+                .accessibilityLabel("Toggle artifacts panel")
             }
         }
         
@@ -592,6 +718,7 @@ struct MacMainView: View {
                     Image(systemName: "square.and.arrow.up")
                 }
                 .help("Share")
+                .accessibilityLabel("Share conversation")
             }
         }
     }
@@ -629,6 +756,42 @@ struct MacMainView: View {
             openWindow(value: chat.id)
         } label: {
             Label("Open in New Window", systemImage: "uiwindow.split.2x1")
+        }
+        
+        Divider()
+        
+        // Pin / Archive
+        Button {
+            Task { await listViewModel.togglePinned(chat) }
+        } label: {
+            Label(chat.pinned ? "Unpin" : "Pin", systemImage: chat.pinned ? "pin.slash" : "pin")
+        }
+        
+        Button {
+            Task { await listViewModel.toggleArchived(chat) }
+        } label: {
+            Label(chat.archived ? "Unarchive" : "Archive", systemImage: chat.archived ? "tray.and.arrow.up" : "archivebox")
+        }
+        
+        // Move to folder
+        if let folderVM = folderViewModel {
+            Menu {
+                Button {
+                    Task { await listViewModel.moveChatToFolder(chat, folderId: nil) }
+                } label: {
+                    Label("No Folder", systemImage: "tray")
+                }
+                
+                ForEach(folderVM.folders) { folder in
+                    Button {
+                        Task { await listViewModel.moveChatToFolder(chat, folderId: folder.id) }
+                    } label: {
+                        Label(folder.name, systemImage: "folder")
+                    }
+                }
+            } label: {
+                Label("Move to Folder", systemImage: "folder")
+            }
         }
         
         Divider()
@@ -700,6 +863,19 @@ struct MacMainView: View {
     
     // MARK: - Private Methods
     
+    /// Idempotent initialization — safe to call multiple times (task + onAppear + onChange)
+    private func initializeViewModels() async {
+        if chatViewModel == nil {
+            setupViewModels()
+        }
+        await chatViewModel?.loadModels()
+        await chatListViewModel?.loadChats()
+        await folderViewModel?.loadFolders()
+        await notesViewModel?.loadNotes()
+        await promptsViewModel?.loadPrompts()
+        await connectWebSocket()
+    }
+    
     private func setupViewModels() {
         chatListViewModel = ChatListViewModel(
             authService: dependencies.authService,
@@ -737,6 +913,15 @@ struct MacMainView: View {
         )
     }
     
+    private func connectWebSocket() async {
+        do {
+            let token = try await dependencies.authService.getToken()
+            dependencies.webSocketSyncService.connect(token: token)
+        } catch {
+            // Auth not available yet — WebSocket will connect later
+        }
+    }
+    
     private func selectChat(_ id: String) {
         Task {
             await chatViewModel?.loadChat(id: id)
@@ -766,6 +951,31 @@ struct MacMainView: View {
         return chats
     }
     
+    /// Returns chats grouped by time period (Today, Yesterday, Previous 7 Days, etc.)
+    private func filteredGroupedChats(from listViewModel: ChatListViewModel) -> [(ChatGroup, [ChatSummary])] {
+        let allGrouped = listViewModel.groupedChats
+        
+        // Apply folder and search filters to each group
+        let hasFolder = selectedFolder != nil && selectedFolder != "all" && selectedFolder != "notes"
+        let hasSearch = !searchText.isEmpty
+        
+        guard hasFolder || hasSearch else { return allGrouped }
+        
+        return allGrouped.compactMap { group, chats in
+            var filtered = chats
+            
+            if hasFolder, let folderId = selectedFolder {
+                filtered = filtered.filter { $0.folderId == folderId }
+            }
+            
+            if hasSearch {
+                filtered = filtered.filter { $0.title.localizedCaseInsensitiveContains(searchText) }
+            }
+            
+            return filtered.isEmpty ? nil : (group, filtered)
+        }
+    }
+    
 }
 
 // MARK: - Mac Chat List Row
@@ -774,13 +984,29 @@ struct MacChatListRow: View {
     let chat: ChatSummary
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(chat.title)
-                .lineLimit(1)
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(chat.title)
+                    .lineLimit(1)
+                
+                Text(chat.updatedAt, style: .relative)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             
-            Text(chat.updatedAt, style: .relative)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Spacer()
+            
+            if chat.pinned {
+                Image(systemName: "pin.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
+            }
+            
+            if chat.archived {
+                Image(systemName: "archivebox.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 }
@@ -840,49 +1066,188 @@ struct MacPromptListRow: View {
 
 struct MacModelSelectorButton: View {
     @Bindable var viewModel: ModelSelectorViewModel
+    @Environment(\.openSettings) private var openSettings
+    
+    private var isPrivateSelected: Bool {
+        viewModel.isPrivateModelSelected
+    }
     
     var body: some View {
         Menu {
             if viewModel.isLoading {
-                Text("Loading models...")
-            } else if viewModel.groupedModels.isEmpty {
-                Text("No models available")
-                Text("Add API keys in Settings")
+                Section {
+                    Label("Loading models...", systemImage: "arrow.trianglehead.2.clockwise")
+                }
+            } else if viewModel.allModels.isEmpty {
+                Section {
+                    Label("No models available", systemImage: "exclamationmark.triangle")
+                    Button {
+                        openSettings()
+                    } label: {
+                        Label("Add API Keys in Settings...", systemImage: "key")
+                    }
+                }
             } else {
-                ForEach(viewModel.groupedModels, id: \.provider) { group in
-                    Section(group.provider.displayName) {
-                        ForEach(group.models) { model in
-                            Button {
-                                viewModel.selectModel(model)
-                            } label: {
-                                HStack {
-                                    Text(model.displayName)
-                                    Spacer()
-                                    if viewModel.selectedModel?.id == model.id {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
+                modelListContent
+                
+                Divider()
+                
+                managementMenus
+            }
+        } label: {
+            triggerLabel
+        }
+        .fixedSize()
+    }
+    
+    // MARK: - Trigger Label
+    
+    private var triggerLabel: some View {
+        HStack(spacing: 4) {
+            if viewModel.isLoading {
+                ProgressView()
+                    .controlSize(.small)
+                    .frame(width: 12, height: 12)
+            } else if isPrivateSelected {
+                Image(systemName: "lock.shield.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.green)
+            }
+            
+            Text(viewModel.selectedModel?.displayName ?? "Select Model")
+                .font(.subheadline.weight(.medium))
+        }
+        .contentShape(Rectangle())
+    }
+    
+    // MARK: - Model List Content
+    
+    @ViewBuilder
+    private var modelListContent: some View {
+        // Pinned models
+        if !viewModel.pinnedModels.isEmpty {
+            Section("Pinned") {
+                ForEach(viewModel.pinnedModels) { model in
+                    modelButton(model)
+                }
+            }
+        }
+        
+        // Recent models (excludes pinned)
+        if !viewModel.recentModels.isEmpty {
+            Section("Recent") {
+                ForEach(viewModel.recentModels) { model in
+                    modelButton(model)
+                }
+            }
+        }
+        
+        // All models grouped by provider
+        ForEach(viewModel.groupedModels, id: \.provider) { group in
+            Section(group.provider.displayName) {
+                ForEach(group.models) { model in
+                    modelButton(model)
+                }
+            }
+        }
+    }
+    
+    // MARK: - Model Button
+    
+    @ViewBuilder
+    private func modelButton(_ model: ModelOption) -> some View {
+        Button {
+            viewModel.selectModel(model)
+        } label: {
+            HStack(spacing: 6) {
+                if model.provider == .private {
+                    Image(systemName: "lock.shield.fill")
+                        .font(.caption)
+                        .foregroundStyle(.green)
+                }
+                
+                Text(model.displayName)
+                
+                Spacer()
+                
+                if viewModel.isPinned(model.id) {
+                    Image(systemName: "pin.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.orange)
+                }
+                
+                if viewModel.selectedModel?.id == model.id {
+                    Image(systemName: "checkmark")
+                        .font(.caption)
+                }
+            }
+        }
+    }
+    
+    // MARK: - Management Submenus
+    
+    @ViewBuilder
+    private var managementMenus: some View {
+        // Provider filter
+        if viewModel.availableProviders.count > 1 {
+            Menu {
+                Button {
+                    viewModel.connectionFilter = nil
+                } label: {
+                    HStack {
+                        Text("All Providers")
+                        if viewModel.connectionFilter == nil {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+                
+                Divider()
+                
+                ForEach(viewModel.availableProviders, id: \.self) { provider in
+                    Button {
+                        viewModel.connectionFilter = viewModel.connectionFilter == provider ? nil : provider
+                    } label: {
+                        HStack {
+                            if provider == .private {
+                                Image(systemName: "lock.shield.fill")
+                                    .foregroundStyle(.green)
+                            }
+                            Text(provider.displayName)
+                            if viewModel.connectionFilter == provider {
+                                Image(systemName: "checkmark")
                             }
                         }
                     }
                 }
-            }
-        } label: {
-            HStack(spacing: 4) {
-                if viewModel.isLoading {
-                    ProgressView()
-                        .scaleEffect(0.6)
-                        .frame(width: 12, height: 12)
-                }
-                Text(viewModel.selectedModel?.displayName ?? "Select Model")
-                    .font(.system(size: 13))
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.secondary)
+            } label: {
+                Label(
+                    viewModel.connectionFilter?.displayName ?? "Filter by Provider",
+                    systemImage: "line.3.horizontal.decrease.circle"
+                )
             }
         }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
+        
+        // Pin management
+        Menu {
+            ForEach(viewModel.allModels) { model in
+                Button {
+                    viewModel.togglePin(model.id)
+                } label: {
+                    HStack {
+                        if model.provider == .private {
+                            Image(systemName: "lock.shield.fill")
+                                .foregroundStyle(.green)
+                        }
+                        Text(model.displayName)
+                        Spacer()
+                        Image(systemName: viewModel.isPinned(model.id) ? "pin.slash" : "pin")
+                    }
+                }
+            }
+        } label: {
+            Label("Manage Pinned", systemImage: "pin")
+        }
     }
 }
 
@@ -917,15 +1282,15 @@ struct MacAuthView: View {
             VStack(spacing: 16) {
                 // App icon
                 Image(systemName: "bubble.left.and.bubble.right.fill")
-                    .font(.system(size: 48, weight: .light))
+                    .font(.largeTitle.weight(.light))
                     .foregroundStyle(.primary)
                 
                 VStack(spacing: 4) {
                     Text("Onera")
-                        .font(.system(size: 24, weight: .bold))
+                        .font(.title2.bold())
                     
                     Text("Private AI conversations")
-                        .font(.system(size: 13))
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -959,7 +1324,7 @@ struct MacAuthView: View {
                             .scaledToFit()
                             .frame(width: 16, height: 16)
                         Text("Continue with Google")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.subheadline.weight(.medium))
                     }
                     .frame(width: 240, height: 40)
                     .foregroundStyle(.primary)

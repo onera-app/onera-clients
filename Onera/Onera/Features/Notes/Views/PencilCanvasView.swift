@@ -52,7 +52,7 @@ struct PencilCanvasView: View {
                 undoManager?.undo()
             } label: {
                 Image(systemName: "arrow.uturn.backward")
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.body.weight(.medium))
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(.bordered)
@@ -63,7 +63,7 @@ struct PencilCanvasView: View {
                 undoManager?.redo()
             } label: {
                 Image(systemName: "arrow.uturn.forward")
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.body.weight(.medium))
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(.bordered)
@@ -86,7 +86,7 @@ struct PencilCanvasView: View {
                 }
             } label: {
                 Image(systemName: isDrawingMode ? "pencil.tip.crop.circle.fill" : "pencil.tip.crop.circle")
-                    .font(.system(size: 20, weight: .medium))
+                    .font(.title3.weight(.medium))
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(.bordered)

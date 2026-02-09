@@ -141,7 +141,7 @@ struct E2EEUnlockView: View {
             Spacer()
             
             Image(systemName: "person.badge.key.fill")
-                .font(.system(size: 64))
+                .font(.largeTitle)
                 .foregroundStyle(.blue)
             
             ProgressView()
@@ -161,7 +161,7 @@ struct E2EEUnlockView: View {
             Section {
                 VStack(spacing: 16) {
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 56))
+                        .font(.largeTitle)
                         .foregroundStyle(.blue)
                     
                     Text("Unlock your encrypted data to continue.")
@@ -319,7 +319,7 @@ struct E2EEUnlockView: View {
             Section {
                 VStack(spacing: 20) {
                     Image(systemName: "person.badge.key.fill")
-                        .font(.system(size: 64))
+                        .font(.largeTitle)
                         .foregroundStyle(.blue)
                     
                     Text("Use Face ID or Touch ID to unlock your encrypted data.")
@@ -367,7 +367,7 @@ struct E2EEUnlockView: View {
             Section {
                 VStack(spacing: 16) {
                     Image(systemName: "key.fill")
-                        .font(.system(size: 56))
+                        .font(.largeTitle)
                         .foregroundStyle(.orange)
                     
                     Text("Enter your encryption password to unlock.")
@@ -440,7 +440,7 @@ struct E2EEUnlockView: View {
             Section {
                 VStack(spacing: 16) {
                     Image(systemName: "rectangle.grid.3x2")
-                        .font(.system(size: 56))
+                        .font(.largeTitle)
                         .foregroundStyle(.purple)
                     
                     Text("Enter your 24-word recovery phrase.")

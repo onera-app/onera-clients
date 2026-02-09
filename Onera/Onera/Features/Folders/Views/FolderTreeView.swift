@@ -67,7 +67,7 @@ struct FolderTreeView: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "tray")
-                    .font(.system(size: 14))
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
                 
                 Text("All items")
@@ -91,7 +91,7 @@ struct FolderTreeView: View {
     private var newFolderRow: some View {
         HStack(spacing: 8) {
             Image(systemName: "folder.fill")
-                .font(.system(size: 14))
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
             
             TextField("Folder name", text: $viewModel.newFolderName)
@@ -109,7 +109,7 @@ struct FolderTreeView: View {
                 }
             } label: {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 18))
+                    .font(.body)
                     .foregroundStyle(.green)
             }
             .disabled(viewModel.newFolderName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -118,7 +118,7 @@ struct FolderTreeView: View {
                 viewModel.cancelCreatingFolder()
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 18))
+                    .font(.body)
                     .foregroundStyle(.secondary)
             }
         }
@@ -134,7 +134,7 @@ struct FolderTreeView: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "plus")
-                    .font(.system(size: 14))
+                    .font(.subheadline)
                 
                 Text("New folder")
                     .font(.subheadline)
@@ -183,7 +183,7 @@ private struct FolderNodeView: View {
                     viewModel.toggleExpanded(folderId: node.id)
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.caption2.weight(.semibold))
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
                         .opacity(hasChildren ? 1 : 0)
                 }
@@ -192,7 +192,7 @@ private struct FolderNodeView: View {
                 
                 // Folder icon
                 Image(systemName: isExpanded ? "folder.fill" : "folder")
-                    .font(.system(size: 14))
+                    .font(.subheadline)
                     .foregroundStyle(isSelected ? .primary : .secondary)
                 
                 // Name or edit field
@@ -299,7 +299,7 @@ private struct FolderNodeView: View {
             }
         } label: {
             Image(systemName: "ellipsis")
-                .font(.system(size: 14))
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: 28, height: 28)
                 .contentShape(Rectangle())
@@ -313,7 +313,7 @@ private struct FolderNodeView: View {
     private var subfolderCreationRow: some View {
         HStack(spacing: 8) {
             Image(systemName: "folder.fill")
-                .font(.system(size: 14))
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
             
             TextField("Folder name", text: $viewModel.newFolderName)
@@ -331,7 +331,7 @@ private struct FolderNodeView: View {
                 }
             } label: {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 18))
+                    .font(.body)
                     .foregroundStyle(.green)
             }
             .disabled(viewModel.newFolderName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -340,7 +340,7 @@ private struct FolderNodeView: View {
                 viewModel.cancelCreatingFolder()
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 18))
+                    .font(.body)
                     .foregroundStyle(.secondary)
             }
         }

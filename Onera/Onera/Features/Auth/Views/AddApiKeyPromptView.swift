@@ -21,7 +21,7 @@ struct AddApiKeyPromptView: View {
                 Section {
                     VStack(spacing: 16) {
                         Image(systemName: "key.fill")
-                            .font(.system(size: 48))
+                            .font(.largeTitle)
                             .foregroundStyle(.orange)
                         
                         VStack(spacing: 8) {

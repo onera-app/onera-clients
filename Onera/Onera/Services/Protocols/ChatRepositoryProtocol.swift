@@ -30,6 +30,12 @@ protocol ChatRepositoryProtocol: Sendable {
     /// Updates a chat's folder assignment
     func updateChatFolder(chatId: String, folderId: String?, token: String) async throws
     
+    /// Updates a chat's pinned status
+    func updateChatPinned(chatId: String, pinned: Bool, token: String) async throws
+    
+    /// Updates a chat's archived status
+    func updateChatArchived(chatId: String, archived: Bool, token: String) async throws
+    
     /// Deletes a chat
     func deleteChat(id: String, token: String) async throws
     
