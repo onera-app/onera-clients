@@ -16,16 +16,6 @@
 	<string>Onera uses the camera to capture photos for your conversations.</string>
 	<key>API_BASE_URL</key>
 	<string>$(API_BASE_URL)</string>
-	<key>TRPC_PATH</key>
-	<string>$(TRPC_PATH)</string>
-	<key>CLERK_PUBLISHABLE_KEY</key>
-	<string>$(CLERK_PUBLISHABLE_KEY)</string>
-	<key>WEBAUTHN_RP_ID</key>
-	<string>$(WEBAUTHN_RP_ID)</string>
-	<key>WEBAUTHN_RP_NAME</key>
-	<string>$(WEBAUTHN_RP_NAME)</string>
-	<key>KEYCHAIN_SERVICE_NAME</key>
-	<string>$(KEYCHAIN_SERVICE_NAME)</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -49,5 +39,15 @@
 			</array>
 		</dict>
 	</array>
+	<key>CLERK_PUBLISHABLE_KEY</key>
+	<string>$(CLERK_PUBLISHABLE_KEY)</string>
+	<key>KEYCHAIN_SERVICE_NAME</key>
+	<string>$(KEYCHAIN_SERVICE_NAME)</string>
+	<key>TRPC_PATH</key>
+	<string>$(TRPC_PATH)</string>
+	<key>WEBAUTHN_RP_ID</key>
+	<string>$(WEBAUTHN_RP_ID)</string>
+	<key>WEBAUTHN_RP_NAME</key>
+	<string>$(WEBAUTHN_RP_NAME)</string>
 </dict>
 </plist>
