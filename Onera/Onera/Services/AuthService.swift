@@ -117,20 +117,15 @@ final class AuthService: AuthServiceProtocol {
             throw authError
         } catch {
             print("[AuthService] Google sign-in error: \(error)")
-            print("[AuthService] Error type: \(type(of: error))")
-            print("[AuthService] Error localizedDescription: \(error.localizedDescription)")
-            if let nsError = error as NSError? {
-                print("[AuthService] NSError domain: \(nsError.domain), code: \(nsError.code)")
-                print("[AuthService] NSError userInfo: \(nsError.userInfo)")
+            
+            // Detect user cancellation from ASWebAuthenticationSession (error code 1)
+            let nsError = error as NSError
+            if nsError.domain == "com.apple.AuthenticationServices.WebAuthenticationSession"
+                && nsError.code == 1 {
+                throw AuthError.oauthCancelled(provider: "Google")
             }
-            // Create detailed error for debugging
-            let errorDetails = """
-            Google Sign-In Error:
-            Type: \(type(of: error))
-            Description: \(error.localizedDescription)
-            Full: \(String(describing: error))
-            """
-            throw AuthError.oauthFailedWithDetails(provider: "Google", details: errorDetails)
+            
+            throw AuthError.oauthFailed(provider: "Google")
         }
     }
     

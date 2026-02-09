@@ -338,7 +338,7 @@
 				D5F4AB44F79B7E39A87510B9 /* XCRemoteSwiftPackageReference "BIP39" */,
 				470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */,
 				33DC0EB0FDA6FC390D0A8AC1 /* XCRemoteSwiftPackageReference "Highlightr" */,
-				F1A2B3C4D5E6F7A8B9C0D1E2 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */,
+				F1A2B3C4D5E6F7A8B9C0D1E2 /* XCRemoteSwiftPackageReference "socket" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = EAB5AAFA2F2B7F0500C79D0F /* Products */;
@@ -680,7 +680,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(inherited)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -728,7 +728,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(inherited)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -819,20 +819,20 @@
 				minimumVersion = 0.71.4;
 			};
 		};
+		F1A2B3C4D5E6F7A8B9C0D1E2 /* XCRemoteSwiftPackageReference "socket" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/socketio/socket.io-client-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 16.1.1;
+			};
+		};
 		FDDBC04EEFA201CB724E38A1 /* XCRemoteSwiftPackageReference "swift-sodium" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/jedisct1/swift-sodium";
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 0.10.0;
-			};
-		};
-		F1A2B3C4D5E6F7A8B9C0D1E2 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/socketio/socket.io-client-swift";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 16.1.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -903,6 +903,11 @@
 			package = 470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
 			productName = SwiftAISDK;
 		};
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* SocketIO */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F1A2B3C4D5E6F7A8B9C0D1E2 /* XCRemoteSwiftPackageReference "socket" */;
+			productName = SocketIO;
+		};
 		B4CC7F5CE75AE58070DAC148 /* GoogleProvider */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
@@ -947,11 +952,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
 			productName = DeepSeekProvider;
-		};
-		A1B2C3D4E5F6A7B8C9D0E1F2 /* SocketIO */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F1A2B3C4D5E6F7A8B9C0D1E2 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */;
-			productName = SocketIO;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

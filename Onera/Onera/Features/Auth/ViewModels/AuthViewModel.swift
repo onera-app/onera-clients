@@ -77,6 +77,8 @@ final class AuthViewModel {
             await onSuccess()
         } catch let authError as AuthError {
             self.error = authError
+        } catch let asError as ASAuthorizationError where asError.code == .canceled {
+            self.error = .oauthCancelled(provider: "Apple")
         } catch {
             self.error = .oauthFailed(provider: "Apple")
         }
