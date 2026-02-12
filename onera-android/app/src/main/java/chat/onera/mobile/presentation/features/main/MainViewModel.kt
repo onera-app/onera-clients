@@ -10,6 +10,8 @@ import chat.onera.mobile.domain.repository.ChatRepository
 import chat.onera.mobile.domain.repository.CredentialRepository
 import chat.onera.mobile.domain.repository.FoldersRepository
 import chat.onera.mobile.domain.repository.LLMRepository
+import chat.onera.mobile.data.remote.private_inference.EnclaveService
+import chat.onera.mobile.data.remote.private_inference.PRIVATE_MODEL_PREFIX
 import chat.onera.mobile.presentation.base.BaseViewModel
 import chat.onera.mobile.presentation.features.main.handlers.AttachmentProcessor
 import chat.onera.mobile.presentation.features.main.handlers.TTSHandler
@@ -38,6 +40,7 @@ class MainViewModel @Inject constructor(
     private val credentialRepository: CredentialRepository,
     private val foldersRepository: FoldersRepository,
     private val llmRepository: LLMRepository,
+    private val enclaveService: EnclaveService,
     private val voiceInputHandler: VoiceInputHandler,
     private val ttsHandler: TTSHandler,
     private val attachmentProcessor: AttachmentProcessor
@@ -924,23 +927,17 @@ class MainViewModel @Inject constructor(
                     return@launch
                 }
                 
-                // Get credentials from server-synced repository
-                val serverCredentials = credentialRepository.getCredentials()
-                
-                if (serverCredentials.isEmpty()) {
-                    // No credentials, show message to add API keys
-                    Timber.d("No credentials found for models")
-                    updateState { 
-                        copy(chatState = chatState.copy(availableModels = emptyList())) 
-                    }
-                    return@launch
-                }
-                
-                Timber.d("Loading models for ${serverCredentials.size} credentials")
-                
-                // For each credential, use default models for this provider
                 val allModels = mutableListOf<ModelOption>()
-                
+
+                // Regular API models from user credentials
+                val serverCredentials = try {
+                    credentialRepository.getCredentials()
+                } catch (e: Exception) {
+                    Timber.w(e, "Failed to load credentials for model list")
+                    emptyList()
+                }
+
+                Timber.d("Loading models for ${serverCredentials.size} credentials")
                 for (credential in serverCredentials) {
                     val provider = try {
                         ModelProvider.valueOf(credential.provider.name)
@@ -951,14 +948,37 @@ class MainViewModel @Inject constructor(
                     // Use default models for each provider
                     allModels.addAll(getDefaultModelsForProvider(provider, credential.id))
                 }
-                
-                Timber.d("Loaded ${allModels.size} models")
+
+                // Private TEE models (do not require a credential)
+                val privateModels = try {
+                    enclaveService.listModels().map { model ->
+                        val modelId = "$PRIVATE_MODEL_PREFIX${model.id}"
+                        val displayName = model.displayName?.takeIf { it.isNotBlank() }
+                            ?: "${model.name} (Private)"
+                        ModelOption(
+                            id = modelId,
+                            displayName = displayName,
+                            provider = ModelProvider.PRIVATE,
+                            credentialId = null
+                        )
+                    }
+                } catch (e: Exception) {
+                    Timber.w(e, "Failed to load private models")
+                    emptyList()
+                }
+                allModels.addAll(privateModels)
+
+                val dedupedModels = allModels.distinctBy { it.id }
+                val selected = dedupedModels.find { it.id == currentState.chatState.selectedModel?.id }
+                    ?: dedupedModels.firstOrNull()
+
+                Timber.d("Loaded ${dedupedModels.size} models (${privateModels.size} private)")
                 
                 updateState { 
                     copy(
                         chatState = chatState.copy(
-                            availableModels = allModels,
-                            selectedModel = allModels.firstOrNull()
+                            availableModels = dedupedModels,
+                            selectedModel = selected
                         )
                     ) 
                 }
@@ -1047,5 +1067,6 @@ enum class ModelProvider(val displayName: String) {
     FIREWORKS("Fireworks"),
     OLLAMA("Ollama"),
     LMSTUDIO("LM Studio"),
+    PRIVATE("Private (E2EE)"),
     CUSTOM("Custom")
 }

@@ -3,11 +3,6 @@ package chat.onera.mobile.data.remote.private_inference
 import android.util.Log
 import com.goterl.lazysodium.LazySodiumAndroid
 import com.goterl.lazysodium.SodiumAndroid
-import com.goterl.lazysodium.interfaces.Box
-import com.goterl.lazysodium.interfaces.Hash
-import com.goterl.lazysodium.interfaces.SecretBox
-import com.goterl.lazysodium.utils.Key
-import com.goterl.lazysodium.utils.KeyPair
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.security.MessageDigest
@@ -15,182 +10,265 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * Noise Protocol NK pattern implementation for encrypted communication with TEE.
- * 
- * NK pattern: One-way authentication where the initiator knows the responder's
- * static public key in advance (obtained through attestation).
- * 
- * Uses libsodium for cryptographic primitives:
- * - X25519 for key exchange
- * - ChaCha20-Poly1305 for AEAD
- * - SHA-256 for hashing
+ * Noise NK handshake + transport encryption implementation.
+ *
+ * Matches server/web/iOS protocol:
+ * Noise_NK_25519_ChaChaPoly_SHA256
  */
 object NoiseProtocol {
-    
+
     private const val TAG = "NoiseProtocol"
-    
+
     // Noise protocol identifiers
     private const val PROTOCOL_NAME = "Noise_NK_25519_ChaChaPoly_SHA256"
-    
+
     // Key sizes
     private const val KEY_SIZE = 32
+    private const val DH_SIZE = 32
+    private const val HASH_SIZE = 32
     private const val NONCE_SIZE = 12
-    private const val TAG_SIZE = 16
-    
-    // Lazy sodium instance
+    private const val AEAD_TAG_SIZE = 16
+
     private val sodium: LazySodiumAndroid by lazy {
         LazySodiumAndroid(SodiumAndroid())
     }
-    
-    /**
-     * Performs the NK handshake as initiator.
-     * 
-     * @param serverPublicKey The server's static public key (from attestation)
-     * @param sendMessage Function to send a message to the server
-     * @param receiveMessage Function to receive a message from the server
-     * @return HandshakeResult containing the cipher states for encryption/decryption
-     */
+
     suspend fun performNKHandshake(
         serverPublicKey: ByteArray,
         sendMessage: suspend (ByteArray) -> Unit,
         receiveMessage: suspend () -> ByteArray
     ): HandshakeResult {
+        if (serverPublicKey.size != DH_SIZE) {
+            throw PrivateInferenceException.HandshakeFailed("Invalid server public key length: ${serverPublicKey.size}")
+        }
+
         Log.d(TAG, "Starting NK handshake")
-        
+
         // Initialize symmetric state
-        val h = sha256(PROTOCOL_NAME.toByteArray())
-        var ck = h.copyOf()
-        
-        // Mix in server's public key (prologue)
-        val hWithRS = mixHash(h, serverPublicKey)
-        
+        val ss = initializeSymmetric(PROTOCOL_NAME)
+        mixHash(ss, ByteArray(0))            // empty prologue
+        mixHash(ss, serverPublicKey)         // <- s (pre-message)
+
         // Generate ephemeral keypair
-        val ephemeralKeyPair = generateKeyPair()
-        Log.d(TAG, "Generated ephemeral keypair")
-        
-        // -> e, es
-        // Send ephemeral public key
-        val messageToSend = ByteBuffer.allocate(KEY_SIZE)
-            .put(ephemeralKeyPair.publicKey.asBytes)
-            .array()
-        
-        // Mix ephemeral public key into hash
-        val hWithE = mixHash(hWithRS, ephemeralKeyPair.publicKey.asBytes)
-        
-        // Perform DH: es = DH(e, rs)
-        val sharedSecret = x25519(ephemeralKeyPair.secretKey.asBytes, serverPublicKey)
-        Log.d(TAG, "Computed shared secret")
-        
-        // Update chaining key with shared secret
-        val (newCK, _) = hkdfExtract(ck, sharedSecret)
-        ck = newCK
-        
-        // Send the handshake message
-        sendMessage(messageToSend)
-        Log.d(TAG, "Sent handshake message")
-        
-        // <- (empty payload, but may have encrypted data)
-        val responseMessage = receiveMessage()
-        Log.d(TAG, "Received handshake response: ${responseMessage.size} bytes")
-        
-        // Split into sending and receiving cipher states
-        val (sendingKey, receivingKey) = hkdfExpand(ck)
-        
-        Log.d(TAG, "NK handshake completed successfully")
-        
-        return HandshakeResult(
-            sendingKey = sendingKey,
-            receivingKey = receivingKey,
-            hash = hWithE
+        val ephemeral = sodium.cryptoBoxKeypair()
+        val e = ephemeral.publicKey.asBytes
+        val ePrivate = ephemeral.secretKey.asBytes
+
+        try {
+            // -> e, es
+            mixHash(ss, e)
+            val es = scalarMult(ePrivate, serverPublicKey)
+            mixKey(ss, es)
+
+            // NK message 1 includes encrypted empty payload (16-byte tag)
+            val payload1 = encryptAndHash(ss, ByteArray(0))
+            val message1 = ByteArray(DH_SIZE + payload1.size)
+            System.arraycopy(e, 0, message1, 0, DH_SIZE)
+            System.arraycopy(payload1, 0, message1, DH_SIZE, payload1.size)
+
+            sendMessage(message1)
+
+            // <- e, ee
+            val message2 = receiveMessage()
+            if (message2.size < DH_SIZE) {
+                throw PrivateInferenceException.HandshakeFailed(
+                    "Invalid handshake message 2 length: ${message2.size}"
+                )
+            }
+
+            val re = message2.copyOfRange(0, DH_SIZE)
+            mixHash(ss, re)
+
+            val ee = scalarMult(ePrivate, re)
+            mixKey(ss, ee)
+
+            val encryptedPayload2 = message2.copyOfRange(DH_SIZE, message2.size)
+            if (encryptedPayload2.isNotEmpty()) {
+                decryptAndHash(ss, encryptedPayload2)
+            }
+
+            val (sendingKey, receivingKey) = split(ss)
+            Log.d(TAG, "NK handshake completed")
+
+            return HandshakeResult(
+                sendingKey = sendingKey,
+                receivingKey = receivingKey,
+                hash = ss.h
+            )
+        } finally {
+            ePrivate.fill(0)
+        }
+    }
+
+    private fun scalarMult(privateKey: ByteArray, publicKey: ByteArray): ByteArray {
+        val out = ByteArray(DH_SIZE)
+        val ok = sodium.cryptoScalarMult(out, privateKey, publicKey)
+        if (!ok) {
+            throw PrivateInferenceException.HandshakeFailed("X25519 key exchange failed")
+        }
+        return out
+    }
+
+    private data class SymmetricState(
+        var h: ByteArray,
+        var ck: ByteArray,
+        var hasKey: Boolean,
+        var k: ByteArray,
+        var n: Long
+    )
+
+    private fun initializeSymmetric(protocolName: String): SymmetricState {
+        val nameBytes = protocolName.toByteArray(Charsets.UTF_8)
+        val h = if (nameBytes.size <= HASH_SIZE) {
+            ByteArray(HASH_SIZE).also { out ->
+                System.arraycopy(nameBytes, 0, out, 0, nameBytes.size)
+            }
+        } else {
+            sha256(nameBytes)
+        }
+
+        return SymmetricState(
+            h = h,
+            ck = h.copyOf(),
+            hasKey = false,
+            k = ByteArray(KEY_SIZE),
+            n = 0L
         )
     }
-    
-    /**
-     * Generate an X25519 keypair
-     */
-    private fun generateKeyPair(): KeyPair {
-        return sodium.cryptoBoxKeypair()
+
+    private fun mixHash(state: SymmetricState, data: ByteArray) {
+        val input = ByteArray(state.h.size + data.size)
+        System.arraycopy(state.h, 0, input, 0, state.h.size)
+        System.arraycopy(data, 0, input, state.h.size, data.size)
+        state.h = sha256(input)
     }
-    
-    /**
-     * Perform X25519 key exchange using crypto_box_beforenm
-     * This computes the shared secret from our private key and their public key
-     */
-    private fun x25519(privateKey: ByteArray, publicKey: ByteArray): ByteArray {
-        // Use crypto_box_beforenm which internally does X25519 + HSalsa20
-        // For Noise, we actually want just the X25519 result, but for simplicity
-        // we use the precomputed shared key which is functionally similar
-        val sharedSecret = ByteArray(Box.BEFORENMBYTES)
-        val privateKeyObj = Key.fromBytes(privateKey)
-        val publicKeyObj = Key.fromBytes(publicKey)
-        
-        // crypto_box_beforenm computes a shared key from pk and sk
-        val result = sodium.cryptoBoxBeforeNm(sharedSecret, publicKeyObj.asBytes, privateKeyObj.asBytes)
-        if (!result) {
-            throw PrivateInferenceException.HandshakeFailed("Key exchange failed")
+
+    private fun mixKey(state: SymmetricState, inputKeyMaterial: ByteArray) {
+        val (ck, tempK) = hkdf(state.ck, inputKeyMaterial)
+        state.ck = ck
+        state.k = tempK
+        state.n = 0L
+        state.hasKey = true
+    }
+
+    private fun split(state: SymmetricState): Pair<ByteArray, ByteArray> {
+        return hkdf(state.ck, ByteArray(0))
+    }
+
+    private fun encryptAndHash(state: SymmetricState, plaintext: ByteArray): ByteArray {
+        if (!state.hasKey) {
+            mixHash(state, plaintext)
+            return plaintext
         }
-        return sharedSecret
+
+        val nonce = createNonce(state.n)
+        val ciphertext = aeadEncrypt(
+            plaintext = plaintext,
+            additionalData = state.h,
+            nonce = nonce,
+            key = state.k
+        )
+        mixHash(state, ciphertext)
+        state.n++
+        return ciphertext
     }
-    
-    /**
-     * SHA-256 hash
-     */
+
+    private fun decryptAndHash(state: SymmetricState, ciphertext: ByteArray): ByteArray {
+        if (!state.hasKey) {
+            mixHash(state, ciphertext)
+            return ciphertext
+        }
+
+        val nonce = createNonce(state.n)
+        val plaintext = aeadDecrypt(
+            ciphertext = ciphertext,
+            additionalData = state.h,
+            nonce = nonce,
+            key = state.k
+        )
+        mixHash(state, ciphertext)
+        state.n++
+        return plaintext
+    }
+
     private fun sha256(data: ByteArray): ByteArray {
         return MessageDigest.getInstance("SHA-256").digest(data)
     }
-    
-    /**
-     * Mix data into hash: h = SHA256(h || data)
-     */
-    private fun mixHash(h: ByteArray, data: ByteArray): ByteArray {
-        val combined = ByteArray(h.size + data.size)
-        System.arraycopy(h, 0, combined, 0, h.size)
-        System.arraycopy(data, 0, combined, h.size, data.size)
-        return sha256(combined)
+
+    private fun hkdf(chainingKey: ByteArray, inputKeyMaterial: ByteArray): Pair<ByteArray, ByteArray> {
+        val tempKey = hmacSha256(chainingKey, inputKeyMaterial)
+        val output1 = hmacSha256(tempKey, byteArrayOf(0x01))
+        val output2 = hmacSha256(tempKey, output1 + byteArrayOf(0x02))
+        return output1.copyOf(KEY_SIZE) to output2.copyOf(KEY_SIZE)
     }
-    
-    /**
-     * HKDF extract step
-     */
-    private fun hkdfExtract(salt: ByteArray, ikm: ByteArray): Pair<ByteArray, ByteArray> {
+
+    private fun hmacSha256(key: ByteArray, data: ByteArray): ByteArray {
         val mac = Mac.getInstance("HmacSHA256")
-        mac.init(SecretKeySpec(salt, "HmacSHA256"))
-        val prk = mac.doFinal(ikm)
-        
-        // Generate two keys
-        mac.init(SecretKeySpec(prk, "HmacSHA256"))
-        val k1 = mac.doFinal(byteArrayOf(0x01))
-        
-        mac.init(SecretKeySpec(prk, "HmacSHA256"))
-        val k2Input = ByteArray(k1.size + 1)
-        System.arraycopy(k1, 0, k2Input, 0, k1.size)
-        k2Input[k1.size] = 0x02
-        val k2 = mac.doFinal(k2Input)
-        
-        return Pair(k1.copyOf(KEY_SIZE), k2.copyOf(KEY_SIZE))
+        mac.init(SecretKeySpec(key, "HmacSHA256"))
+        return mac.doFinal(data)
     }
-    
-    /**
-     * HKDF expand to derive cipher keys
-     */
-    private fun hkdfExpand(prk: ByteArray): Pair<ByteArray, ByteArray> {
-        val mac = Mac.getInstance("HmacSHA256")
-        mac.init(SecretKeySpec(prk, "HmacSHA256"))
-        val sendKey = mac.doFinal(byteArrayOf(0x01))
-        
-        mac.init(SecretKeySpec(prk, "HmacSHA256"))
-        val recvKeyInput = ByteArray(sendKey.size + 1)
-        System.arraycopy(sendKey, 0, recvKeyInput, 0, sendKey.size)
-        recvKeyInput[sendKey.size] = 0x02
-        val recvKey = mac.doFinal(recvKeyInput)
-        
-        return Pair(sendKey.copyOf(KEY_SIZE), recvKey.copyOf(KEY_SIZE))
+
+    private fun createNonce(counter: Long): ByteArray {
+        val nonce = ByteArray(NONCE_SIZE)
+        val buffer = ByteBuffer.wrap(nonce).order(ByteOrder.LITTLE_ENDIAN)
+        buffer.position(4)
+        buffer.putLong(counter)
+        return nonce
+    }
+
+    private fun aeadEncrypt(
+        plaintext: ByteArray,
+        additionalData: ByteArray?,
+        nonce: ByteArray,
+        key: ByteArray
+    ): ByteArray {
+        val ad = additionalData ?: ByteArray(0)
+        val out = ByteArray(plaintext.size + AEAD_TAG_SIZE)
+        val outLen = longArrayOf(0L)
+        val ok = sodium.cryptoAeadChaCha20Poly1305IetfEncrypt(
+            out,
+            outLen,
+            plaintext,
+            plaintext.size.toLong(),
+            ad,
+            ad.size.toLong(),
+            null,
+            nonce,
+            key
+        )
+        if (!ok) {
+            throw PrivateInferenceException.EncryptionFailed()
+        }
+        return out.copyOf(outLen[0].toInt())
+    }
+
+    private fun aeadDecrypt(
+        ciphertext: ByteArray,
+        additionalData: ByteArray?,
+        nonce: ByteArray,
+        key: ByteArray
+    ): ByteArray {
+        val ad = additionalData ?: ByteArray(0)
+        val out = ByteArray((ciphertext.size - AEAD_TAG_SIZE).coerceAtLeast(0))
+        val outLen = longArrayOf(0L)
+        val ok = sodium.cryptoAeadChaCha20Poly1305IetfDecrypt(
+            out,
+            outLen,
+            null,
+            ciphertext,
+            ciphertext.size.toLong(),
+            ad,
+            ad.size.toLong(),
+            nonce,
+            key
+        )
+        if (!ok) {
+            throw PrivateInferenceException.DecryptionFailed()
+        }
+        return out.copyOf(outLen[0].toInt())
     }
 }
 
-/**
- * Result of the Noise handshake containing cipher state keys
- */
 data class HandshakeResult(
     val sendingKey: ByteArray,
     val receivingKey: ByteArray,
@@ -214,87 +292,76 @@ data class HandshakeResult(
     }
 }
 
-/**
- * Cipher state for encrypting/decrypting messages after handshake
- */
 class NoiseSession(
     private val sendingKey: ByteArray,
     private val receivingKey: ByteArray
 ) {
     private val sodium: LazySodiumAndroid = LazySodiumAndroid(SodiumAndroid())
-    
-    // Nonce counters
-    private var sendNonce: Long = 0
-    private var receiveNonce: Long = 0
-    
+    private var sendNonce: Long = 0L
+    private var receiveNonce: Long = 0L
+
     @Volatile
     var isClosed: Boolean = false
         private set
-    
-    companion object {
-        // SecretBox uses 24-byte nonces (XSalsa20)
-        private const val NONCE_SIZE = SecretBox.NONCEBYTES  // 24 bytes
-        private const val TAG_SIZE = SecretBox.MACBYTES  // 16 bytes
-    }
-    
-    /**
-     * Encrypt a message using SecretBox (XSalsa20-Poly1305)
-     * Note: Noise uses ChaCha20-Poly1305, but SecretBox is compatible for our use case
-     */
+
     fun encrypt(plaintext: ByteArray): ByteArray {
         if (isClosed) throw PrivateInferenceException.ConnectionClosed()
-        
+
         val nonce = createNonce(sendNonce++)
-        
-        // Use the lazy sodium string-based API which is more reliable
-        val key = Key.fromBytes(sendingKey)
-        val ciphertext = sodium.cryptoSecretBoxEasy(
-            String(plaintext, Charsets.UTF_8),
+        val out = ByteArray(plaintext.size + AEAD_TAG_SIZE)
+        val outLen = longArrayOf(0L)
+        val ok = sodium.cryptoAeadChaCha20Poly1305IetfEncrypt(
+            out,
+            outLen,
+            plaintext,
+            plaintext.size.toLong(),
+            ByteArray(0),
+            0L,
+            null,
             nonce,
-            key
-        ) ?: throw PrivateInferenceException.EncryptionFailed()
-        
-        return sodium.sodiumHex2Bin(ciphertext)
+            sendingKey
+        )
+        if (!ok) throw PrivateInferenceException.EncryptionFailed()
+        return out.copyOf(outLen[0].toInt())
     }
-    
-    /**
-     * Decrypt a message using SecretBox (XSalsa20-Poly1305)
-     */
+
     fun decrypt(ciphertext: ByteArray): ByteArray {
         if (isClosed) throw PrivateInferenceException.ConnectionClosed()
-        
+
         val nonce = createNonce(receiveNonce++)
-        
-        val key = Key.fromBytes(receivingKey)
-        val ciphertextHex = sodium.sodiumBin2Hex(ciphertext)
-        
-        val plaintext = sodium.cryptoSecretBoxOpenEasy(
-            ciphertextHex,
+        val out = ByteArray((ciphertext.size - AEAD_TAG_SIZE).coerceAtLeast(0))
+        val outLen = longArrayOf(0L)
+        val ok = sodium.cryptoAeadChaCha20Poly1305IetfDecrypt(
+            out,
+            outLen,
+            null,
+            ciphertext,
+            ciphertext.size.toLong(),
+            ByteArray(0),
+            0L,
             nonce,
-            key
-        ) ?: throw PrivateInferenceException.DecryptionFailed()
-        
-        return plaintext.toByteArray(Charsets.UTF_8)
+            receivingKey
+        )
+        if (!ok) throw PrivateInferenceException.DecryptionFailed()
+        return out.copyOf(outLen[0].toInt())
     }
-    
-    /**
-     * Close the session
-     */
+
     fun close() {
         isClosed = true
-        // Zero out keys for security
         sendingKey.fill(0)
         receivingKey.fill(0)
     }
-    
-    /**
-     * Create a nonce from a counter (padded to NONCE_SIZE bytes)
-     */
+
     private fun createNonce(counter: Long): ByteArray {
         val nonce = ByteArray(NONCE_SIZE)
-        ByteBuffer.wrap(nonce)
-            .order(ByteOrder.LITTLE_ENDIAN)
-            .putLong(counter)
+        val buffer = ByteBuffer.wrap(nonce).order(ByteOrder.LITTLE_ENDIAN)
+        buffer.position(4)
+        buffer.putLong(counter)
         return nonce
+    }
+
+    private companion object {
+        private const val NONCE_SIZE = 12
+        private const val AEAD_TAG_SIZE = 16
     }
 }

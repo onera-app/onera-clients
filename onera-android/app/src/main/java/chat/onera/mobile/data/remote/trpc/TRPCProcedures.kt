@@ -1,6 +1,7 @@
 package chat.onera.mobile.data.remote.trpc
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerialName
 
 // Chat procedures - matches server tRPC router (plural "chats")
 object ChatProcedures {
@@ -304,14 +305,9 @@ data class EmptyInput(
 data class PrivateModelDto(
     val id: String,
     val name: String,
-    val enclaveId: String,
-    val maxContextLength: Int? = null,
-    val capabilities: List<String>? = null
-)
-
-@Serializable
-data class PrivateModelsListOutput(
-    val models: List<PrivateModelDto>
+    val displayName: String? = null,
+    val contextLength: Int? = null,
+    val provider: String? = null
 )
 
 @Serializable
@@ -322,16 +318,19 @@ data class RequestEnclaveInput(
 )
 
 @Serializable
-data class EnclaveInfoDto(
+data class EnclaveEndpointDto(
     val id: String,
     val host: String,
-    val port: Int
+    val port: Int,
+    @SerialName("public_key")
+    val publicKey: String? = null
 )
 
 @Serializable
 data class RequestEnclaveOutput(
     val assignmentId: String,
-    val enclave: EnclaveInfoDto,
+    val enclaveId: String,
+    val endpoint: EnclaveEndpointDto,
     val wsEndpoint: String,
     val attestationEndpoint: String,
     val allowUnverified: Boolean = false

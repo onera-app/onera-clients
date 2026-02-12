@@ -3,7 +3,6 @@ package chat.onera.mobile.data.remote.private_inference
 import android.util.Log
 import chat.onera.mobile.data.remote.trpc.EnclavesProcedures
 import chat.onera.mobile.data.remote.trpc.PrivateModelDto
-import chat.onera.mobile.data.remote.trpc.PrivateModelsListOutput
 import chat.onera.mobile.data.remote.trpc.ReleaseEnclaveInput
 import chat.onera.mobile.data.remote.trpc.RequestEnclaveInput
 import chat.onera.mobile.data.remote.trpc.RequestEnclaveOutput
@@ -50,12 +49,12 @@ class EnclaveService @Inject constructor(
         }
         
         return try {
-            val result = trpcClient.query<Unit, PrivateModelsListOutput>(
+            val result = trpcClient.query<Unit, List<PrivateModelDto>>(
                 EnclavesProcedures.LIST_MODELS,
                 Unit
             )
-            
-            result.getOrNull()?.models?.also {
+
+            result.getOrNull()?.also {
                 modelCache = it
                 modelCacheFetchedAt = now
                 Log.d(TAG, "Fetched ${it.size} private models")
@@ -97,9 +96,9 @@ class EnclaveService @Inject constructor(
             Log.d(TAG, "Enclave assigned: ${response.assignmentId}")
             
             EnclaveConfig(
-                id = response.enclave.id,
+                id = response.endpoint.id,
                 name = modelId,
-                endpoint = "https://${response.enclave.host}:${response.enclave.port}",
+                endpoint = "https://${response.endpoint.host}:${response.endpoint.port}",
                 wsEndpoint = response.wsEndpoint,
                 attestationEndpoint = response.attestationEndpoint,
                 allowUnverified = response.allowUnverified

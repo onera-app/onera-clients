@@ -6,6 +6,7 @@ import chat.onera.mobile.data.remote.dto.*
 import chat.onera.mobile.data.remote.llm.ChatMessage
 import chat.onera.mobile.data.remote.llm.ImageData
 import chat.onera.mobile.data.remote.llm.StreamEvent
+import chat.onera.mobile.data.remote.private_inference.PrivateInferenceEvent
 import chat.onera.mobile.data.remote.trpc.TRPCClient
 import chat.onera.mobile.data.remote.trpc.ChatProcedures
 import chat.onera.mobile.data.security.ChatKeyCache
@@ -363,11 +364,13 @@ class ChatRepositoryImpl @Inject constructor(
 
     override fun sendMessageStream(chatId: String?, message: String, model: String, images: List<ImageData>): Flow<String> = flow {
         Log.d(TAG, "sendMessageStream: chatId=$chatId, model=$model, images=${images.size}")
-        
-        // Parse model string - format can be "credentialId:modelName" or just "modelName"
-        val (credentialId, modelName) = parseModelString(model)
-        
-        if (credentialId == null) {
+
+        // Parse model string - format can be:
+        // - "credentialId:modelName" (standard models)
+        // - "private:modelName" (TEE private inference models)
+        // - "modelName" (fallback to first credential)
+        val modelRoute = parseModelString(model)
+        if (modelRoute is ParsedModelRoute.Standard && modelRoute.credentialId == null) {
             Log.e(TAG, "No credential ID found in model string: $model")
             emit("Error: Please add an API key in Settings > API Connections")
             return@flow
@@ -400,35 +403,61 @@ class ChatRepositoryImpl @Inject constructor(
         Log.d(TAG, "Sending ${messages.size} messages to LLM with ${images.size} images")
         
         try {
-            llmRepository.streamChat(
-                credentialId = credentialId,
-                messages = messages,
-                model = modelName,
-                systemPrompt = DEFAULT_SYSTEM_PROMPT,
-                images = images
-            ).collect { event ->
-                when (event) {
-                    is StreamEvent.Text -> emit(event.content)
-                    is StreamEvent.Reasoning -> {
-                        Log.d(TAG, "Reasoning: ${event.content}")
-                    }
-                    is StreamEvent.ToolCall -> {
-                        Log.d(TAG, "Tool call: ${event.name}")
-                    }
-                    is StreamEvent.Done -> {
-                        Log.d(TAG, "Stream completed")
-                        // Sync chat after message completes
-                        if (chatId != null) {
-                            try {
-                                syncChat(chatId)
-                            } catch (e: Exception) {
-                                Log.w(TAG, "Failed to sync chat after message", e)
+            when (modelRoute) {
+                is ParsedModelRoute.Private -> {
+                    llmRepository.streamPrivateChat(
+                        modelId = modelRoute.modelId,
+                        messages = messages,
+                        systemPrompt = DEFAULT_SYSTEM_PROMPT
+                    ).collect { event ->
+                        when (event) {
+                            is PrivateInferenceEvent.TextDelta -> emit(event.text)
+                            is PrivateInferenceEvent.Finish -> {
+                                Log.d(TAG, "Private stream completed: ${event.reason}")
+                                if (chatId != null) {
+                                    syncChatAfterMessage(chatId)
+                                }
+                            }
+                            is PrivateInferenceEvent.Error -> {
+                                Log.e(TAG, "Private stream error: ${event.message}", event.cause)
+                                emit("\n\nError: ${event.message}")
                             }
                         }
                     }
-                    is StreamEvent.Error -> {
-                        Log.e(TAG, "Stream error: ${event.message}", event.cause)
-                        emit("\n\nError: ${event.message}")
+                    if (chatId != null) {
+                        syncChatAfterMessage(chatId)
+                    }
+                }
+                is ParsedModelRoute.Standard -> {
+                    val credentialId = requireNotNull(modelRoute.credentialId) {
+                        "Missing credential for non-private model"
+                    }
+                    llmRepository.streamChat(
+                        credentialId = credentialId,
+                        messages = messages,
+                        model = modelRoute.modelName,
+                        systemPrompt = DEFAULT_SYSTEM_PROMPT,
+                        images = images
+                    ).collect { event ->
+                        when (event) {
+                            is StreamEvent.Text -> emit(event.content)
+                            is StreamEvent.Reasoning -> {
+                                Log.d(TAG, "Reasoning: ${event.content}")
+                            }
+                            is StreamEvent.ToolCall -> {
+                                Log.d(TAG, "Tool call: ${event.name}")
+                            }
+                            is StreamEvent.Done -> {
+                                Log.d(TAG, "Stream completed")
+                                if (chatId != null) {
+                                    syncChatAfterMessage(chatId)
+                                }
+                            }
+                            is StreamEvent.Error -> {
+                                Log.e(TAG, "Stream error: ${event.message}", event.cause)
+                                emit("\n\nError: ${event.message}")
+                            }
+                        }
                     }
                 }
             }
@@ -437,22 +466,45 @@ class ChatRepositoryImpl @Inject constructor(
             emit("Error: ${e.message}")
         }
     }
-    
-    private suspend fun parseModelString(model: String): Pair<String?, String> {
-        return if (model.contains(":")) {
-            val parts = model.split(":", limit = 2)
-            parts[0] to parts[1]
-        } else {
-            // Use server-synced credentials
-            val serverCredentials = try {
-                credentialRepository.getCredentials()
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to get server credentials", e)
-                emptyList()
-            }
-            val firstCredential = serverCredentials.firstOrNull()
-            firstCredential?.id to model
+
+    private suspend fun parseModelString(model: String): ParsedModelRoute {
+        if (llmRepository.isPrivateModel(model)) {
+            return ParsedModelRoute.Private(modelId = model)
         }
+
+        if (model.contains(":")) {
+            val parts = model.split(":", limit = 2)
+            return ParsedModelRoute.Standard(
+                credentialId = parts[0],
+                modelName = parts[1]
+            )
+        }
+
+        // Fallback to first server-synced credential
+        val serverCredentials = try {
+            credentialRepository.getCredentials()
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to get server credentials", e)
+            emptyList()
+        }
+        val firstCredential = serverCredentials.firstOrNull()
+        return ParsedModelRoute.Standard(
+            credentialId = firstCredential?.id,
+            modelName = model
+        )
+    }
+
+    private suspend fun syncChatAfterMessage(chatId: String) {
+        try {
+            syncChat(chatId)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to sync chat after message", e)
+        }
+    }
+
+    private sealed interface ParsedModelRoute {
+        data class Standard(val credentialId: String?, val modelName: String) : ParsedModelRoute
+        data class Private(val modelId: String) : ParsedModelRoute
     }
 
     /**

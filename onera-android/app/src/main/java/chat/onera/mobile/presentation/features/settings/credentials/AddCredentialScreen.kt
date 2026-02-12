@@ -312,6 +312,7 @@ private fun getHelpText(provider: ModelProvider): String {
         ModelProvider.FIREWORKS -> "Visit fireworks.ai to create an API key."
         ModelProvider.OLLAMA -> "No API key needed for local Ollama. Just enter your server URL (default: http://localhost:11434)."
         ModelProvider.LMSTUDIO -> "No API key needed for local LM Studio. Enter your server URL."
+        ModelProvider.PRIVATE -> "Private TEE models are managed automatically by Onera."
         ModelProvider.CUSTOM -> "Enter your custom OpenAI-compatible API endpoint and key."
     }
 }

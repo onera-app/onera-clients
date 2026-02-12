@@ -74,7 +74,7 @@ class PrivateInferenceClient @Inject constructor() {
         private set
     
     // Message handling
-    private val messageChannel = Channel<ByteArray>(Channel.UNLIMITED)
+    private var messageChannel = Channel<ByteArray>(Channel.UNLIMITED)
     private val isCancelled = AtomicBoolean(false)
     
     /**
@@ -85,6 +85,12 @@ class PrivateInferenceClient @Inject constructor() {
         attestationEndpoint: String,
         expectedMeasurements: ExpectedMeasurements? = null
     ) = withContext(Dispatchers.IO) {
+        isClosed = false
+        isCancelled.set(false)
+        if (messageChannel.isClosedForReceive || messageChannel.isClosedForSend) {
+            messageChannel = Channel(Channel.UNLIMITED)
+        }
+
         Log.i(TAG, "Connecting to private inference endpoint: $wsEndpoint")
         
         // Step 1: Verify attestation and get server public key
@@ -240,13 +246,24 @@ class PrivateInferenceClient @Inject constructor() {
                 PrivateInferenceEvent.TextDelta(text)
             }
             "finish" -> {
-                val finishReason = json["finishReason"]?.jsonPrimitive?.content ?: "stop"
+                val finishReason =
+                    json["finish_reason"]?.jsonPrimitive?.content
+                        ?: json["finishReason"]?.jsonPrimitive?.content
+                        ?: "stop"
                 val usage = json["usage"]?.jsonObject
                 PrivateInferenceEvent.Finish(
                     reason = finishReason,
-                    promptTokens = usage?.get("promptTokens")?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
-                    completionTokens = usage?.get("completionTokens")?.jsonPrimitive?.content?.toIntOrNull() ?: 0
+                    promptTokens = usage?.get("promptTokens")?.jsonPrimitive?.content?.toIntOrNull()
+                        ?: usage?.get("prompt_tokens")?.jsonPrimitive?.content?.toIntOrNull()
+                        ?: 0,
+                    completionTokens = usage?.get("completionTokens")?.jsonPrimitive?.content?.toIntOrNull()
+                        ?: usage?.get("completion_tokens")?.jsonPrimitive?.content?.toIntOrNull()
+                        ?: 0
                 )
+            }
+            "error" -> {
+                val message = json["message"]?.jsonPrimitive?.content ?: "Unknown private inference error"
+                PrivateInferenceEvent.Error(message)
             }
             else -> {
                 // Try to handle single response format
@@ -277,6 +294,7 @@ class PrivateInferenceClient @Inject constructor() {
         noiseSession = null
         
         messageChannel.close()
+        messageChannel = Channel(Channel.UNLIMITED)
     }
     
     // ========================================================================
@@ -316,11 +334,13 @@ class PrivateInferenceClient @Inject constructor() {
                 override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
                     Log.d(TAG, "WebSocket closed: $code $reason")
                     isConnected = false
+                    messageChannel.trySend(ByteArray(0))
                 }
                 
                 override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                     Log.e(TAG, "WebSocket failure: ${t.message}", t)
                     isConnected = false
+                    messageChannel.trySend(ByteArray(0))
                     if (continuation.isActive) {
                         continuation.resumeWithException(
                             PrivateInferenceException.ConnectionTimeout()
