@@ -156,7 +156,7 @@ struct MessageInputView: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .animation(.easeOut(duration: 0.15), value: showMentionPopover)
+        .animation(OneraAnimation.springQuick, value: showMentionPopover)
         .onChange(of: text) { _, newValue in
             detectMention(in: newValue)
         }

@@ -20,6 +20,9 @@ struct ChatView: View {
     @FocusState private var isInputFocused: Bool
     @State private var showingError = false
     @State private var ttsStartTime: Date?
+    @State private var messageSentTrigger = false
+    @State private var isNewChatSendAnimating = false
+    @State private var firstMessageAnimationComplete = false
 
     #if os(iOS)
     @State private var showArtifacts = false
@@ -77,6 +80,17 @@ struct ChatView: View {
             }
             .safeAreaInset(edge: .bottom) {
                 inputSection
+                    .background(alignment: .top) {
+                        // Progressive blur gradient above input (v0-style)
+                        LinearGradient(
+                            colors: [theme.background, theme.background.opacity(0)],
+                            startPoint: .bottom,
+                            endPoint: .top
+                        )
+                        .frame(height: 24)
+                        .offset(y: -24)
+                        .allowsHitTesting(false)
+                    }
             }
             
             // TTS Player Overlay - shown when speaking
@@ -93,8 +107,8 @@ struct ChatView: View {
                 .animation(.spring(response: 0.3, dampingFraction: 0.8), value: viewModel.isSpeaking)
             }
         }
-        .sensoryFeedback(.success, trigger: viewModel.messages.count)
-        .sensoryFeedback(.start, trigger: viewModel.isStreaming)
+        .sensoryFeedback(.impact(weight: .medium), trigger: messageSentTrigger)
+        .sensoryFeedback(.impact(weight: .light), trigger: viewModel.isStreaming)
         .task {
             await viewModel.loadModels()
         }
@@ -136,11 +150,25 @@ struct ChatView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 16) {
-                    ForEach(viewModel.messages) { message in
+                    ForEach(Array(viewModel.messages.enumerated()), id: \.element.id) { index, message in
                         messageBubble(for: message)
                             .frame(maxWidth: maxMessageWidth, alignment: message.isUser ? .trailing : .leading)
                             .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
                             .id(message.id)
+                            .modifier(NewChatMessageAnimator(
+                                index: index,
+                                isUser: message.isUser,
+                                isNewChatSendAnimating: isNewChatSendAnimating,
+                                firstMessageAnimationComplete: $firstMessageAnimationComplete,
+                                onAnimationDone: {
+                                    isNewChatSendAnimating = false
+                                }
+                            ))
+                            .scrollTransition { content, phase in
+                                content
+                                    .opacity(phase.isIdentity ? 1 : 0.85)
+                                    .scaleEffect(phase.isIdentity ? 1 : 0.98)
+                            }
                             .transition(
                                 message.isUser
                                     ? .asymmetric(
@@ -167,8 +195,10 @@ struct ChatView: View {
             }
             .scrollDismissesKeyboard(.interactively)
             .onChange(of: viewModel.messages.count) { _, _ in
-                withAnimation(.easeOut(duration: 0.3)) {
-                    scrollToBottom(proxy)
+                withAnimation(OneraAnimation.springSmooth) {
+                    if let lastId = viewModel.messages.last?.id {
+                        proxy.scrollTo(lastId, anchor: .bottom)
+                    }
                 }
             }
         }
@@ -186,36 +216,13 @@ struct ChatView: View {
     // MARK: - Empty State
     
     private var emptyStateView: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            
-            // Minimal icon
-            Image(systemName: "bubble.left.and.text.bubble.right")
-                .font(.largeTitle.weight(.light))
-                .foregroundStyle(.secondary.opacity(0.6))
-            
-            VStack(spacing: 8) {
-                Text("What's on your mind?")
-                    .font(.title3)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.primary)
-                
-                HStack(spacing: 4) {
-                    Image(systemName: "lock.fill")
-                        .font(.caption2)
-                    Text("Encrypted and only accessible by you")
-                }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            }
-            
-            // Starter prompts
+        ContentUnavailableView {
+            Label("What's on your mind?", systemImage: "bubble.left.and.text.bubble.right")
+        } description: {
+            Label("Encrypted and only accessible by you", systemImage: "lock.fill")
+        } actions: {
             starterPromptsGrid
-                .padding(.top, 8)
-            
-            Spacer()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
         .onTapGesture {
             dismissSelection()
@@ -302,7 +309,15 @@ struct ChatView: View {
                 isSending: viewModel.isSending,
                 isStreaming: viewModel.isStreaming,
                 canSend: viewModel.canSend,
-                onSend: { Task { await viewModel.sendMessage() } },
+                onSend: {
+                    let isNewChat = viewModel.messages.isEmpty
+                    messageSentTrigger.toggle()
+                    if isNewChat {
+                        isNewChatSendAnimating = true
+                        firstMessageAnimationComplete = false
+                    }
+                    Task { await viewModel.sendMessage() }
+                },
                 onStop: { viewModel.stopStreaming() },
                 isRecording: viewModel.isRecording,
                 onStartRecording: { handleStartRecording() },
@@ -319,9 +334,7 @@ struct ChatView: View {
     
     private func scrollToBottom(_ proxy: ScrollViewProxy) {
         if let lastId = viewModel.messages.last?.id {
-            withAnimation {
-                proxy.scrollTo(lastId, anchor: .bottom)
-            }
+            proxy.scrollTo(lastId, anchor: .bottom)
         }
     }
     

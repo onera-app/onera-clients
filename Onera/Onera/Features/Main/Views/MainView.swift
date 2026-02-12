@@ -279,7 +279,7 @@ struct MainView: View {
                     #elseif os(macOS)
                     NSApp.keyWindow?.makeFirstResponder(nil)
                     #endif
-                    withAnimation(.easeOut(duration: 0.25)) {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                         isDrawerOpen = true
                     }
                 },

@@ -119,8 +119,6 @@ struct MessageBubbleView: View {
                     Button {
                         #if os(iOS)
                         UIPasteboard.general.string = parsedContent.displayContent
-                        let generator = UINotificationFeedbackGenerator()
-                        generator.notificationOccurred(.success)
                         #elseif os(macOS)
                         NSPasteboard.general.clearContents()
                         NSPasteboard.general.setString(parsedContent.displayContent, forType: .string)
@@ -181,16 +179,15 @@ struct MessageBubbleView: View {
     
     // MARK: - Branch Navigation View
     
+    @State private var branchNavTrigger = false
+    
     private func branchNavigationView(current: Int, total: Int) -> some View {
         let isDisabledByStreaming = message.isStreaming
         
         return HStack(spacing: OneraSpacing.xxs) {
             // Previous button
             Button {
-                #if os(iOS)
-                let generator = UIImpactFeedbackGenerator(style: .light)
-                generator.impactOccurred()
-                #endif
+                branchNavTrigger.toggle()
                 onPreviousBranch?()
             } label: {
                 Image(systemName: "chevron.left")
@@ -214,10 +211,7 @@ struct MessageBubbleView: View {
             
             // Next button
             Button {
-                #if os(iOS)
-                let generator = UIImpactFeedbackGenerator(style: .light)
-                generator.impactOccurred()
-                #endif
+                branchNavTrigger.toggle()
                 onNextBranch?()
             } label: {
                 Image(systemName: "chevron.right")
@@ -234,6 +228,7 @@ struct MessageBubbleView: View {
         }
         .foregroundStyle(theme.textSecondary)
         .padding(.leading, OneraSpacing.sm)
+        .sensoryFeedback(.impact(weight: .light), trigger: branchNavTrigger)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Response versions. Version \(current) of \(total)")
     }
@@ -293,8 +288,6 @@ struct MessageBubbleView: View {
                             Button {
                                 #if os(iOS)
                                 UIPasteboard.general.string = message.content
-                                let generator = UINotificationFeedbackGenerator()
-                                generator.notificationOccurred(.success)
                                 #elseif os(macOS)
                                 NSPasteboard.general.clearContents()
                                 NSPasteboard.general.setString(message.content, forType: .string)
@@ -374,10 +367,12 @@ struct MessageBubbleView: View {
             Image(systemName: showCopiedFeedback ? "checkmark" : "doc.on.doc")
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(showCopiedFeedback ? theme.success : theme.textTertiary)
-                .frame(width: 30, height: 30)
+                .contentTransition(.symbolEffect(.replace))
+                .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .sensoryFeedback(.success, trigger: showCopiedFeedback)
         .accessibilityIdentifier("copyButton")
         .accessibilityLabel(showCopiedFeedback ? "Copied to clipboard" : "Copy message")
         .accessibilityHint("Copies the message text to clipboard")
@@ -387,9 +382,6 @@ struct MessageBubbleView: View {
         // Copy to clipboard
         #if os(iOS)
         UIPasteboard.general.string = parsedContent.displayContent
-        // Haptic feedback
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.success)
         #elseif os(macOS)
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(parsedContent.displayContent, forType: .string)
@@ -401,7 +393,9 @@ struct MessageBubbleView: View {
         }
         
         // Auto-dismiss after 2 seconds
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
             withAnimation(OneraAnimation.standard) {
                 showCopiedFeedback = false
             }
@@ -439,7 +433,8 @@ struct MessageBubbleView: View {
             Image(systemName: "arrow.clockwise")
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(isRegenerating ? theme.info : theme.textTertiary)
-                .frame(width: 30, height: 30)
+                .contentTransition(.symbolEffect(.replace))
+                .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
                 .contentShape(Rectangle())
                 .rotationEffect(.degrees(isRegenerating ? 360 : 0))
                 .animateRepeatingIfAllowed(OneraAnimation.rotate, isActive: isRegenerating)
@@ -447,6 +442,7 @@ struct MessageBubbleView: View {
             doRegenerate(modifier: nil)
         }
         .menuStyle(.borderlessButton)
+        .sensoryFeedback(.impact(weight: .medium), trigger: isRegenerating)
         .disabled(isRegenerating)
         .accessibilityIdentifier("regenerateButton")
         .accessibilityLabel(isRegenerating ? "Regenerating response" : "Regenerate response")
@@ -454,12 +450,6 @@ struct MessageBubbleView: View {
     }
     
     private func doRegenerate(modifier: String? = nil) {
-        // Haptic feedback
-        #if os(iOS)
-        let generator = UIImpactFeedbackGenerator(style: .medium)
-        generator.impactOccurred()
-        #endif
-        
         // Show visual feedback
         withAnimation(OneraAnimation.springBouncy) {
             isRegenerating = true
@@ -469,7 +459,9 @@ struct MessageBubbleView: View {
         onRegenerate?(modifier)
         
         // Reset after short delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+        Task {
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled else { return }
             withAnimation(OneraAnimation.standard) {
                 isRegenerating = false
             }
@@ -481,22 +473,18 @@ struct MessageBubbleView: View {
             Image(systemName: isSpeaking ? "stop.fill" : "speaker.wave.2")
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(isSpeaking ? theme.error : theme.textTertiary)
-                .frame(width: 30, height: 30)
+                .contentTransition(.symbolEffect(.replace))
+                .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .sensoryFeedback(.impact(weight: .light), trigger: isSpeaking)
         .accessibilityIdentifier("speakButton")
         .accessibilityLabel(isSpeaking ? "Stop speaking" : "Read aloud")
         .accessibilityHint(isSpeaking ? "Stops text-to-speech" : "Reads the message aloud")
     }
     
     private func doSpeak() {
-        // Haptic feedback
-        #if os(iOS)
-        let generator = UIImpactFeedbackGenerator(style: .light)
-        generator.impactOccurred()
-        #endif
-        
         if isSpeaking {
             onStopSpeaking?()
         } else {
@@ -564,17 +552,23 @@ struct MarkdownContentView: View {
     }
     
     private var streamingPlaceholder: some View {
-        HStack(spacing: OneraSpacing.xs) {
-            ForEach(0..<3, id: \.self) { i in
-                Circle()
-                    .fill(theme.textSecondary)
-                    .frame(width: 5, height: 5)
-                    .opacity(0.6)
-                    .modifier(PulsingDot(delay: Double(i) * 0.15))
+        PhaseAnimator([false, true]) { phase in
+            HStack(spacing: OneraSpacing.xs) {
+                ForEach(0..<3, id: \.self) { i in
+                    Circle()
+                        .fill(theme.textSecondary)
+                        .frame(width: 5, height: 5)
+                        .opacity(phase ? 0.8 : 0.3)
+                        .scaleEffect(phase ? 1.0 : 0.5)
+                        .animation(
+                            .easeInOut(duration: 0.6).delay(Double(i) * 0.15),
+                            value: phase
+                        )
+                }
             }
         }
         .padding(.vertical, OneraSpacing.xs)
-        .transition(.opacity.animation(.easeOut(duration: 0.25)))
+        .transition(.opacity.animation(OneraAnimation.springQuick))
     }
     
     private var streamingCursor: some View {
@@ -591,18 +585,21 @@ struct MarkdownContentView: View {
 struct PulsingDot: ViewModifier {
     let delay: Double
     @State private var isAnimating = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     func body(content: Content) -> some View {
         content
-            .scaleEffect(isAnimating ? 1.0 : 0.5)
-            .opacity(isAnimating ? 0.8 : 0.3)
+            .scaleEffect(reduceMotion ? 1.0 : (isAnimating ? 1.0 : 0.5))
+            .opacity(reduceMotion ? 0.6 : (isAnimating ? 0.8 : 0.3))
             .animation(
-                .easeInOut(duration: 0.6)
-                .repeatForever(autoreverses: true)
-                .delay(delay),
+                reduceMotion ? nil : .easeInOut(duration: 0.6)
+                    .repeatForever(autoreverses: true)
+                    .delay(delay),
                 value: isAnimating
             )
-            .onAppear { isAnimating = true }
+            .onAppear {
+                if !reduceMotion { isAnimating = true }
+            }
     }
 }
 
@@ -627,7 +624,7 @@ struct StreamingBlockFadeIn: ViewModifier {
             .opacity(shouldAnimate ? opacity : 1)
             .onAppear {
                 if shouldAnimate {
-                    withAnimation(.easeOut(duration: 0.35)) {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                         opacity = 1
                     }
                 } else {
@@ -672,6 +669,7 @@ struct MarkdownBlockView: View {
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
                 .lineSpacing(5)
+                .contentTransition(.interpolate)
             
         case let list as UnorderedList:
             VStack(alignment: .leading, spacing: OneraSpacing.sm) {
@@ -998,14 +996,17 @@ struct CodeBlockView: View {
                     HStack(spacing: 3) {
                         Image(systemName: copied ? "checkmark" : "doc.on.doc")
                             .font(.system(size: 11, weight: .medium))
+                            .contentTransition(.symbolEffect(.replace))
                         Text(copied ? "Copied!" : "Copy")
                             .font(.system(size: 11, weight: .medium))
+                            .contentTransition(.interpolate)
                     }
                     .foregroundStyle(copied ? theme.success : theme.textSecondary)
                     .padding(.horizontal, OneraSpacing.sm)
                     .padding(.vertical, OneraSpacing.xxs)
                 }
                 .buttonStyle(.plain)
+                .sensoryFeedback(.success, trigger: copied)
                 .accessibilityIdentifier("codeBlockCopyButton")
                 .accessibilityLabel(copied ? "Code copied to clipboard" : "Copy code")
                 .accessibilityHint("Copies the code block to clipboard")
@@ -1062,9 +1063,6 @@ struct CodeBlockView: View {
     private func copyToClipboard() {
         #if os(iOS)
         UIPasteboard.general.string = code
-        // Haptic feedback
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.success)
         #elseif os(macOS)
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(code, forType: .string)
@@ -1074,7 +1072,9 @@ struct CodeBlockView: View {
             copied = true
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+        Task {
+            try? await Task.sleep(for: .seconds(2.5))
+            guard !Task.isCancelled else { return }
             withAnimation(OneraAnimation.standard) {
                 copied = false
             }
@@ -1150,13 +1150,16 @@ typealias ResponsiveButtonStyle = ActionButtonStyle
 
 struct BlinkingModifier: ViewModifier {
     @State private var isVisible = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     func body(content: Content) -> some View {
         content
-            .opacity(isVisible ? 1 : 0)
+            .opacity(reduceMotion ? 0.7 : (isVisible ? 1 : 0))
             .onAppear {
-                withAnimation(OneraAnimation.blink) {
-                    isVisible.toggle()
+                if !reduceMotion {
+                    withAnimation(OneraAnimation.blink) {
+                        isVisible.toggle()
+                    }
                 }
             }
     }
@@ -1428,19 +1431,20 @@ struct ThinkingDrawerView: View {
 private struct PulsingDotModifier: ViewModifier {
     let delay: Double
     @State private var isAnimating = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     func body(content: Content) -> some View {
         content
-            .scaleEffect(isAnimating ? 1.3 : 0.8)
-            .opacity(isAnimating ? 1 : 0.5)
+            .scaleEffect(reduceMotion ? 1.0 : (isAnimating ? 1.3 : 0.8))
+            .opacity(reduceMotion ? 0.7 : (isAnimating ? 1 : 0.5))
             .animation(
-                .easeInOut(duration: 0.4)
-                .repeatForever()
-                .delay(delay),
+                reduceMotion ? nil : .easeInOut(duration: 0.4)
+                    .repeatForever()
+                    .delay(delay),
                 value: isAnimating
             )
             .onAppear {
-                isAnimating = true
+                if !reduceMotion { isAnimating = true }
             }
     }
 }
@@ -1475,7 +1479,8 @@ struct SelectableTextSheet: View {
     }
 }
 
-/// UITextView wrapper that supports native text selection with handles
+/// UITextView wrapper that renders markdown as attributed text with native text selection handles.
+/// Parses the markdown content so bold, italic, code, links, and headings are styled properly.
 private struct SelectableTextViewRepresentable: UIViewRepresentable {
     let text: String
     
@@ -1483,8 +1488,6 @@ private struct SelectableTextViewRepresentable: UIViewRepresentable {
         let textView = UITextView()
         textView.isEditable = false
         textView.isSelectable = true
-        textView.font = .preferredFont(forTextStyle: .body)
-        textView.textColor = .label
         textView.backgroundColor = .clear
         textView.textContainerInset = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
         textView.dataDetectorTypes = [.link, .phoneNumber]
@@ -1493,7 +1496,47 @@ private struct SelectableTextViewRepresentable: UIViewRepresentable {
     }
     
     func updateUIView(_ textView: UITextView, context: Context) {
-        textView.text = text
+        // Attempt markdown → NSAttributedString via the system parser
+        if let markdownAttr = try? NSAttributedString(
+            markdown: text,
+            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        ) {
+            // Re-style with Dynamic Type body font and label color
+            let mutable = NSMutableAttributedString(attributedString: markdownAttr)
+            let fullRange = NSRange(location: 0, length: mutable.length)
+            mutable.addAttribute(.font, value: UIFont.preferredFont(forTextStyle: .body), range: fullRange)
+            mutable.addAttribute(.foregroundColor, value: UIColor.label, range: fullRange)
+            // Preserve bold/italic from the markdown parse by re-enumerating
+            markdownAttr.enumerateAttribute(.font, in: fullRange) { value, range, _ in
+                guard let font = value as? UIFont else { return }
+                let traits = font.fontDescriptor.symbolicTraits
+                var descriptor = UIFont.preferredFont(forTextStyle: .body).fontDescriptor
+                if traits.contains(.traitBold) || traits.contains(.traitItalic) {
+                    var newTraits: UIFontDescriptor.SymbolicTraits = []
+                    if traits.contains(.traitBold) { newTraits.insert(.traitBold) }
+                    if traits.contains(.traitItalic) { newTraits.insert(.traitItalic) }
+                    if let boldItalicDescriptor = descriptor.withSymbolicTraits(newTraits) {
+                        descriptor = boldItalicDescriptor
+                    }
+                    mutable.addAttribute(.font, value: UIFont(descriptor: descriptor, size: 0), range: range)
+                }
+                // Monospace (inline code)
+                if font.fontDescriptor.symbolicTraits.contains(.traitMonoSpace) {
+                    let monoFont = UIFont.monospacedSystemFont(
+                        ofSize: UIFont.preferredFont(forTextStyle: .body).pointSize * 0.9,
+                        weight: .regular
+                    )
+                    mutable.addAttribute(.font, value: monoFont, range: range)
+                    mutable.addAttribute(.backgroundColor, value: UIColor.secondarySystemBackground, range: range)
+                }
+            }
+            textView.attributedText = mutable
+        } else {
+            // Fallback to plain text
+            textView.font = .preferredFont(forTextStyle: .body)
+            textView.textColor = .label
+            textView.text = text
+        }
     }
 }
 #endif

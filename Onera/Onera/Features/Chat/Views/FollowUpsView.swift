@@ -14,6 +14,8 @@ struct FollowUpsView: View {
     
     @Environment(\.colorScheme) private var colorScheme
     
+    @State private var appeared = false
+    
     var body: some View {
         if !followUps.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
@@ -22,14 +24,24 @@ struct FollowUpsView: View {
                     .foregroundStyle(.secondary)
                 
                 FlowLayout(spacing: 8) {
-                    ForEach(followUps, id: \.self) { followUp in
+                    ForEach(Array(followUps.enumerated()), id: \.element) { index, followUp in
                         FollowUpPill(text: followUp) {
                             onSelect(followUp)
                         }
+                        .opacity(appeared ? 1 : 0)
+                        .offset(y: appeared ? 0 : 8)
+                        .scaleEffect(appeared ? 1 : 0.9)
+                        .animation(
+                            .spring(response: 0.4, dampingFraction: 0.8).delay(Double(index) * 0.06),
+                            value: appeared
+                        )
                     }
                 }
             }
             .padding(.top, 8)
+            .onAppear {
+                appeared = true
+            }
         }
     }
 }
@@ -61,8 +73,9 @@ private struct FollowUpPill: View {
                 )
         }
         .buttonStyle(.plain)
+        .sensoryFeedback(.impact(weight: .light), trigger: isHovered)
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
+            withAnimation(OneraAnimation.springQuick) {
                 isHovered = hovering
             }
         }

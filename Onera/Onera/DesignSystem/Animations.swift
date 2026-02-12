@@ -209,6 +209,59 @@ extension View {
     }
 }
 
+// MARK: - v0-Style New Chat Message Animator
+
+/// Inspired by v0 iOS app: animates the first user message from center to top,
+/// then fades in the first assistant message with a staggered delay.
+/// Only active when `isNewChatSendAnimating` is true (first message in a new chat).
+struct NewChatMessageAnimator: ViewModifier {
+    let index: Int
+    let isUser: Bool
+    let isNewChatSendAnimating: Bool
+    @Binding var firstMessageAnimationComplete: Bool
+    let onAnimationDone: () -> Void
+    
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var appeared = false
+    
+    func body(content: Content) -> some View {
+        if reduceMotion || !isNewChatSendAnimating {
+            // No animation: show content immediately
+            content
+                .onAppear {
+                    if isNewChatSendAnimating && index == 0 {
+                        firstMessageAnimationComplete = true
+                        onAnimationDone()
+                    }
+                }
+        } else if index == 0 && isUser {
+            // First user message: slide from center to top with spring
+            content
+                .opacity(appeared ? 1 : 0)
+                .offset(y: appeared ? 0 : 120)
+                .scaleEffect(appeared ? 1 : 0.95)
+                .onAppear {
+                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                        appeared = true
+                    }
+                    // Signal animation completion after spring settles
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(500))
+                        firstMessageAnimationComplete = true
+                        onAnimationDone()
+                    }
+                }
+        } else if index == 1 && !isUser {
+            // First assistant message: fade in after user message animation
+            content
+                .opacity(firstMessageAnimationComplete ? 1 : 0)
+                .animation(.spring(response: 0.4, dampingFraction: 0.85), value: firstMessageAnimationComplete)
+        } else {
+            content
+        }
+    }
+}
+
 // MARK: - Accessibility Helper View
 
 /// A wrapper that provides static alternative content when Reduce Motion is enabled
