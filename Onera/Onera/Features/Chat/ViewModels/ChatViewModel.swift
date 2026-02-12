@@ -514,9 +514,12 @@ final class ChatViewModel {
         }
         responseBranches[userMessage.id] = existingBranches
         
-        // Remove the assistant message and everything after it from chat
-        // but keep the user message
+        // Remove the assistant message and everything after it, then immediately
+        // re-add a streaming placeholder in one batch to avoid blank screen flash
         chat.messages = Array(chat.messages.prefix(index))
+        
+        // Set current branch index to point to the upcoming new response
+        currentBranchIndex[userMessage.id] = existingBranches.count
         
         // If a modifier is provided, temporarily append it to the user message content
         // (matching web behavior: userContent + "\n\n" + modifier)
@@ -525,7 +528,7 @@ final class ChatViewModel {
             chat.messages[userMessageIndex].content = originalContent + "\n\n" + modifier
             self.chat = chat
             
-            // Stream with modified content
+            // Stream with modified content (appends streaming placeholder internally)
             await streamLLMResponse()
             
             // Restore original user message content (modifier is transient, not persisted)
@@ -561,12 +564,20 @@ final class ChatViewModel {
         }
         
         let userMessageId = chat.messages[messageIndex - 1].id
-        guard let branches = responseBranches[userMessageId], branches.count > 1 else {
+        guard let branches = responseBranches[userMessageId], !branches.isEmpty else {
             return nil
         }
         
+        // During regeneration, the current message is a new streaming response
+        // that hasn't been added to branches yet. Count it as +1.
+        let currentMsg = chat.messages[messageIndex]
+        let isRegenerating = currentMsg.isStreaming && !branches.contains(where: { $0.id == currentMsg.id })
+        let totalCount = branches.count + (isRegenerating ? 1 : 0)
+        
+        guard totalCount > 1 else { return nil }
+        
         let currentIdx = currentBranchIndex[userMessageId] ?? (branches.count - 1)
-        return (current: currentIdx + 1, total: branches.count)
+        return (current: min(currentIdx + 1, totalCount), total: totalCount)
     }
     
     /// Switch to previous response branch

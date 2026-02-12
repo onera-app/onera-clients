@@ -34,6 +34,8 @@
 		B1AE870F2F2B8AFB004FE3D7 /* Highlightr in Frameworks */ = {isa = PBXBuildFile; productRef = E2E6118F4D3ED82A14A3D312 /* Highlightr */; };
 		B1AE87102F2B8AFB004FE3D7 /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* SocketIO */; };
 		B1AE880F2F2B8B5B004FE3D7 /* Onera-watchOS Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = B1AE88052F2B8B5B004FE3D7 /* Onera-watchOS Watch App.app */; platformFilters = (ios, watchos, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B1F364272F3D97E0003592EA /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = B1F364262F3D97E0003592EA /* Markdown */; };
+		C1A2B3C4D5E6F7A8B9C0D1E3 /* Textual in Frameworks */ = {isa = PBXBuildFile; productRef = C1A2B3C4D5E6F7A8B9C0D1E4 /* Textual */; };
 		B7DE419C622688B075992B1B /* SettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94C73529DE8D6F5523368BC6 /* SettingsTests.swift */; };
 		D2E4BBA1E49AED8F51C27A8D /* AuthenticationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30903014009C0294EFF5CB49 /* AuthenticationTests.swift */; };
 /* End PBXBuildFile section */
@@ -133,6 +135,8 @@
 				B1AE870F2F2B8AFB004FE3D7 /* Highlightr in Frameworks */,
 				B1AE87102F2B8AFB004FE3D7 /* SocketIO in Frameworks */,
 				B1AE870E2F2B8AFB004FE3D7 /* XAIProvider in Frameworks */,
+				B1F364272F3D97E0003592EA /* Markdown in Frameworks */,
+				C1A2B3C4D5E6F7A8B9C0D1E3 /* Textual in Frameworks */,
 				B1AE870D2F2B8AFB004FE3D7 /* SwiftAISDK in Frameworks */,
 				B1AE870C2F2B8AFB004FE3D7 /* PerplexityProvider in Frameworks */,
 				B1AE870B2F2B8AFB004FE3D7 /* OpenAIProvider in Frameworks */,
@@ -300,6 +304,8 @@
 				531D546BE67674E3B633CF82 /* XAIProvider */,
 				E2E6118F4D3ED82A14A3D312 /* Highlightr */,
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* SocketIO */,
+				B1F364262F3D97E0003592EA /* Markdown */,
+				C1A2B3C4D5E6F7A8B9C0D1E4 /* Textual */,
 			);
 			productName = Onera;
 			productReference = EAB5AAF92F2B7F0500C79D0F /* Onera.app */;
@@ -339,6 +345,8 @@
 				470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */,
 				33DC0EB0FDA6FC390D0A8AC1 /* XCRemoteSwiftPackageReference "Highlightr" */,
 				F1A2B3C4D5E6F7A8B9C0D1E2 /* XCRemoteSwiftPackageReference "socket" */,
+				B1F364252F3D97E0003592EA /* XCRemoteSwiftPackageReference "swift-markdown" */,
+				C1A2B3C4D5E6F7A8B9C0D1E5 /* XCRemoteSwiftPackageReference "textual" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = EAB5AAFA2F2B7F0500C79D0F /* Products */;
@@ -815,6 +823,14 @@
 				minimumVersion = 0.5.8;
 			};
 		};
+		B1F364252F3D97E0003592EA /* XCRemoteSwiftPackageReference "swift-markdown" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/swiftlang/swift-markdown";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.7.3;
+			};
+		};
 		D5F4AB44F79B7E39A87510B9 /* XCRemoteSwiftPackageReference "BIP39" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pengpengliu/BIP39";
@@ -845,6 +861,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 0.10.0;
+			};
+		};
+		C1A2B3C4D5E6F7A8B9C0D1E5 /* XCRemoteSwiftPackageReference "textual" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gonzalezreal/textual";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.3.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -920,6 +944,11 @@
 			package = F1A2B3C4D5E6F7A8B9C0D1E2 /* XCRemoteSwiftPackageReference "socket" */;
 			productName = SocketIO;
 		};
+		B1F364262F3D97E0003592EA /* Markdown */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B1F364252F3D97E0003592EA /* XCRemoteSwiftPackageReference "swift-markdown" */;
+			productName = Markdown;
+		};
 		B4CC7F5CE75AE58070DAC148 /* GoogleProvider */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
@@ -964,6 +993,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
 			productName = DeepSeekProvider;
+		};
+		C1A2B3C4D5E6F7A8B9C0D1E4 /* Textual */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C1A2B3C4D5E6F7A8B9C0D1E5 /* XCRemoteSwiftPackageReference "textual" */;
+			productName = Textual;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -7,11 +7,21 @@
 
 import SwiftUI
 import Highlightr
+import Markdown
+import Textual
 #if os(iOS)
 import UIKit
 #elseif os(macOS)
 import AppKit
 #endif
+
+// MARK: - Renderer Selection
+
+/// Which markdown renderer to use (for A/B testing)
+enum MarkdownRenderer: String, CaseIterable {
+    case custom = "Custom"
+    case textual = "Textual"
+}
 
 struct MessageBubbleView: View {
     
@@ -29,6 +39,7 @@ struct MessageBubbleView: View {
     var onNextBranch: (() -> Void)?
     
     @Environment(\.theme) private var theme
+    @AppStorage("markdownRenderer") private var markdownRenderer: MarkdownRenderer = .custom
     @State private var isEditing = false
     @State private var editText = ""
     @State private var showCopiedFeedback = false
@@ -85,15 +96,22 @@ struct MessageBubbleView: View {
                         AttachmentsView(attachments: message.attachments)
                     }
                     
-                    // Action buttons row (ChatGPT style)
-                    if !message.isStreaming {
+                    // Branch navigation — always visible (even during streaming)
+                    // so users can switch back to older responses
+                    if let branch = branchInfo, branch.total > 1 {
+                        HStack(spacing: 0) {
+                            if !message.isStreaming {
+                                assistantActionButtons
+                            }
+                            branchNavigationView(current: branch.current, total: branch.total)
+                            if message.isStreaming {
+                                Spacer()
+                            }
+                        }
+                    } else if !message.isStreaming {
+                        // No branches — just show action buttons
                         HStack(spacing: 0) {
                             assistantActionButtons
-                            
-                            // Branch navigation (if multiple versions exist)
-                            if let branch = branchInfo, branch.total > 1 {
-                                branchNavigationView(current: branch.current, total: branch.total)
-                            }
                         }
                     }
                 }
@@ -129,6 +147,28 @@ struct MessageBubbleView: View {
                             )
                         }
                     }
+                    
+                    Divider()
+                    
+                    // Renderer toggle for A/B testing
+                    Menu {
+                        ForEach(MarkdownRenderer.allCases, id: \.self) { renderer in
+                            Button {
+                                markdownRenderer = renderer
+                            } label: {
+                                if markdownRenderer == renderer {
+                                    Label(renderer.rawValue, systemImage: "checkmark")
+                                } else {
+                                    Text(renderer.rawValue)
+                                }
+                            }
+                        }
+                    } label: {
+                        Label(
+                            "Renderer: \(markdownRenderer.rawValue)",
+                            systemImage: "paintbrush"
+                        )
+                    }
                 }
                 #if os(iOS)
                 .sheet(isPresented: $showTextSelection) {
@@ -142,7 +182,9 @@ struct MessageBubbleView: View {
     // MARK: - Branch Navigation View
     
     private func branchNavigationView(current: Int, total: Int) -> some View {
-        HStack(spacing: OneraSpacing.xxs) {
+        let isDisabledByStreaming = message.isStreaming
+        
+        return HStack(spacing: OneraSpacing.xxs) {
             // Previous button
             Button {
                 #if os(iOS)
@@ -157,8 +199,8 @@ struct MessageBubbleView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(current <= 1)
-            .opacity(current > 1 ? 1 : 0.3)
+            .disabled(current <= 1 || isDisabledByStreaming)
+            .opacity(current > 1 && !isDisabledByStreaming ? 1 : 0.3)
             .accessibilityIdentifier("branchPrevious")
             .accessibilityLabel("Previous response version")
             .accessibilityHint(current > 1 ? "Shows version \(current - 1) of \(total)" : "No previous version available")
@@ -184,8 +226,8 @@ struct MessageBubbleView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(current >= total)
-            .opacity(current < total ? 1 : 0.3)
+            .disabled(current >= total || isDisabledByStreaming)
+            .opacity(current < total && !isDisabledByStreaming ? 1 : 0.3)
             .accessibilityIdentifier("branchNext")
             .accessibilityLabel("Next response version")
             .accessibilityHint(current < total ? "Shows version \(current + 1) of \(total)" : "No next version available")
@@ -309,25 +351,20 @@ struct MessageBubbleView: View {
     // MARK: - Subviews
     
     private var assistantActionButtons: some View {
-        HStack(spacing: OneraSpacing.sm) {
-            // Copy button with feedback
+        HStack(spacing: OneraSpacing.xxs) {
             copyButton
             
-            // Regenerate button
             if onRegenerate != nil {
                 regenerateButton
             }
             
-            // Read aloud button
             if onSpeak != nil || onStopSpeaking != nil {
                 speakButton
             }
             
             Spacer()
         }
-        .frame(minHeight: 44)
-        .padding(.top, OneraSpacing.sm)
-        .padding(.bottom, OneraSpacing.xxs)
+        .padding(.top, OneraSpacing.xs)
         .contentShape(Rectangle())
         .zIndex(1)
     }
@@ -335,15 +372,12 @@ struct MessageBubbleView: View {
     private var copyButton: some View {
         Button(action: doCopy) {
             Image(systemName: showCopiedFeedback ? "checkmark" : "doc.on.doc")
-                .font(OneraTypography.iconLabel)
-                .foregroundStyle(showCopiedFeedback ? theme.success : theme.textSecondary)
-                .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
-                .background(showCopiedFeedback ? theme.success.opacity(0.15) : theme.secondaryBackground)
-                .clipShape(Circle())
-                .animateBouncyWithReducedMotion(value: showCopiedFeedback)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(showCopiedFeedback ? theme.success : theme.textTertiary)
+                .frame(width: 30, height: 30)
+                .contentShape(Rectangle())
         }
-        .buttonStyle(ActionButtonStyle())
-        .contentShape(Circle())
+        .buttonStyle(.plain)
         .accessibilityIdentifier("copyButton")
         .accessibilityLabel(showCopiedFeedback ? "Copied to clipboard" : "Copy message")
         .accessibilityHint("Copies the message text to clipboard")
@@ -403,18 +437,16 @@ struct MessageBubbleView: View {
             }
         } label: {
             Image(systemName: "arrow.clockwise")
-                .font(OneraTypography.iconLabel)
-                .foregroundStyle(isRegenerating ? theme.info : theme.textSecondary)
-                .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
-                .background(isRegenerating ? theme.info.opacity(0.15) : theme.secondaryBackground)
-                .clipShape(Circle())
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(isRegenerating ? theme.info : theme.textTertiary)
+                .frame(width: 30, height: 30)
+                .contentShape(Rectangle())
                 .rotationEffect(.degrees(isRegenerating ? 360 : 0))
                 .animateRepeatingIfAllowed(OneraAnimation.rotate, isActive: isRegenerating)
         } primaryAction: {
             doRegenerate(modifier: nil)
         }
         .menuStyle(.borderlessButton)
-        .contentShape(Circle())
         .disabled(isRegenerating)
         .accessibilityIdentifier("regenerateButton")
         .accessibilityLabel(isRegenerating ? "Regenerating response" : "Regenerate response")
@@ -447,14 +479,12 @@ struct MessageBubbleView: View {
     private var speakButton: some View {
         Button(action: doSpeak) {
             Image(systemName: isSpeaking ? "stop.fill" : "speaker.wave.2")
-                .font(OneraTypography.iconLabel)
-                .foregroundStyle(isSpeaking ? theme.error : theme.textSecondary)
-                .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
-                .background(isSpeaking ? theme.error.opacity(0.15) : theme.secondaryBackground)
-                .clipShape(Circle())
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(isSpeaking ? theme.error : theme.textTertiary)
+                .frame(width: 30, height: 30)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .contentShape(Circle())
         .accessibilityIdentifier("speakButton")
         .accessibilityLabel(isSpeaking ? "Stop speaking" : "Read aloud")
         .accessibilityHint(isSpeaking ? "Stops text-to-speech" : "Reads the message aloud")
@@ -475,45 +505,76 @@ struct MessageBubbleView: View {
     }
 }
 
-// MARK: - Markdown Content View with Code Block Detection
+// MARK: - Markdown Content View (swift-markdown AST)
 
 struct MarkdownContentView: View {
     @Environment(\.theme) private var theme
+    @AppStorage("markdownRenderer") private var renderer: MarkdownRenderer = .custom
     let content: String
     let isStreaming: Bool
+    
+    private var document: Document {
+        Document(parsing: content)
+    }
     
     var body: some View {
         if content.isEmpty && isStreaming {
             streamingPlaceholder
         } else {
-            VStack(alignment: .leading, spacing: OneraSpacing.md) {
-                // Parse and render content blocks
-                ForEach(Array(parseContent().enumerated()), id: \.offset) { index, block in
-                    switch block {
-                    case .text(let text):
-                        NativeMarkdownText(text: text)
-                    case .code(let code, let language):
-                        CodeBlockView(code: code, language: language)
-                    }
-                }
-                
-                if isStreaming {
-                    streamingCursor
-                }
+            switch renderer {
+            case .custom:
+                customRendererView
+            case .textual:
+                textualRendererView
+            }
+        }
+    }
+    
+    // MARK: - Custom Renderer (swift-markdown AST)
+    
+    private var customRendererView: some View {
+        VStack(alignment: .leading, spacing: OneraSpacing.xl) {
+            ForEach(Array(document.children.enumerated()), id: \.offset) { index, child in
+                MarkdownBlockView(block: child)
+                    .modifier(StreamingBlockFadeIn(
+                        isStreaming: isStreaming,
+                        blockIndex: index,
+                        totalBlocks: document.childCount
+                    ))
+            }
+            if isStreaming {
+                streamingCursor
+            }
+        }
+    }
+    
+    // MARK: - Textual Renderer (gonzalezreal/textual)
+    
+    private var textualRendererView: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            StructuredText(markdown: content)
+                .font(OneraTypography.body)
+                .foregroundStyle(theme.textPrimary)
+                .textual.textSelection(.enabled)
+                .textual.structuredTextStyle(.gitHub)
+            if isStreaming {
+                streamingCursor
             }
         }
     }
     
     private var streamingPlaceholder: some View {
-        HStack(spacing: OneraSpacing.xxs) {
-            ForEach(0..<3, id: \.self) { _ in
+        HStack(spacing: OneraSpacing.xs) {
+            ForEach(0..<3, id: \.self) { i in
                 Circle()
                     .fill(theme.textSecondary)
-                    .frame(width: 6, height: 6)
-                    .opacity(0.5)
+                    .frame(width: 5, height: 5)
+                    .opacity(0.6)
+                    .modifier(PulsingDot(delay: Double(i) * 0.15))
             }
         }
-        .padding(.vertical, OneraSpacing.xxs)
+        .padding(.vertical, OneraSpacing.xs)
+        .transition(.opacity.animation(.easeOut(duration: 0.25)))
     }
     
     private var streamingCursor: some View {
@@ -523,96 +584,394 @@ struct MarkdownContentView: View {
             .opacity(0.7)
             .modifier(BlinkingModifier())
     }
+}
+
+// MARK: - Pulsing Dot Animation
+
+struct PulsingDot: ViewModifier {
+    let delay: Double
+    @State private var isAnimating = false
     
-    // Parse markdown content into text and code blocks
-    private func parseContent() -> [ContentBlock] {
-        var blocks: [ContentBlock] = []
-        let pattern = "```(\\w*)\\n([\\s\\S]*?)```"
-        
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
-            return [.text(content)]
-        }
-        
-        let nsContent = content as NSString
-        let matches = regex.matches(in: content, options: [], range: NSRange(location: 0, length: nsContent.length))
-        
-        var lastEnd = 0
-        
-        for match in matches {
-            // Text before code block
-            if match.range.location > lastEnd {
-                let textRange = NSRange(location: lastEnd, length: match.range.location - lastEnd)
-                let text = nsContent.substring(with: textRange).trimmingCharacters(in: .whitespacesAndNewlines)
-                if !text.isEmpty {
-                    blocks.append(.text(text))
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isAnimating ? 1.0 : 0.5)
+            .opacity(isAnimating ? 0.8 : 0.3)
+            .animation(
+                .easeInOut(duration: 0.6)
+                .repeatForever(autoreverses: true)
+                .delay(delay),
+                value: isAnimating
+            )
+            .onAppear { isAnimating = true }
+    }
+}
+
+// MARK: - Streaming Block Fade In (v0-style staggered animation)
+
+/// Fades in new markdown blocks as they appear during streaming.
+/// Only the last few blocks animate — earlier blocks are already visible.
+struct StreamingBlockFadeIn: ViewModifier {
+    let isStreaming: Bool
+    let blockIndex: Int
+    let totalBlocks: Int
+    
+    @State private var opacity: Double = 0
+    
+    /// Only animate blocks near the end of the content (the "new" ones)
+    private var shouldAnimate: Bool {
+        isStreaming && blockIndex >= totalBlocks - 2
+    }
+    
+    func body(content: Content) -> some View {
+        content
+            .opacity(shouldAnimate ? opacity : 1)
+            .onAppear {
+                if shouldAnimate {
+                    withAnimation(.easeOut(duration: 0.35)) {
+                        opacity = 1
+                    }
+                } else {
+                    opacity = 1
+                }
+            }
+            .onChange(of: totalBlocks) { _, _ in
+                // When new blocks arrive, this block is no longer "last" — snap to full opacity
+                if !shouldAnimate {
+                    opacity = 1
+                }
+            }
+    }
+}
+
+// MARK: - Block Renderer
+
+/// Renders a single Markdown AST block node as a SwiftUI view.
+struct MarkdownBlockView: View {
+    @Environment(\.theme) private var theme
+    let block: any Markup
+    
+    var body: some View {
+        renderBlock(block)
+    }
+    
+    @ViewBuilder
+    private func renderBlock(_ node: any Markup) -> some View {
+        switch node {
+        case let heading as Heading:
+            Text(InlineRenderer.render(heading, theme: theme))
+                .font(headingFont(for: heading.level))
+                .foregroundStyle(theme.textPrimary)
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, OneraSpacing.xs)
+            
+        case let paragraph as Paragraph:
+            Text(InlineRenderer.render(paragraph, theme: theme))
+                .font(OneraTypography.callout)
+                .foregroundStyle(theme.textPrimary)
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
+                .lineSpacing(5)
+            
+        case let list as UnorderedList:
+            VStack(alignment: .leading, spacing: OneraSpacing.sm) {
+                ForEach(Array(list.listItems.enumerated()), id: \.offset) { _, item in
+                    HStack(alignment: .firstTextBaseline, spacing: OneraSpacing.sm) {
+                        Text("•")
+                            .font(OneraTypography.callout)
+                            .foregroundStyle(theme.textSecondary)
+                        VStack(alignment: .leading, spacing: OneraSpacing.sm) {
+                            ForEach(Array(item.children.enumerated()), id: \.offset) { _, child in
+                                renderListChild(child)
+                            }
+                        }
+                    }
                 }
             }
             
-            // Code block
-            let languageRange = match.range(at: 1)
-            let codeRange = match.range(at: 2)
-            
-            let language = languageRange.length > 0 ? nsContent.substring(with: languageRange) : nil
-            let code = nsContent.substring(with: codeRange)
-            
-            blocks.append(.code(code, language))
-            
-            lastEnd = match.range.location + match.range.length
-        }
-        
-        // Remaining text after last code block
-        if lastEnd < nsContent.length {
-            let text = nsContent.substring(from: lastEnd).trimmingCharacters(in: .whitespacesAndNewlines)
-            if !text.isEmpty {
-                blocks.append(.text(text))
+        case let list as OrderedList:
+            VStack(alignment: .leading, spacing: OneraSpacing.sm) {
+                ForEach(Array(list.listItems.enumerated()), id: \.offset) { idx, item in
+                    HStack(alignment: .firstTextBaseline, spacing: OneraSpacing.sm) {
+                        Text("\(Int(list.startIndex) + idx).")
+                            .font(OneraTypography.callout)
+                            .foregroundStyle(theme.textSecondary)
+                            .frame(minWidth: 20, alignment: .trailing)
+                        VStack(alignment: .leading, spacing: OneraSpacing.sm) {
+                            ForEach(Array(item.children.enumerated()), id: \.offset) { _, child in
+                                renderListChild(child)
+                            }
+                        }
+                    }
+                }
             }
+            
+        case let quote as BlockQuote:
+            HStack(alignment: .top, spacing: OneraSpacing.sm) {
+                Rectangle()
+                    .fill(theme.textSecondary.opacity(0.5))
+                    .frame(width: 3)
+                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.small))
+                VStack(alignment: .leading, spacing: OneraSpacing.xs) {
+                    ForEach(Array(quote.children.enumerated()), id: \.offset) { _, child in
+                        MarkdownBlockView(block: child)
+                    }
+                }
+            }
+            .padding(.vertical, OneraSpacing.xs)
+            
+        case let codeBlock as CodeBlock:
+            CodeBlockView(
+                code: codeBlock.code.hasSuffix("\n")
+                    ? String(codeBlock.code.dropLast())
+                    : codeBlock.code,
+                language: codeBlock.language
+            )
+            
+        case let table as Markdown.Table:
+            MarkdownTableView(table: table)
+            
+        case is ThematicBreak:
+            Divider().padding(.vertical, OneraSpacing.xs)
+            
+        default:
+            // HTMLBlock or other unsupported nodes – render as plain text
+            // Use plainText where available; avoid format() which crashes on table sub-nodes
+            Text(InlineRenderer.extractPlainText(from: node))
+                .font(OneraTypography.callout)
+                .foregroundStyle(theme.textPrimary)
         }
-        
-        // If no blocks found, treat entire content as text
-        if blocks.isEmpty {
-            blocks.append(.text(content))
+    }
+    
+    @ViewBuilder
+    private func renderListChild(_ child: any Markup) -> some View {
+        if let p = child as? Paragraph {
+            Text(InlineRenderer.render(p, theme: theme))
+                .font(OneraTypography.callout)
+                .foregroundStyle(theme.textPrimary)
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
+        } else if child is UnorderedList || child is OrderedList {
+            MarkdownBlockView(block: child)
+                .padding(.leading, OneraSpacing.md)
+        } else {
+            MarkdownBlockView(block: child)
         }
-        
-        return blocks
+    }
+    
+    private func headingFont(for level: Int) -> Font {
+        switch level {
+        case 1: return OneraTypography.title2.weight(.semibold)
+        case 2: return OneraTypography.title3.weight(.semibold)
+        case 3: return OneraTypography.headline.weight(.medium)
+        default: return OneraTypography.subheadline.weight(.medium)
+        }
     }
 }
 
-enum ContentBlock {
-    case text(String)
-    case code(String, String?) // code, language
+// MARK: - Inline Renderer (Markup → AttributedString)
+
+/// Walks Markdown AST nodes and builds a styled AttributedString from inline content.
+/// Recursively descends into block containers (e.g. Paragraph inside Table.Cell) to find inline nodes.
+enum InlineRenderer {
+    static func render(_ container: any Markup, theme: any ThemeColors) -> AttributedString {
+        var result = AttributedString()
+        collectInlines(from: container, into: &result, theme: theme)
+        if result.characters.isEmpty {
+            // Safe plain text fallback – avoid format() which crashes on Table.Cell nodes
+            // Use plainText if available (InlineMarkup, InlineContainer, Table.Cell, Heading, Paragraph)
+            let plain: String
+            if let ptc = container as? any PlainTextConvertibleMarkup {
+                plain = ptc.plainText
+            } else {
+                // Last resort: collect text by walking children manually
+                plain = extractPlainText(from: container)
+            }
+            let trimmed = plain.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                var fallback = AttributedString(trimmed)
+                fallback.foregroundColor = theme.textPrimary
+                return fallback
+            }
+        }
+        return result
+    }
+    
+    /// Recursively extract plain text from any Markup node without using format().
+    static func extractPlainText(from node: any Markup) -> String {
+        if let ptc = node as? any PlainTextConvertibleMarkup {
+            return ptc.plainText
+        }
+        return node.children.map { extractPlainText(from: $0) }.joined()
+    }
+    
+    /// Recursively walk children – render InlineMarkup directly, descend into block containers.
+    private static func collectInlines(from node: any Markup, into result: inout AttributedString, theme: any ThemeColors) {
+        for child in node.children {
+            if let inline = child as? any InlineMarkup {
+                result.append(renderInline(inline, theme: theme))
+            } else {
+                // Block child (e.g. Paragraph inside a ListItem or Table.Cell) – recurse
+                collectInlines(from: child, into: &result, theme: theme)
+            }
+        }
+    }
+    
+    private static func renderInline(_ node: any InlineMarkup, theme: any ThemeColors) -> AttributedString {
+        switch node {
+        case let text as Markdown.Text:
+            var s = AttributedString(text.string)
+            s.foregroundColor = theme.textPrimary
+            return s
+            
+        case let strong as Strong:
+            var s = inlineChildren(of: strong, theme: theme)
+            s.font = OneraTypography.callout.weight(.semibold)
+            return s
+            
+        case let em as Emphasis:
+            var s = inlineChildren(of: em, theme: theme)
+            s.font = OneraTypography.callout.italic()
+            return s
+            
+        case let code as InlineCode:
+            var s = AttributedString(code.code)
+            s.font = .system(.callout, design: .monospaced)
+            s.backgroundColor = theme.secondaryBackground
+            s.foregroundColor = theme.textPrimary
+            return s
+            
+        case let link as Markdown.Link:
+            var s = inlineChildren(of: link, theme: theme)
+            if let dest = link.destination { s.link = URL(string: dest) }
+            s.foregroundColor = theme.accent
+            s.underlineStyle = .single
+            return s
+            
+        case let strike as Strikethrough:
+            var s = inlineChildren(of: strike, theme: theme)
+            s.strikethroughStyle = .single
+            return s
+            
+        case is SoftBreak:
+            return AttributedString(" ")
+            
+        case is LineBreak:
+            return AttributedString("\n")
+            
+        case let img as Markdown.Image:
+            var s = AttributedString(img.title ?? img.source ?? "image")
+            s.foregroundColor = theme.accent
+            return s
+            
+        default:
+            // Safe plain-text extraction for unknown inline types
+            var s = AttributedString(node.plainText)
+            s.foregroundColor = theme.textPrimary
+            return s
+        }
+    }
+    
+    private static func inlineChildren(of node: any Markup, theme: any ThemeColors) -> AttributedString {
+        var result = AttributedString()
+        for child in node.children {
+            if let inline = child as? any InlineMarkup {
+                result.append(renderInline(inline, theme: theme))
+            }
+        }
+        return result
+    }
 }
 
-// MARK: - Native Markdown Text (Replaces Textual)
+// MARK: - Table View
 
-/// Native SwiftUI markdown text view using AttributedString
-struct NativeMarkdownText: View {
+struct MarkdownTableView: View {
     @Environment(\.theme) private var theme
-    let text: String
+    let table: Markdown.Table
     
-    private var attributedText: AttributedString {
-        do {
-            var attributed = try AttributedString(markdown: text, options: .init(
-                allowsExtendedAttributes: true,
-                interpretedSyntax: .inlineOnlyPreservingWhitespace,
-                failurePolicy: .returnPartiallyParsedIfPossible
-            ))
-            // Apply theme colors
-            attributed.foregroundColor = theme.textPrimary
-            return attributed
-        } catch {
-            // Fallback to plain text if markdown parsing fails
-            return AttributedString(text)
-        }
+    private var columnCount: Int {
+        Array(table.head.cells).count
+    }
+    
+    private var alignments: [Markdown.Table.ColumnAlignment?] {
+        table.columnAlignments
     }
     
     var body: some View {
-        Text(attributedText)
-            .textSelection(.enabled)
-            .fixedSize(horizontal: false, vertical: true)
+        let bodyRows = Array(table.body.rows)
+        
+        ScrollView(.horizontal, showsIndicators: false) {
+            Grid(alignment: .leading, horizontalSpacing: 0, verticalSpacing: 0) {
+                // Header row
+                GridRow {
+                    ForEach(Array(table.head.cells.enumerated()), id: \.offset) { col, cell in
+                        Text(InlineRenderer.render(cell, theme: theme))
+                            .font(OneraTypography.footnote.weight(.semibold))
+                            .foregroundStyle(theme.textPrimary)
+                            .frame(
+                                maxWidth: .infinity,
+                                alignment: gridAlignment(for: col)
+                            )
+                            .padding(.horizontal, OneraSpacing.md)
+                            .padding(.vertical, OneraSpacing.compact)
+                    }
+                }
+                .background(theme.secondaryBackground.opacity(0.8))
+                
+                // Separator under header
+                Divider()
+                    .gridCellUnsizedAxes(.horizontal)
+                
+                // Body rows
+                ForEach(Array(bodyRows.enumerated()), id: \.offset) { rowIdx, row in
+                    GridRow {
+                        ForEach(Array(row.cells.enumerated()), id: \.offset) { col, cell in
+                            Text(InlineRenderer.render(cell, theme: theme))
+                                .font(OneraTypography.footnote)
+                                .foregroundStyle(theme.textPrimary)
+                                .frame(
+                                    maxWidth: .infinity,
+                                    alignment: gridAlignment(for: col)
+                                )
+                                .padding(.horizontal, OneraSpacing.md)
+                                .padding(.vertical, OneraSpacing.sm)
+                                .textSelection(.enabled)
+                        }
+                    }
+                    .background(
+                        rowIdx % 2 == 0
+                            ? Color.clear
+                            : theme.secondaryBackground.opacity(0.35)
+                    )
+                    
+                    // Row separator (except after last row)
+                    if rowIdx < bodyRows.count - 1 {
+                        Divider()
+                            .opacity(0.4)
+                            .gridCellUnsizedAxes(.horizontal)
+                    }
+                }
+            }
+            .frame(minWidth: CGFloat(columnCount) * 100)
+            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
+            .overlay(
+                RoundedRectangle(cornerRadius: OneraRadius.medium)
+                    .stroke(theme.border.opacity(0.6), lineWidth: 0.5)
+            )
+        }
+    }
+    
+    private func gridAlignment(for col: Int) -> Alignment {
+        guard col < alignments.count, let a = alignments[col] else { return .leading }
+        switch a {
+        case .left: return .leading
+        case .center: return .center
+        case .right: return .trailing
+        }
     }
 }
 
-// MARK: - Code Block View (Separate from Textual)
+// MARK: - Code Block View
 
 struct CodeBlockView: View {
     @Environment(\.theme) private var theme
@@ -625,59 +984,56 @@ struct CodeBlockView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header with language and copy button
-            HStack {
+            // Compact header — language label + icon-only copy button
+            HStack(spacing: OneraSpacing.xs) {
                 Text(language ?? "code")
-                    .font(OneraTypography.caption)
+                    .font(OneraTypography.caption2)
                     .foregroundStyle(theme.textSecondary)
                 
                 Spacer()
                 
-                // Copy button - native SwiftUI button, NOT inside Textual
                 Button {
                     copyToClipboard()
                 } label: {
-                    HStack(spacing: OneraSpacing.xs) {
-                        Image(systemName: copied ? "checkmark.circle.fill" : "doc.on.doc")
-                            .font(OneraTypography.buttonSmall)
-                        Text(copied ? "Copied!" : "Copy code")
-                            .font(OneraTypography.buttonSmall)
+                    HStack(spacing: 3) {
+                        Image(systemName: copied ? "checkmark" : "doc.on.doc")
+                            .font(.system(size: 11, weight: .medium))
+                        Text(copied ? "Copied!" : "Copy")
+                            .font(.system(size: 11, weight: .medium))
                     }
                     .foregroundStyle(copied ? theme.success : theme.textSecondary)
-                    .padding(.horizontal, OneraSpacing.md)
-                    .frame(minHeight: AccessibilitySize.minTouchTarget)
-                    .background(copied ? theme.success.opacity(0.2) : theme.secondaryBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.small))
+                    .padding(.horizontal, OneraSpacing.sm)
+                    .padding(.vertical, OneraSpacing.xxs)
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("codeBlockCopyButton")
                 .accessibilityLabel(copied ? "Code copied to clipboard" : "Copy code")
                 .accessibilityHint("Copies the code block to clipboard")
             }
-            .padding(.horizontal, OneraSpacing.md)
-            .padding(.vertical, OneraSpacing.sm)
+            .padding(.horizontal, OneraSpacing.compact)
+            .padding(.vertical, OneraSpacing.xs)
             .background(theme.tertiaryBackground)
             
             // Code content with syntax highlighting
             ScrollView(.horizontal, showsIndicators: false) {
                 if let highlighted = highlightedCode {
                     Text(highlighted)
-                        .font(OneraTypography.mono)
+                        .font(.system(.caption, design: .monospaced))
                         .textSelection(.enabled)
-                        .padding(.vertical, OneraSpacing.md)
-                        .padding(.horizontal, OneraSpacing.comfortable)
+                        .padding(.vertical, OneraSpacing.sm)
+                        .padding(.horizontal, OneraSpacing.compact)
                 } else {
                     Text(code)
-                        .font(OneraTypography.mono)
+                        .font(.system(.caption, design: .monospaced))
                         .foregroundStyle(theme.textPrimary)
                         .textSelection(.enabled)
-                        .padding(.vertical, OneraSpacing.md)
-                        .padding(.horizontal, OneraSpacing.comfortable)
+                        .padding(.vertical, OneraSpacing.sm)
+                        .padding(.horizontal, OneraSpacing.compact)
                 }
             }
             .background(theme.secondaryBackground)
         }
-        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.mediumSmall, style: .continuous))
         .task {
             await highlightCode()
         }

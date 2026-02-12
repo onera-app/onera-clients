@@ -3,6 +3,7 @@
 //  Onera
 //
 //  Custom navigation bar with drawer and model selector
+//  ChatGPT-style minimal header
 //
 
 import SwiftUI
@@ -19,63 +20,57 @@ struct CustomNavigationBar: View {
     
     var body: some View {
         HStack(spacing: 0) {
-            // Left: Sidebar menu with liquid glass effect
+            // Left: Sidebar toggle - minimal icon button
             Button {
                 menuTapTrigger.toggle()
                 onMenuTap()
             } label: {
-                Image(systemName: "line.3.horizontal")
-                    .font(OneraTypography.iconLabel)
+                Image(systemName: "sidebar.left")
+                    .font(.system(size: 20, weight: .regular))
                     .foregroundStyle(theme.textPrimary)
                     .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
-                    .oneraGlassCircle()
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .sensoryFeedback(.impact(weight: .light), trigger: menuTapTrigger)
-            .padding(.leading, OneraSpacing.lg)
-            .accessibilityLabel("Open sidebar menu")
-            .accessibilityHint("Shows chat history and navigation")
+            .padding(.leading, OneraSpacing.md)
+            .accessibilityLabel("Toggle sidebar")
+            .accessibilityHint("Shows or hides chat history")
             
             Spacer()
             
-            // Center: Native model selector menu
-            nativeModelSelector
+            // Center: Model selector - ChatGPT style
+            modelSelector_chatGPTStyle
             
             Spacer()
             
-            // Right: New conversation button with liquid glass effect
+            // Right: New chat - minimal icon button
             Button {
                 newConversationTrigger.toggle()
                 onNewConversation()
             } label: {
                 Image(systemName: "square.and.pencil")
-                    .font(OneraTypography.iconLabel)
+                    .font(.system(size: 20, weight: .regular))
                     .foregroundStyle(theme.textPrimary)
                     .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
-                    .oneraGlassCircle()
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .sensoryFeedback(.impact(weight: .medium), trigger: newConversationTrigger)
-            .padding(.trailing, OneraSpacing.lg)
+            .padding(.trailing, OneraSpacing.md)
             .accessibilityLabel("New conversation")
-            .accessibilityHint("Starts a new chat conversation")
+            .accessibilityHint("Starts a new chat")
         }
-        .padding(.top, OneraSpacing.sm)
-        .padding(.bottom, OneraSpacing.xxs)
-        .frame(height: 56)
+        .frame(height: 52)
         .background(
-            LinearGradient(
-                colors: [theme.background, theme.background.opacity(0)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea(edges: .top)
+            theme.background
+                .ignoresSafeArea(edges: .top)
         )
     }
     
-    // MARK: - Native Model Selector
+    // MARK: - ChatGPT-style Model Selector
     
-    private var nativeModelSelector: some View {
+    private var modelSelector_chatGPTStyle: some View {
         Menu {
             if modelSelector.isLoading {
                 Text("Loading models...")
@@ -101,26 +96,26 @@ struct CustomNavigationBar: View {
                 }
             }
         } label: {
-            HStack(spacing: OneraSpacing.xs) {
+            HStack(spacing: 4) {
                 if modelSelector.isLoading {
                     ProgressView()
-                        .scaleEffect(0.7)
+                        .scaleEffect(0.6)
                         .accessibilityLabel("Loading models")
+                } else {
+                    Text(modelSelector.selectedModel?.displayName ?? "Select Model")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(theme.textPrimary)
+                        .lineLimit(1)
+                    
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(theme.textSecondary)
+                        .accessibilityHidden(true)
                 }
-                
-                Text(modelSelector.selectedModel?.displayName ?? "Select Model")
-                    .font(OneraTypography.navTitle)
-                    .foregroundStyle(theme.textPrimary)
-                    .lineLimit(1)
-                
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.caption2.bold())
-                    .foregroundStyle(theme.textSecondary)
-                    .accessibilityHidden(true)
             }
-            .padding(.horizontal, OneraSpacing.comfortable)
-            .padding(.vertical, OneraSpacing.sm)
-            .oneraGlass()
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
         }
         .menuStyle(.borderlessButton)
         .accessibilityLabel("Select AI model")

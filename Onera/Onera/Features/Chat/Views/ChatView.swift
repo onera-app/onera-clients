@@ -20,6 +20,7 @@ struct ChatView: View {
     @FocusState private var isInputFocused: Bool
     @State private var showingError = false
     @State private var ttsStartTime: Date?
+
     #if os(iOS)
     @State private var showArtifacts = false
     @State private var activeArtifactId: String?
@@ -140,11 +141,20 @@ struct ChatView: View {
                             .frame(maxWidth: maxMessageWidth, alignment: message.isUser ? .trailing : .leading)
                             .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
                             .id(message.id)
+                            .transition(
+                                message.isUser
+                                    ? .asymmetric(
+                                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                                        removal: .opacity
+                                      )
+                                    : .opacity
+                            )
                     }
                     
-                    // Large tappable spacer at bottom to dismiss selection
+                    // Small spacer for visual breathing room
+                    // (safeAreaInset handles the input area spacing)
                     Color.clear
-                        .frame(height: 150)
+                        .frame(height: 16)
                         .frame(maxWidth: .infinity)
                         .contentShape(Rectangle())
                         .onTapGesture {
@@ -157,7 +167,9 @@ struct ChatView: View {
             }
             .scrollDismissesKeyboard(.interactively)
             .onChange(of: viewModel.messages.count) { _, _ in
-                scrollToBottom(proxy)
+                withAnimation(.easeOut(duration: 0.3)) {
+                    scrollToBottom(proxy)
+                }
             }
         }
     }
@@ -302,14 +314,7 @@ struct ChatView: View {
             )
             .focused($isInputFocused)
         }
-        .background(
-            LinearGradient(
-                colors: [theme.background.opacity(0), theme.background],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea(edges: .bottom)
-        )
+        .ignoresSafeArea()
     }
     
     private func scrollToBottom(_ proxy: ScrollViewProxy) {
