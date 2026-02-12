@@ -262,6 +262,52 @@ struct NewChatMessageAnimator: ViewModifier {
     }
 }
 
+// MARK: - Composable Chat ViewModifiers (v0-style hook pattern)
+
+/// Automatically scrolls to the bottom of a message list when new messages arrive.
+/// Equivalent to v0's `useScrollMessageListFromNewMessages()` hook.
+struct ScrollToBottomOnNewMessage: ViewModifier {
+    let messageCount: Int
+    let lastMessageId: String?
+    
+    func body(content: Content) -> some View {
+        ScrollViewReader { proxy in
+            content
+                .onChange(of: messageCount) { _, _ in
+                    withAnimation(OneraAnimation.springSmooth) {
+                        if let lastId = lastMessageId {
+                            proxy.scrollTo(lastId, anchor: .bottom)
+                        }
+                    }
+                }
+        }
+    }
+}
+
+/// Applies haptic feedback for chat interactions (message sent, streaming started).
+/// Equivalent to v0's haptic feedback coordination across chat events.
+struct MessageListFeedback: ViewModifier {
+    let messageSentTrigger: Bool
+    let isStreaming: Bool
+    
+    func body(content: Content) -> some View {
+        content
+            .sensoryFeedback(.impact(weight: .medium), trigger: messageSentTrigger)
+            .sensoryFeedback(.impact(weight: .light), trigger: isStreaming)
+    }
+}
+
+/// Applies a subtle opacity fade as messages scroll near the edges of the viewport.
+/// Equivalent to scroll-based content transitions in native list views.
+struct MessageScrollFade: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .scrollTransition { view, phase in
+                view.opacity(phase.isIdentity ? 1 : 0.85)
+            }
+    }
+}
+
 // MARK: - Accessibility Helper View
 
 /// A wrapper that provides static alternative content when Reduce Motion is enabled

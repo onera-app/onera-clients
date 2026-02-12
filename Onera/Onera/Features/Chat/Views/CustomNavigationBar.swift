@@ -26,7 +26,7 @@ struct CustomNavigationBar: View {
                 onMenuTap()
             } label: {
                 Image(systemName: "sidebar.left")
-                    .font(.system(size: 20, weight: .regular))
+                    .font(OneraTypography.iconXLarge)
                     .foregroundStyle(theme.textPrimary)
                     .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
                     .contentShape(Rectangle())
@@ -50,7 +50,7 @@ struct CustomNavigationBar: View {
                 onNewConversation()
             } label: {
                 Image(systemName: "square.and.pencil")
-                    .font(.system(size: 20, weight: .regular))
+                    .font(OneraTypography.iconXLarge)
                     .foregroundStyle(theme.textPrimary)
                     .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
                     .contentShape(Rectangle())
@@ -103,12 +103,12 @@ struct CustomNavigationBar: View {
                         .accessibilityLabel("Loading models")
                 } else {
                     Text(modelSelector.selectedModel?.displayName ?? "Select Model")
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(OneraTypography.navTitle)
                         .foregroundStyle(theme.textPrimary)
                         .lineLimit(1)
                     
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(OneraTypography.buttonSmall)
                         .foregroundStyle(theme.textSecondary)
                         .accessibilityHidden(true)
                 }

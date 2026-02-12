@@ -286,13 +286,6 @@ struct AdaptiveMainView: View {
         if let viewModel = chatViewModel {
             ChatView(
                 viewModel: viewModel,
-                onMenuTap: {
-                    withAnimation {
-                        columnVisibility = .all
-                    }
-                },
-                onNewConversation: createNewChat,
-                showCustomNavBar: false, // iPad/Mac uses native nav
                 promptSummaries: promptsViewModel?.prompts ?? [],
                 onFetchPromptContent: { summary in
                     await promptsViewModel?.usePrompt(summary)

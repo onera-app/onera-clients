@@ -217,10 +217,7 @@ struct DetachedChatWindowView: View {
             if let viewModel = chatViewModel {
                 NavigationStack {
                     ChatView(
-                        viewModel: viewModel,
-                        onMenuTap: nil,
-                        onNewConversation: nil,
-                        showCustomNavBar: false
+                        viewModel: viewModel
                     )
                     .navigationTitle(viewModel.chat?.title ?? "Chat")
                     .navigationBarTitleDisplayMode(.inline)

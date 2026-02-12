@@ -365,7 +365,7 @@ struct MessageBubbleView: View {
     private var copyButton: some View {
         Button(action: doCopy) {
             Image(systemName: showCopiedFeedback ? "checkmark" : "doc.on.doc")
-                .font(.system(size: 14, weight: .medium))
+                .font(OneraTypography.iconLabel)
                 .foregroundStyle(showCopiedFeedback ? theme.success : theme.textTertiary)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
@@ -431,7 +431,7 @@ struct MessageBubbleView: View {
             }
         } label: {
             Image(systemName: "arrow.clockwise")
-                .font(.system(size: 14, weight: .medium))
+                .font(OneraTypography.iconLabel)
                 .foregroundStyle(isRegenerating ? theme.info : theme.textTertiary)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
@@ -471,7 +471,7 @@ struct MessageBubbleView: View {
     private var speakButton: some View {
         Button(action: doSpeak) {
             Image(systemName: isSpeaking ? "stop.fill" : "speaker.wave.2")
-                .font(.system(size: 14, weight: .medium))
+                .font(OneraTypography.iconLabel)
                 .foregroundStyle(isSpeaking ? theme.error : theme.textTertiary)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
@@ -669,7 +669,6 @@ struct MarkdownBlockView: View {
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
                 .lineSpacing(5)
-                .contentTransition(.interpolate)
             
         case let list as UnorderedList:
             VStack(alignment: .leading, spacing: OneraSpacing.sm) {
@@ -995,10 +994,10 @@ struct CodeBlockView: View {
                 } label: {
                     HStack(spacing: 3) {
                         Image(systemName: copied ? "checkmark" : "doc.on.doc")
-                            .font(.system(size: 11, weight: .medium))
+                            .font(OneraTypography.buttonSmall)
                             .contentTransition(.symbolEffect(.replace))
                         Text(copied ? "Copied!" : "Copy")
-                            .font(.system(size: 11, weight: .medium))
+                            .font(OneraTypography.buttonSmall)
                             .contentTransition(.interpolate)
                     }
                     .foregroundStyle(copied ? theme.success : theme.textSecondary)

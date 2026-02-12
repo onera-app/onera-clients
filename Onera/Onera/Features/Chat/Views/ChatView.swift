@@ -29,10 +29,6 @@ struct ChatView: View {
     @State private var activeArtifactId: String?
     #endif
     
-    var onMenuTap: (() -> Void)?
-    var onNewConversation: (() -> Void)?
-    var showCustomNavBar: Bool = false
-    
     // @mention prompt support
     var promptSummaries: [PromptSummary] = []
     var onFetchPromptContent: ((PromptSummary) async -> String?)? = nil
@@ -68,29 +64,8 @@ struct ChatView: View {
                         .tint(.blue) // Blue text selection color
                 }
             }
-            // Add padding for header and input areas so content doesn't start under them
-            .safeAreaInset(edge: .top) {
-                if showCustomNavBar {
-                    CustomNavigationBar(
-                        modelSelector: viewModel.modelSelector,
-                        onMenuTap: { onMenuTap?() },
-                        onNewConversation: { onNewConversation?() }
-                    )
-                }
-            }
             .safeAreaInset(edge: .bottom) {
                 inputSection
-                    .background(alignment: .top) {
-                        // Progressive blur gradient above input (v0-style)
-                        LinearGradient(
-                            colors: [theme.background, theme.background.opacity(0)],
-                            startPoint: .bottom,
-                            endPoint: .top
-                        )
-                        .frame(height: 24)
-                        .offset(y: -24)
-                        .allowsHitTesting(false)
-                    }
             }
             
             // TTS Player Overlay - shown when speaking
@@ -107,8 +82,10 @@ struct ChatView: View {
                 .animation(.spring(response: 0.3, dampingFraction: 0.8), value: viewModel.isSpeaking)
             }
         }
-        .sensoryFeedback(.impact(weight: .medium), trigger: messageSentTrigger)
-        .sensoryFeedback(.impact(weight: .light), trigger: viewModel.isStreaming)
+        .modifier(MessageListFeedback(
+            messageSentTrigger: messageSentTrigger,
+            isStreaming: viewModel.isStreaming
+        ))
         .task {
             await viewModel.loadModels()
         }
@@ -147,61 +124,52 @@ struct ChatView: View {
     // MARK: - Messages View
     
     private var messagesView: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: 16) {
-                    ForEach(Array(viewModel.messages.enumerated()), id: \.element.id) { index, message in
-                        messageBubble(for: message)
-                            .frame(maxWidth: maxMessageWidth, alignment: message.isUser ? .trailing : .leading)
-                            .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
-                            .id(message.id)
-                            .modifier(NewChatMessageAnimator(
-                                index: index,
-                                isUser: message.isUser,
-                                isNewChatSendAnimating: isNewChatSendAnimating,
-                                firstMessageAnimationComplete: $firstMessageAnimationComplete,
-                                onAnimationDone: {
-                                    isNewChatSendAnimating = false
-                                }
-                            ))
-                            .scrollTransition { content, phase in
-                                content
-                                    .opacity(phase.isIdentity ? 1 : 0.85)
-                                    .scaleEffect(phase.isIdentity ? 1 : 0.98)
+        ScrollView {
+            LazyVStack(spacing: 16) {
+                ForEach(Array(viewModel.messages.enumerated()), id: \.element.id) { index, message in
+                    messageBubble(for: message)
+                        .frame(maxWidth: maxMessageWidth, alignment: message.isUser ? .trailing : .leading)
+                        .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
+                        .id(message.id)
+                        .modifier(NewChatMessageAnimator(
+                            index: index,
+                            isUser: message.isUser,
+                            isNewChatSendAnimating: isNewChatSendAnimating,
+                            firstMessageAnimationComplete: $firstMessageAnimationComplete,
+                            onAnimationDone: {
+                                isNewChatSendAnimating = false
                             }
-                            .transition(
-                                message.isUser
-                                    ? .asymmetric(
-                                        insertion: .move(edge: .bottom).combined(with: .opacity),
-                                        removal: .opacity
-                                      )
-                                    : .opacity
-                            )
-                    }
-                    
-                    // Small spacer for visual breathing room
-                    // (safeAreaInset handles the input area spacing)
-                    Color.clear
-                        .frame(height: 16)
-                        .frame(maxWidth: .infinity)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            dismissSelection()
-                        }
+                        ))
+                        .modifier(MessageScrollFade())
+                        .transition(
+                            message.isUser
+                                ? .asymmetric(
+                                    insertion: .move(edge: .bottom).combined(with: .opacity),
+                                    removal: .opacity
+                                  )
+                                : .opacity
+                        )
                 }
-                .frame(maxWidth: maxContentWidth)
-                .frame(maxWidth: .infinity) // Center the constrained content
-                .padding()
-            }
-            .scrollDismissesKeyboard(.interactively)
-            .onChange(of: viewModel.messages.count) { _, _ in
-                withAnimation(OneraAnimation.springSmooth) {
-                    if let lastId = viewModel.messages.last?.id {
-                        proxy.scrollTo(lastId, anchor: .bottom)
+                
+                // Small spacer for visual breathing room
+                // (safeAreaInset handles the input area spacing)
+                Color.clear
+                    .frame(height: 16)
+                    .frame(maxWidth: .infinity)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        dismissSelection()
                     }
-                }
             }
+            .frame(maxWidth: maxContentWidth)
+            .frame(maxWidth: .infinity) // Center the constrained content
+            .padding()
         }
+        .scrollDismissesKeyboard(.interactively)
+        .modifier(ScrollToBottomOnNewMessage(
+            messageCount: viewModel.messages.count,
+            lastMessageId: viewModel.messages.last?.id
+        ))
     }
     
     // Dismiss any active text selection or keyboard
@@ -216,12 +184,34 @@ struct ChatView: View {
     // MARK: - Empty State
     
     private var emptyStateView: some View {
-        ContentUnavailableView {
-            Label("What's on your mind?", systemImage: "bubble.left.and.text.bubble.right")
-        } description: {
-            Label("Encrypted and only accessible by you", systemImage: "lock.fill")
-        } actions: {
+        VStack(spacing: 20) {
+            Spacer()
+            
+            // Minimal icon
+            Image(systemName: "bubble.left.and.text.bubble.right")
+                .font(.largeTitle.weight(.light))
+                .foregroundStyle(.secondary.opacity(0.6))
+            
+            VStack(spacing: 8) {
+                Text("What's on your mind?")
+                    .font(.title3)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.primary)
+                
+                HStack(spacing: 4) {
+                    Image(systemName: "lock.fill")
+                        .font(.caption2)
+                    Text("Encrypted and only accessible by you")
+                }
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            }
+            
+            // Starter prompts
             starterPromptsGrid
+                .padding(.top, 8)
+            
+            Spacer()
         }
         .contentShape(Rectangle())
         .onTapGesture {
@@ -330,12 +320,6 @@ struct ChatView: View {
             .focused($isInputFocused)
         }
         .ignoresSafeArea()
-    }
-    
-    private func scrollToBottom(_ proxy: ScrollViewProxy) {
-        if let lastId = viewModel.messages.last?.id {
-            proxy.scrollTo(lastId, anchor: .bottom)
-        }
     }
     
     // MARK: - Message Bubble Builder
