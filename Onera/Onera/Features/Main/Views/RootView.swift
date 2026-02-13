@@ -139,6 +139,7 @@ struct RootView: View {
 
 struct LaunchView: View {
     @State private var isAnimating = false
+    @Environment(\.theme) private var theme
     
     var body: some View {
         VStack(spacing: 24) {
@@ -164,7 +165,7 @@ struct LaunchView: View {
                 // Icon container
                 ZStack {
                     RoundedRectangle(cornerRadius: 24)
-                        .fill(OneraColors.background)
+                        .fill(theme.background)
                         .shadow(color: .black.opacity(0.1), radius: 20, y: 10)
                     
                     // Lock + chat bubble icon representing secure chat

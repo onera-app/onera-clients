@@ -103,6 +103,26 @@ struct ClaudeLightThemeColors: ThemeColors {
     
     /// Reasoning indicator - coral accent
     var reasoning: Color { accent }
+    
+    // MARK: - Onboarding
+    
+    /// Claude light onboarding uses warm cream-to-coral gradient
+    var onboardingGradient: LinearGradient {
+        LinearGradient(
+            colors: [
+                Color(red: 0.984, green: 0.976, blue: 0.965),  // Cream
+                Color(red: 0.965, green: 0.929, blue: 0.914),  // Warm blush
+                Color(red: 0.953, green: 0.902, blue: 0.886),  // Pale coral
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+    var onboardingSheetBackground: Color { Color(red: 0.098, green: 0.094, blue: 0.090) }
+    var onboardingPill: Color { Color(red: 0.184, green: 0.180, blue: 0.176) }
+    var onboardingSelected: Color { Color(red: 0.220, green: 0.216, blue: 0.212) }
+    var goldAccent: Color { Color(red: 0.820, green: 0.557, blue: 0.196) }
+    var ctaButton: Color { accent }
 }
 
 /// Claude theme for dark mode
@@ -197,6 +217,26 @@ struct ClaudeDarkThemeColors: ThemeColors {
     
     /// Reasoning indicator - coral
     var reasoning: Color { accent }
+    
+    // MARK: - Onboarding
+    
+    /// Claude dark onboarding uses warm charcoal-to-deep gradient
+    var onboardingGradient: LinearGradient {
+        LinearGradient(
+            colors: [
+                Color(red: 0.145, green: 0.141, blue: 0.137),
+                Color(red: 0.120, green: 0.110, blue: 0.105),
+                Color(red: 0.098, green: 0.094, blue: 0.090),
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+    var onboardingSheetBackground: Color { Color(red: 0.065, green: 0.063, blue: 0.060) }
+    var onboardingPill: Color { tertiaryBackground }
+    var onboardingSelected: Color { Color(red: 0.220, green: 0.216, blue: 0.212) }
+    var goldAccent: Color { Color(red: 0.918, green: 0.686, blue: 0.333) }
+    var ctaButton: Color { accent }
 }
 
 // MARK: - Claude Theme Wrapper
@@ -226,6 +266,12 @@ struct ClaudeThemeColors: ThemeColors {
     var border: Color { colors.border }
     var placeholder: Color { colors.placeholder }
     var reasoning: Color { colors.reasoning }
+    var onboardingGradient: LinearGradient { colors.onboardingGradient }
+    var onboardingSheetBackground: Color { colors.onboardingSheetBackground }
+    var onboardingPill: Color { colors.onboardingPill }
+    var onboardingSelected: Color { colors.onboardingSelected }
+    var goldAccent: Color { colors.goldAccent }
+    var ctaButton: Color { colors.ctaButton }
 }
 
 // MARK: - Claude Design Constants

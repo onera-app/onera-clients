@@ -51,7 +51,7 @@ struct ChatView: View {
     
     var body: some View {
         ZStack {
-            // Background color
+            // Background color – dark like Captions home screen
             theme.background
                 .ignoresSafeArea()
             
@@ -184,32 +184,48 @@ struct ChatView: View {
     // MARK: - Empty State
     
     private var emptyStateView: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: OneraSpacing.xxl) {
             Spacer()
             
-            // Minimal icon
-            Image(systemName: "bubble.left.and.text.bubble.right")
-                .font(.largeTitle.weight(.light))
-                .foregroundStyle(.secondary.opacity(0.6))
+            // Centered icon/illustration area (like Captions' tilted photo stack)
+            Image(systemName: "sparkles")
+                .font(.system(size: 48))
+                .foregroundStyle(theme.textTertiary)
+                .frame(width: 100, height: 100)
+                .background(theme.onboardingPill)
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.xlarge, style: .continuous))
+                .rotationEffect(.degrees(-5))
+                .shadow(color: .black.opacity(0.3), radius: 12, x: 0, y: 4)
             
-            VStack(spacing: 8) {
-                Text("What's on your mind?")
-                    .font(.title3)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.primary)
-                
-                HStack(spacing: 4) {
-                    Image(systemName: "lock.fill")
-                        .font(.caption2)
-                    Text("Encrypted and only accessible by you")
+            // Pill-shaped quick action buttons (like Captions' "Import video", "AI Edit")
+            VStack(spacing: OneraSpacing.md) {
+                HStack(spacing: OneraSpacing.md) {
+                    Button {
+                        createNewChatAction()
+                    } label: {
+                        HStack(spacing: OneraSpacing.sm) {
+                            Image(systemName: "plus")
+                            Text("New Chat")
+                        }
+                    }
+                    .buttonStyle(CaptionsPillChipStyle())
+                    
+                    Button {
+                        // Could trigger AI-specific action
+                    } label: {
+                        Text("Quick Ask")
+                    }
+                    .buttonStyle(CaptionsPillChipStyle())
                 }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
             }
             
-            // Starter prompts
-            starterPromptsGrid
-                .padding(.top, 8)
+            HStack(spacing: OneraSpacing.xxs) {
+                Image(systemName: "lock.fill")
+                    .font(.caption2)
+                Text("End-to-end encrypted")
+            }
+            .font(.caption)
+            .foregroundStyle(theme.textTertiary)
             
             Spacer()
         }
@@ -219,39 +235,10 @@ struct ChatView: View {
         }
     }
     
-    private var starterPromptsGrid: some View {
-        let prompts: [(icon: String, title: String, prompt: String)] = [
-            ("lightbulb", "Explain a concept", "Explain the concept of"),
-            ("envelope", "Draft an email", "Help me draft a professional email about"),
-            ("chevron.left.forwardslash.chevron.right", "Write code", "Write a function that"),
-            ("chart.bar", "Analyze data", "Help me analyze the following data:")
-        ]
-        
-        return LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-            ForEach(Array(prompts.enumerated()), id: \.offset) { _, item in
-                Button {
-                    viewModel.inputText = item.prompt + " "
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: item.icon)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        Text(item.title)
-                            .font(.subheadline)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                    .background(theme.secondaryBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, 24)
-        .frame(maxWidth: 500)
+    /// Action to start a new chat from empty state
+    private func createNewChatAction() {
+        // This triggers the input focus so user can start typing
+        isInputFocused = true
     }
     
     // MARK: - Input Section
@@ -265,32 +252,34 @@ struct ChatView: View {
                         .foregroundStyle(.orange)
                     Text(error.localizedDescription)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                     Spacer()
                     Button {
                         viewModel.clearError()
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(theme.textTertiary)
                     }
                     .accessibilityLabel("Dismiss error")
                 }
-                .padding(.horizontal)
-                .padding(.vertical, 8)
+                .padding(.horizontal, OneraSpacing.lg)
+                .padding(.vertical, OneraSpacing.sm)
+                .background(theme.secondaryBackground)
             }
             
             // Show hint if no model selected
             if viewModel.modelSelector.selectedModel == nil && !viewModel.modelSelector.isLoading {
                 HStack {
                     Image(systemName: "info.circle.fill")
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(theme.info)
                     Text("Tap the model name above to select a model")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                     Spacer()
                 }
-                .padding(.horizontal)
-                .padding(.vertical, 8)
+                .padding(.horizontal, OneraSpacing.lg)
+                .padding(.vertical, OneraSpacing.sm)
+                .background(theme.secondaryBackground)
             }
             
             MessageInputView(
@@ -319,6 +308,7 @@ struct ChatView: View {
             )
             .focused($isInputFocused)
         }
+        .background(theme.background)
         .ignoresSafeArea()
     }
     

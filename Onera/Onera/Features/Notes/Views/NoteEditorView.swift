@@ -12,6 +12,7 @@ struct NoteEditorView: View {
     @Bindable var viewModel: NotesViewModel
     var folderViewModel: FolderViewModel?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.theme) private var theme
     
     @State private var title: String = ""
     @State private var content: String = ""
@@ -225,7 +226,7 @@ struct NoteEditorView: View {
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(OneraColors.secondaryBackground)
+                .background(theme.secondaryBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .disabled(folderViewModel == nil)

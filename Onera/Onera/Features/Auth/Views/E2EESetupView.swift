@@ -18,6 +18,7 @@ struct E2EESetupView: View {
     @Bindable var viewModel: E2EESetupViewModel
     @FocusState private var passwordFieldFocused: Bool
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.theme) private var theme
     
     /// Callback for signing out
     var onSignOut: (() -> Void)?
@@ -624,6 +625,7 @@ struct E2EESetupView: View {
 
 struct RecoveryPhraseGrid: View {
     let phrase: String
+    @Environment(\.theme) private var theme
     
     private var words: [String] {
         phrase.split(separator: " ").map(String.init)
@@ -649,7 +651,7 @@ struct RecoveryPhraseGrid: View {
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 6)
-                .background(OneraColors.tertiaryBackground)
+                .background(theme.tertiaryBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             }
         }

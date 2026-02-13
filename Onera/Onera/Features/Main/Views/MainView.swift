@@ -2,7 +2,7 @@
 //  MainView.swift
 //  Onera
 //
-//  Main app view with NavigationSplitView navigation (iPhone)
+//  Main app view with custom drawer navigation and native-style toolbar (iPhone)
 //
 
 import SwiftUI
@@ -15,10 +15,16 @@ import AppKit
 struct MainView: View {
     
     @Environment(\.dependencies) private var dependencies
+    @Environment(\.theme) private var theme
     @State private var selectedChatId: String?
     @State private var showSettings = false
     @State private var showNotes = false
-    @State private var columnVisibility: NavigationSplitViewVisibility = .detailOnly
+    @State private var isDrawerOpen = false
+    
+    // Interactive drag state
+    @GestureState private var dragOffset: CGFloat = 0
+    @State private var isDragging = false
+    @State private var containerWidth: CGFloat = 0
     
     @State private var chatListViewModel: ChatListViewModel?
     @State private var chatViewModel: ChatViewModel?
@@ -29,15 +35,125 @@ struct MainView: View {
     
     let onSignOut: () async -> Void
     
+    // Drawer width - 80% of container
+    private var drawerWidth: CGFloat {
+        #if os(iOS)
+        containerWidth * 0.80
+        #elseif os(macOS)
+        300
+        #endif
+    }
+    
+    // Current offset based on drawer state and drag
+    private var currentOffset: CGFloat {
+        let baseOffset = isDrawerOpen ? drawerWidth : 0
+        let totalOffset = baseOffset + dragOffset
+        return min(max(totalOffset, 0), drawerWidth)
+    }
+    
+    // Overlay opacity
+    private var overlayOpacity: Double {
+        guard drawerWidth > 0 else { return 0 }
+        return Double(currentOffset / drawerWidth) * 0.3
+    }
+    
+    // Sidebar offset
+    private var sidebarOffset: CGFloat {
+        guard drawerWidth > 0 else { return 0 }
+        let progress = currentOffset / drawerWidth
+        return -drawerWidth * (1 - progress)
+    }
+    
     var body: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
-            // Sidebar — SidebarDrawerView content
-            sidebarColumn
-        } detail: {
-            // Detail — Chat view with native toolbar
-            chatDetailColumn
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                // Dark background matching Captions aesthetic
+                theme.background
+                    .ignoresSafeArea()
+                    .onAppear {
+                        containerWidth = geometry.size.width
+                    }
+                    .onChange(of: geometry.size.width) { _, newWidth in
+                        containerWidth = newWidth
+                    }
+                
+                // Sidebar drawer
+                if let listViewModel = chatListViewModel {
+                    SidebarDrawerView(
+                        isOpen: $isDrawerOpen,
+                        selectedChatId: $selectedChatId,
+                        chats: listViewModel.chats,
+                        groupedChats: listViewModel.groupedChats,
+                        isLoading: listViewModel.isLoading,
+                        error: listViewModel.error,
+                        user: dependencies.authService.currentUser,
+                        folderViewModel: folderViewModel,
+                        onSelectChat: selectChat,
+                        onNewChat: createNewChat,
+                        onDeleteChat: { id in
+                            await listViewModel.deleteChat(id)
+                        },
+                        onMoveChatToFolder: { chatId, folderId in
+                            await moveChatToFolder(chatId: chatId, folderId: folderId)
+                        },
+                        onPinChat: { chatId, pinned in
+                            if let chat = listViewModel.chats.first(where: { $0.id == chatId }) {
+                                await listViewModel.togglePinned(chat)
+                            }
+                        },
+                        onArchiveChat: { chatId, archived in
+                            if let chat = listViewModel.chats.first(where: { $0.id == chatId }) {
+                                await listViewModel.toggleArchived(chat)
+                            }
+                        },
+                        onOpenSettings: {
+                            showSettings = true
+                        },
+                        onRefresh: {
+                            await listViewModel.loadChats()
+                        },
+                        onOpenNotes: {
+                            showNotes = true
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                isDrawerOpen = false
+                            }
+                        }
+                    )
+                    .frame(width: drawerWidth)
+                    .offset(x: sidebarOffset)
+                    .animation(isDragging ? nil : .spring(response: 0.3, dampingFraction: 0.8), value: sidebarOffset)
+                    .simultaneousGesture(fullScreenDrawerGesture)
+                    .accessibilityIdentifier("sidebarDrawer")
+                }
+                
+                // Main chat content + toolbar (slides together)
+                ZStack {
+                    chatContent
+                        .safeAreaInset(edge: .top) {
+                            nativeStyleToolbar
+                        }
+                        .allowsHitTesting(!isDrawerOpen)
+                    
+                    // Tap/swipe-to-dismiss overlay
+                    Color.black
+                        .opacity(overlayOpacity)
+                        .ignoresSafeArea()
+                        .contentShape(Rectangle())
+                        .allowsHitTesting(isDrawerOpen || isDragging)
+                        .onTapGesture {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                isDrawerOpen = false
+                            }
+                        }
+                        .gesture(fullScreenDrawerGesture)
+                }
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .offset(x: currentOffset)
+                .animation(isDragging ? nil : .spring(response: 0.3, dampingFraction: 0.8), value: currentOffset)
+                .simultaneousGesture(fullScreenDrawerGesture)
+            }
+            .accessibilityIdentifier("mainView")
         }
-        .navigationSplitViewStyle(.balanced)
         .sheet(isPresented: $showSettings) {
             if let viewModel = settingsViewModel {
                 SettingsView(viewModel: viewModel)
@@ -67,67 +183,120 @@ struct MainView: View {
         }
     }
     
-    // MARK: - Sidebar Column
+    // MARK: - Native-Style Toolbar (Captions-inspired dark toolbar)
     
-    @ViewBuilder
-    private var sidebarColumn: some View {
-        if let listViewModel = chatListViewModel {
-            SidebarDrawerView(
-                isOpen: Binding(
-                    get: { columnVisibility != .detailOnly },
-                    set: { newValue in
-                        withAnimation {
-                            columnVisibility = newValue ? .all : .detailOnly
-                        }
-                    }
-                ),
-                selectedChatId: $selectedChatId,
-                chats: listViewModel.chats,
-                groupedChats: listViewModel.groupedChats,
-                isLoading: listViewModel.isLoading,
-                error: listViewModel.error,
-                user: dependencies.authService.currentUser,
-                folderViewModel: folderViewModel,
-                onSelectChat: selectChat,
-                onNewChat: createNewChat,
-                onDeleteChat: { id in
-                    await listViewModel.deleteChat(id)
-                },
-                onMoveChatToFolder: { chatId, folderId in
-                    await moveChatToFolder(chatId: chatId, folderId: folderId)
-                },
-                onPinChat: { chatId, pinned in
-                    if let chat = listViewModel.chats.first(where: { $0.id == chatId }) {
-                        await listViewModel.togglePinned(chat)
-                    }
-                },
-                onArchiveChat: { chatId, archived in
-                    if let chat = listViewModel.chats.first(where: { $0.id == chatId }) {
-                        await listViewModel.toggleArchived(chat)
-                    }
-                },
-                onOpenSettings: {
-                    showSettings = true
-                },
-                onRefresh: {
-                    await listViewModel.loadChats()
-                },
-                onOpenNotes: {
-                    showNotes = true
-                    withAnimation {
-                        columnVisibility = .detailOnly
-                    }
+    private var nativeStyleToolbar: some View {
+        HStack(spacing: OneraSpacing.md) {
+            // Leading: hamburger menu button (pill shape like Captions)
+            Button {
+                dismissKeyboard()
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    isDrawerOpen = true
                 }
-            )
-        } else {
-            ProgressView()
+            } label: {
+                Image(systemName: "line.3.horizontal")
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(theme.textPrimary)
+                    .frame(width: 44, height: 44)
+                    .background(theme.onboardingPill)
+                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Toggle sidebar")
+            .accessibilityHint("Shows or hides chat history")
+            
+            Spacer()
+            
+            // Center: model selector (pill badge style)
+            if let viewModel = chatViewModel {
+                modelSelectorToolbarItem(viewModel: viewModel)
+            }
+            
+            Spacer()
+            
+            // Trailing: profile avatar (purple circle like Captions)
+            Button {
+                showSettings = true
+            } label: {
+                let initial = dependencies.authService.currentUser?.displayName.prefix(1).uppercased() ?? "?"
+                Text(initial)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 36, height: 36)
+                    .background(theme.accent)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Profile and settings")
         }
+        .padding(.horizontal, OneraSpacing.lg)
+        .padding(.vertical, OneraSpacing.sm)
+        .background(theme.background)
     }
     
-    // MARK: - Chat Detail Column
+    // MARK: - Drawer Gesture
+    
+    private var fullScreenDrawerGesture: some Gesture {
+        DragGesture(minimumDistance: 30, coordinateSpace: .global)
+            .updating($dragOffset) { value, state, _ in
+                let isVeryHorizontal = abs(value.translation.width) > abs(value.translation.height) * 3
+                let hasMinDistance = abs(value.translation.width) > 40
+                
+                guard isVeryHorizontal && hasMinDistance else { return }
+                
+                if isDrawerOpen {
+                    if value.translation.width < 0 { state = value.translation.width }
+                } else {
+                    if value.translation.width > 0 { state = value.translation.width }
+                }
+            }
+            .onChanged { value in
+                let isVeryHorizontal = abs(value.translation.width) > abs(value.translation.height) * 3
+                let hasMinDistance = abs(value.translation.width) > 40
+                
+                guard isVeryHorizontal && hasMinDistance else { return }
+                
+                if isDrawerOpen {
+                    if value.translation.width < 0 { isDragging = true }
+                } else {
+                    if value.translation.width > 0 { isDragging = true }
+                }
+            }
+            .onEnded { value in
+                guard isDragging else { return }
+                isDragging = false
+                
+                let velocity = value.velocity.width
+                let snapThreshold = drawerWidth * 0.3
+                
+                if isDrawerOpen {
+                    if velocity < -500 {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                            isDrawerOpen = false
+                        }
+                        return
+                    }
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                        isDrawerOpen = currentOffset > (drawerWidth - snapThreshold)
+                    }
+                } else {
+                    if velocity > 500 {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                            isDrawerOpen = true
+                        }
+                        return
+                    }
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                        isDrawerOpen = currentOffset > snapThreshold
+                    }
+                }
+            }
+    }
+    
+    // MARK: - Chat Content
     
     @ViewBuilder
-    private var chatDetailColumn: some View {
+    private var chatContent: some View {
         if let viewModel = chatViewModel {
             ChatView(
                 viewModel: viewModel,
@@ -136,23 +305,7 @@ struct MainView: View {
                     await promptsViewModel?.usePrompt(summary)
                 }
             )
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    modelSelectorToolbarItem(viewModel: viewModel)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        createNewChat()
-                    } label: {
-                        Image(systemName: "square.and.pencil")
-                    }
-                    .accessibilityLabel("New conversation")
-                    .accessibilityHint("Starts a new chat")
-                }
-            }
         } else {
-            // Loading state
             VStack {
                 Spacer()
                 ProgressView()
@@ -166,7 +319,7 @@ struct MainView: View {
         }
     }
     
-    // MARK: - Model Selector (Toolbar)
+    // MARK: - Model Selector
     
     private func modelSelectorToolbarItem(viewModel: ChatViewModel) -> some View {
         Menu {
@@ -194,29 +347,44 @@ struct MainView: View {
                 }
             }
         } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: OneraSpacing.sm) {
                 if viewModel.modelSelector.isLoading {
                     ProgressView()
                         .scaleEffect(0.6)
+                        .tint(theme.goldAccent)
                         .accessibilityLabel("Loading models")
                 } else {
-                    Text(viewModel.modelSelector.selectedModel?.displayName ?? "Select Model")
-                        .font(OneraTypography.navTitle)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
+                    // Gold sparkle icon like Captions "Get MAX" badge
+                    Image(systemName: "sparkles")
+                        .font(.caption)
+                        .foregroundStyle(theme.goldAccent)
                     
-                    Image(systemName: "chevron.down")
-                        .font(OneraTypography.buttonSmall)
-                        .foregroundStyle(.secondary)
-                        .accessibilityHidden(true)
+                    Text(viewModel.modelSelector.selectedModel?.displayName ?? "Select Model")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(theme.goldAccent)
+                        .lineLimit(1)
                 }
             }
+            .padding(.horizontal, OneraSpacing.md)
+            .padding(.vertical, OneraSpacing.sm)
+            .background(theme.goldAccent.opacity(0.15))
+            .clipShape(Capsule())
             .contentShape(Rectangle())
         }
         .menuStyle(.borderlessButton)
         .accessibilityLabel("Select AI model")
         .accessibilityValue(viewModel.modelSelector.selectedModel?.displayName ?? "No model selected")
         .accessibilityHint("Opens menu to choose a different AI model")
+    }
+    
+    // MARK: - Helpers
+    
+    private func dismissKeyboard() {
+        #if os(iOS)
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        #elseif os(macOS)
+        NSApp.keyWindow?.makeFirstResponder(nil)
+        #endif
     }
     
     // MARK: - Private Methods
@@ -272,9 +440,6 @@ struct MainView: View {
     
     private func selectChat(_ id: String) {
         selectedChatId = id
-        withAnimation {
-            columnVisibility = .detailOnly
-        }
         Task {
             await chatViewModel?.loadChat(id: id)
         }
@@ -282,9 +447,6 @@ struct MainView: View {
     
     private func createNewChat() {
         selectedChatId = nil
-        withAnimation {
-            columnVisibility = .detailOnly
-        }
         Task {
             await chatViewModel?.createNewChat()
         }
@@ -298,7 +460,6 @@ struct MainView: View {
                 folderId: folderId,
                 token: token
             )
-            // Refresh the chat list to reflect the change
             await chatListViewModel?.loadChats()
         } catch {
             print("[MainView] Failed to move chat to folder: \(error)")

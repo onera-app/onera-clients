@@ -97,6 +97,26 @@ protocol ThemeColors {
     
     /// AI reasoning/thinking indicator
     var reasoning: Color { get }
+    
+    // MARK: - Onboarding Colors
+    
+    /// Welcome gradient for onboarding background
+    var onboardingGradient: LinearGradient { get }
+    
+    /// Dark sheet / bottom card background for onboarding
+    var onboardingSheetBackground: Color { get }
+    
+    /// Elevated surface in onboarding (pills, input fields)
+    var onboardingPill: Color { get }
+    
+    /// Selected/highlighted row in onboarding drawer
+    var onboardingSelected: Color { get }
+    
+    /// Gold accent (badges, premium indicators)
+    var goldAccent: Color { get }
+    
+    /// CTA button colour for onboarding
+    var ctaButton: Color { get }
 }
 
 // MARK: - Default Theme (System Colors)
@@ -155,6 +175,24 @@ struct DefaultThemeColors: ThemeColors {
     
     // Special
     var reasoning: Color { Color.purple }
+    
+    // Onboarding
+    var onboardingGradient: LinearGradient {
+        LinearGradient(
+            colors: [
+                Color(red: 0.55, green: 0.85, blue: 0.96),
+                Color(red: 0.76, green: 0.91, blue: 0.97),
+                Color(red: 0.95, green: 0.88, blue: 0.84),
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+    var onboardingSheetBackground: Color { Color(red: 0.09, green: 0.09, blue: 0.09) }
+    var onboardingPill: Color { Color(white: 0.18) }
+    var onboardingSelected: Color { Color(white: 0.22) }
+    var goldAccent: Color { Color(red: 0.85, green: 0.68, blue: 0.30) }
+    var ctaButton: Color { .blue }
 }
 
 // MARK: - OLED Dark Theme Wrapper
@@ -188,4 +226,12 @@ struct OLEDDarkThemeColors: ThemeColors {
     var border: Color { base.border }
     var placeholder: Color { base.placeholder }
     var reasoning: Color { base.reasoning }
+    
+    // Onboarding - pass through from base, with OLED-appropriate overrides
+    var onboardingGradient: LinearGradient { base.onboardingGradient }
+    var onboardingSheetBackground: Color { .black }
+    var onboardingPill: Color { Color(white: 0.10) }
+    var onboardingSelected: Color { Color(white: 0.14) }
+    var goldAccent: Color { base.goldAccent }
+    var ctaButton: Color { base.ctaButton }
 }

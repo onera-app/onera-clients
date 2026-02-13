@@ -2,7 +2,8 @@
 //  OnboardingView.swift
 //  Onera
 //
-//  Streamlined native iOS onboarding flow
+//  Captions-inspired onboarding: gradient background, centered branding,
+//  dark bottom card with sign-in buttons. All colours sourced from ThemeColors.
 //
 
 import SwiftUI
@@ -23,336 +24,263 @@ struct OnboardingView: View {
     
     @State private var currentStep: OnboardingStep = .welcome
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.theme) private var theme
     
     let onComplete: () -> Void
     
-    /// iPad uses constrained width
     private var isRegularWidth: Bool {
         horizontalSizeClass == .regular
     }
     
-    /// Max width for content on iPad
     private let iPadMaxWidth: CGFloat = 600
     
     var body: some View {
-        VStack(spacing: 0) {
-            TabView(selection: $currentStep) {
-                ForEach(OnboardingStep.allCases) { step in
-                    OnboardingPageView(step: step, maxWidth: isRegularWidth ? iPadMaxWidth : nil)
-                        .tag(step)
-                }
-            }
-            #if os(iOS)
-            .tabViewStyle(.page(indexDisplayMode: .always))
-            .indexViewStyle(.page(backgroundDisplayMode: .always))
-            #endif
+        ZStack {
+            theme.onboardingGradient
+                .ignoresSafeArea()
             
-            // Bottom buttons - constrained on iPad
-            VStack(spacing: 12) {
-                Button {
-                    if currentStep == .ready {
-                        onComplete()
-                    } else {
-                        withAnimation {
-                            currentStep = OnboardingStep(rawValue: currentStep.rawValue + 1) ?? .ready
-                        }
+            VStack(spacing: 0) {
+                HStack {
+                    Spacer()
+                    Button {
+                        // Help action
+                    } label: {
+                        Image(systemName: "questionmark.circle.fill")
+                            .font(.title2)
+                            .foregroundStyle(.black.opacity(0.5))
+                            .frame(width: 44, height: 44)
                     }
-                } label: {
-                    Text(currentStep == .ready ? "Get Started" : "Continue")
-                        .frame(maxWidth: isRegularWidth ? 300 : .infinity)
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Help")
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .tint(.blue)
+                .padding(.horizontal, OneraSpacing.lg)
+                .padding(.top, OneraSpacing.sm)
                 
-                if currentStep != .ready {
-                    Button("Skip") {
-                        onComplete()
+                Spacer()
+                
+                VStack(spacing: OneraSpacing.lg) {
+                    switch currentStep {
+                    case .welcome:
+                        WelcomeBrandingContent()
+                    case .security:
+                        SecurityBrandingContent()
+                    case .ready:
+                        ReadyBrandingContent(theme: theme)
                     }
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
                 }
+                .frame(maxWidth: isRegularWidth ? iPadMaxWidth : .infinity)
+                .padding(.horizontal, OneraSpacing.xxxl)
+                
+                Spacer()
+                
+                bottomCard
             }
-            .frame(maxWidth: isRegularWidth ? iPadMaxWidth : .infinity)
-            .padding(.horizontal, 24)
-            .padding(.bottom, isRegularWidth ? 32 : 16)
         }
-        .background(OneraColors.background)
     }
-}
-
-// MARK: - Onboarding Page View
-
-private struct OnboardingPageView: View {
-    let step: OnboardingStep
-    var maxWidth: CGFloat? = nil
     
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 32) {
-                Spacer(minLength: 40)
-                
-                switch step {
-                case .welcome:
-                    WelcomeContent()
-                case .security:
-                    SecurityContent()
-                case .ready:
-                    ReadyContent()
+    // MARK: - Bottom Dark Card
+    
+    private var bottomCard: some View {
+        VStack(spacing: OneraSpacing.lg) {
+            if currentStep == .ready {
+                Button {
+                    onComplete()
+                } label: {
+                    Text("Get Started")
                 }
+                .buttonStyle(CaptionsPrimaryButtonStyle())
                 
-                Spacer(minLength: 100)
+            } else if currentStep == .welcome {
+                Button {
+                    advanceOrComplete()
+                } label: {
+                    HStack(spacing: OneraSpacing.md) {
+                        Image(systemName: "apple.logo")
+                            .font(.title3)
+                        Text("Continue with Apple")
+                    }
+                }
+                .buttonStyle(CaptionsPrimaryButtonStyle())
+                
+                Button {
+                    advanceOrComplete()
+                } label: {
+                    HStack(spacing: OneraSpacing.md) {
+                        Image(systemName: "globe")
+                            .font(.title3)
+                        Text("Continue with Google")
+                    }
+                }
+                .buttonStyle(CaptionsDarkButtonStyle())
+                
+                Button {
+                    advanceOrComplete()
+                } label: {
+                    Text("Continue another way")
+                        .font(.subheadline)
+                        .foregroundStyle(theme.textTertiary)
+                }
+                .padding(.top, OneraSpacing.sm)
+                
+            } else {
+                Button {
+                    advanceOrComplete()
+                } label: {
+                    Text("Continue")
+                }
+                .buttonStyle(CaptionsPrimaryButtonStyle())
+                
+                Button("Skip") {
+                    onComplete()
+                }
+                .font(.subheadline)
+                .foregroundStyle(theme.textTertiary)
             }
-            .frame(maxWidth: maxWidth)
-            .frame(maxWidth: .infinity) // Center if constrained
-            .padding(.horizontal, 24)
         }
-        .scrollIndicators(.hidden)
+        .frame(maxWidth: isRegularWidth ? iPadMaxWidth : .infinity)
+        .padding(.horizontal, OneraSpacing.xxl)
+        .padding(.top, OneraSpacing.xxxl)
+        .padding(.bottom, OneraSpacing.xxxl)
+        .background(
+            UnevenRoundedRectangle(
+                topLeadingRadius: OneraRadius.pill,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: OneraRadius.pill
+            )
+            .fill(theme.onboardingSheetBackground)
+            .ignoresSafeArea(edges: .bottom)
+        )
+    }
+    
+    private func advanceOrComplete() {
+        if currentStep == .ready {
+            onComplete()
+        } else {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                currentStep = OnboardingStep(rawValue: currentStep.rawValue + 1) ?? .ready
+            }
+        }
     }
 }
 
-// MARK: - Welcome Content
+// MARK: - Welcome Branding
 
-private struct WelcomeContent: View {
+private struct WelcomeBrandingContent: View {
     var body: some View {
-        VStack(spacing: 32) {
-            // Icon
-            Image(systemName: "sparkles")
-                .font(.largeTitle)
-                .foregroundStyle(.blue)
-                .frame(width: 100, height: 100)
-                .background(Color.blue.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        VStack(spacing: OneraSpacing.md) {
+            Text("onera")
+                .font(.system(size: 52, weight: .bold, design: .default))
+                .foregroundStyle(.black)
             
-            VStack(spacing: 12) {
-                Text("Welcome to Onera")
-                    .font(.title.bold())
-                
-                Text("Private AI chat, built differently")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-            }
-            
-            VStack(spacing: 16) {
-                FeatureRow(
-                    icon: "key.fill",
-                    iconColor: .orange,
-                    title: "Bring Your Own Keys",
-                    subtitle: "Use your own API keys from OpenAI, Anthropic, and more"
-                )
-                
-                FeatureRow(
-                    icon: "lock.shield.fill",
-                    iconColor: .green,
-                    title: "End-to-End Encrypted",
-                    subtitle: "Your chats and API keys are encrypted—we can't read them"
-                )
-                
-                FeatureRow(
-                    icon: "desktopcomputer",
-                    iconColor: .purple,
-                    title: "Local AI Support",
-                    subtitle: "Run models completely offline with Ollama"
-                )
-            }
+            Text("Private AI chat, built differently.")
+                .font(.title3)
+                .foregroundStyle(.black.opacity(0.65))
+                .multilineTextAlignment(.center)
         }
     }
 }
 
-// MARK: - Security Content
+// MARK: - Security Branding
 
-private struct SecurityContent: View {
+private struct SecurityBrandingContent: View {
     var body: some View {
-        VStack(spacing: 32) {
-            // Icon
+        VStack(spacing: OneraSpacing.xxl) {
             Image(systemName: "lock.shield.fill")
-                .font(.largeTitle)
-                .foregroundStyle(.green)
-                .frame(width: 100, height: 100)
-                .background(Color.green.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .font(.system(size: 56))
+                .foregroundStyle(.black.opacity(0.75))
             
-            VStack(spacing: 12) {
+            VStack(spacing: OneraSpacing.md) {
                 Text("Your Data, Your Control")
                     .font(.title.bold())
+                    .foregroundStyle(.black)
                 
-                Text("Everything is encrypted before it leaves your device")
+                Text("Everything is encrypted before it leaves your device. We never see your chats or API keys.")
                     .font(.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.black.opacity(0.6))
                     .multilineTextAlignment(.center)
             }
             
-            // Encryption visual
-            HStack(spacing: 16) {
-                VStack(spacing: 4) {
-                    Image(systemName: "doc.text")
-                        .font(.title2)
-                    Text("Your Data")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                
+            HStack(spacing: OneraSpacing.lg) {
+                encryptionNode(icon: "doc.text", label: "Your Data")
                 Image(systemName: "arrow.right")
-                    .foregroundStyle(.secondary)
-                
-                VStack(spacing: 4) {
-                    Image(systemName: "lock.fill")
-                        .font(.title2)
-                        .foregroundStyle(.green)
-                    Text("Encrypted")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                
+                    .foregroundStyle(.black.opacity(0.4))
+                encryptionNode(icon: "lock.fill", label: "Encrypted")
                 Image(systemName: "arrow.right")
-                    .foregroundStyle(.secondary)
-                
-                VStack(spacing: 4) {
-                    Image(systemName: "icloud.fill")
-                        .font(.title2)
-                    Text("Stored")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                    .foregroundStyle(.black.opacity(0.4))
+                encryptionNode(icon: "icloud.fill", label: "Stored")
             }
             .padding()
-            .frame(maxWidth: .infinity)
-            .background(OneraColors.secondaryBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            
-            // Recovery key info
-            VStack(alignment: .leading, spacing: 12) {
-                Label {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Recovery Phrase")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color.primary)
-                        Text("You'll get a 24-word phrase to backup your encryption key")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                } icon: {
-                    Image(systemName: "key.fill")
-                        .foregroundStyle(.orange)
-                }
-                
-                Divider()
-                
-                Label {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("We Can't Reset It")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color.primary)
-                        Text("This is by design—only you have access to your data")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                } icon: {
-                    Image(systemName: "exclamationmark.shield.fill")
-                        .foregroundStyle(.red)
-                }
-            }
-            .padding()
-            .background(OneraColors.secondaryBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(.white.opacity(0.35))
+            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium, style: .continuous))
+        }
+    }
+    
+    private func encryptionNode(icon: String, label: String) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(.black.opacity(0.7))
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.black.opacity(0.5))
         }
     }
 }
 
-// MARK: - Ready Content
+// MARK: - Ready Branding
 
-private struct ReadyContent: View {
+private struct ReadyBrandingContent: View {
+    let theme: ThemeColors
+    
     var body: some View {
-        VStack(spacing: 32) {
-            // Icon
+        VStack(spacing: OneraSpacing.xxl) {
             Image(systemName: "checkmark.seal.fill")
-                .font(.largeTitle)
-                .foregroundStyle(.green)
-                .frame(width: 100, height: 100)
-                .background(Color.green.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .font(.system(size: 56))
+                .foregroundStyle(.black.opacity(0.75))
             
-            VStack(spacing: 12) {
+            VStack(spacing: OneraSpacing.md) {
                 Text("You're All Set")
                     .font(.title.bold())
+                    .foregroundStyle(.black)
                 
-                Text("After signing in, you'll set up encryption and add your API keys")
+                Text("Sign in, set up encryption, and add your API keys to get started.")
                     .font(.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.black.opacity(0.6))
                     .multilineTextAlignment(.center)
             }
             
-            VStack(spacing: 16) {
-                StepRow(number: 1, title: "Sign In", subtitle: "Use Apple or Google")
-                StepRow(number: 2, title: "Set Up Encryption", subtitle: "Create passkey or password")
-                StepRow(number: 3, title: "Add API Key", subtitle: "Connect to an AI provider")
+            VStack(spacing: OneraSpacing.md) {
+                readyStep(number: 1, title: "Sign In", subtitle: "Use Apple or Google")
+                readyStep(number: 2, title: "Set Up Encryption", subtitle: "Create passkey or password")
+                readyStep(number: 3, title: "Add API Key", subtitle: "Connect to an AI provider")
             }
         }
     }
-}
-
-// MARK: - Helper Views
-
-private struct FeatureRow: View {
-    let icon: String
-    let iconColor: Color
-    let title: String
-    let subtitle: String
     
-    var body: some View {
-        HStack(spacing: 16) {
-            Image(systemName: icon)
-                .font(.body)
-                .foregroundStyle(iconColor)
-                .frame(width: 36, height: 36)
-                .background(iconColor.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.primary)
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            
-            Spacer()
-        }
-        .padding()
-        .background(OneraColors.secondaryBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-}
-
-private struct StepRow: View {
-    let number: Int
-    let title: String
-    let subtitle: String
-    
-    var body: some View {
-        HStack(spacing: 16) {
+    private func readyStep(number: Int, title: String, subtitle: String) -> some View {
+        HStack(spacing: OneraSpacing.lg) {
             Text("\(number)")
-                .font(.headline)
+                .font(.headline.weight(.bold))
                 .foregroundStyle(.white)
                 .frame(width: 32, height: 32)
-                .background(Color.blue)
+                .background(.black.opacity(0.7))
                 .clipShape(Circle())
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.primary)
+                    .foregroundStyle(.black)
                 Text(subtitle)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.black.opacity(0.5))
             }
             
             Spacer()
         }
         .padding()
-        .background(OneraColors.secondaryBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(.white.opacity(0.35))
+        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard, style: .continuous))
     }
 }
 
@@ -360,4 +288,5 @@ private struct StepRow: View {
 
 #Preview {
     OnboardingView(onComplete: {})
+        .themed()
 }

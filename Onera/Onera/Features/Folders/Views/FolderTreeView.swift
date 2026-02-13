@@ -13,6 +13,7 @@ struct FolderTreeView: View {
     let selectedFolderId: String?
     let onSelectFolder: (String?) -> Void
     var showAllOption: Bool = true
+    @Environment(\.theme) private var theme
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -79,7 +80,7 @@ struct FolderTreeView: View {
             .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(selectedFolderId == nil ? OneraColors.secondaryBackground : Color.clear)
+                    .fill(selectedFolderId == nil ? theme.secondaryBackground : Color.clear)
             )
         }
         .buttonStyle(.plain)
@@ -157,6 +158,7 @@ private struct FolderNodeView: View {
     let selectedFolderId: String?
     let onSelectFolder: (String?) -> Void
     let depth: Int
+    @Environment(\.theme) private var theme
     
     private var isExpanded: Bool {
         viewModel.isExpanded(node.id)
@@ -223,7 +225,7 @@ private struct FolderNodeView: View {
             .padding(.vertical, 6)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(isSelected ? OneraColors.secondaryBackground : Color.clear)
+                    .fill(isSelected ? theme.secondaryBackground : Color.clear)
             )
             .contentShape(Rectangle())
             .onTapGesture {

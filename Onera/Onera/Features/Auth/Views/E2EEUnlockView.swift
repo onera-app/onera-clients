@@ -25,6 +25,7 @@ struct E2EEUnlockView: View {
     @State private var hasPassword = false
     @State private var isCheckingUnlockMethods = true
     
+    @Environment(\.theme) private var theme
     @FocusState private var focusedWordIndex: Int?
     @FocusState private var passwordFieldFocused: Bool
     
@@ -548,7 +549,7 @@ struct E2EEUnlockView: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 8)
-        .background(OneraColors.tertiaryBackground)
+        .background(theme.tertiaryBackground)
         .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 }
