@@ -1,0 +1,2 @@
+json_key_file(ENV["PLAY_STORE_JSON_KEY"] || "fastlane/play-store-key.json")
+package_name("chat.onera.mobile")

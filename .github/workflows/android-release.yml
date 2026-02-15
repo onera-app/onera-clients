@@ -1,0 +1,111 @@
+name: Android Release
+
+on:
+  push:
+    tags:
+      - 'android-v*'  # e.g. android-v1.0.0
+
+concurrency:
+  group: android-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build & Deploy to Play Store
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: onera-android
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('onera-android/**/*.gradle.kts', 'onera-android/gradle/libs.versions.toml') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/android-v}"
+          echo "version_name=$TAG" >> "$GITHUB_OUTPUT"
+          # Convert semver to integer version code: 1.2.3 -> 10203
+          IFS='.' read -r major minor patch <<< "$TAG"
+          VERSION_CODE=$(( major * 10000 + minor * 100 + ${patch:-0} ))
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+          echo "Version: $TAG (code: $VERSION_CODE)"
+
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > app/onera-upload.jks
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+          working-directory: onera-android
+
+      - name: Decode Play Store service account key
+        run: |
+          echo "${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}" | base64 --decode > fastlane/play-store-key.json
+
+      - name: Run unit tests
+        env:
+          CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY_PROD }}
+        run: ./gradlew test --no-daemon
+
+      - name: Deploy to Play Store (internal track)
+        env:
+          VERSION_NAME: ${{ steps.version.outputs.version_name }}
+          VERSION_CODE: ${{ steps.version.outputs.version_code }}
+          KEYSTORE_FILE: ${{ github.workspace }}/onera-android/app/onera-upload.jks
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY_PROD }}
+          API_BASE_URL: https://api.onera.chat/
+          PLAY_STORE_JSON_KEY: fastlane/play-store-key.json
+        run: bundle exec fastlane deploy_internal
+
+      - name: Upload release AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-aab
+          path: onera-android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Android ${{ steps.version.outputs.version_name }}
+          body: |
+            ## Android ${{ steps.version.outputs.version_name }}
+
+            Version code: ${{ steps.version.outputs.version_code }}
+
+            Deployed to Play Store internal testing track.
+          files: |
+            onera-android/app/build/outputs/bundle/release/app-release.aab
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cleanup secrets
+        if: always()
+        run: |
+          rm -f app/onera-upload.jks
+          rm -f fastlane/play-store-key.json

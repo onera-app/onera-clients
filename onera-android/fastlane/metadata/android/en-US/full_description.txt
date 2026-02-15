@@ -1,0 +1,43 @@
+Your AI conversations deserve privacy.
+
+Onera is the secure way to chat with your favorite AI models. Every message, every note, every credential is protected by end-to-end encryption, so only you can read them.
+
+All Your AI Providers in One Place
+
+Connect to 13+ AI providers including OpenAI (ChatGPT), Anthropic (Claude), Google (Gemini), Groq, Mistral, DeepSeek, and more. Switch between models mid-conversation or use your own API keys. One app, unlimited possibilities.
+
+True End-to-End Encryption
+Unlike other AI apps, Onera encrypts your data before it leaves your device. Not even we can read your conversations. Your chats are protected by the same military-grade encryption used by secure messaging apps.
+
+Unlock Your Way
+
+Choose how you secure your vault:
+
+• Passkeys with biometric authentication
+• Password protection
+• 24-word recovery phrase
+• Device-based authentication
+
+Smart Features, Private by Design
+
+• Voice input with speech-to-text
+• Listen to responses with text-to-speech
+• Attach images, PDFs, and documents
+• Explore alternative responses with branching
+• Edit messages and regenerate answers
+• Auto-generated conversation titles
+
+Encrypted Notes
+Keep sensitive notes alongside your AI chats. Organize with folders, pin important notes, and search across everything — all encrypted.
+
+Beautiful & Intuitive
+A polished interface with Material Design 3, smooth animations, dark mode support, and gesture-driven navigation. AI conversations have never felt this good.
+
+Why Onera?
+
+• Zero-knowledge architecture — we can't see your data
+• Your API keys stay encrypted on your device
+• No tracking, no ads, no compromises
+• Sync securely across devices with onera.chat
+
+Download Onera and take control of your AI conversations.

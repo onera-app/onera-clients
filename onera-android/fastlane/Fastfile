@@ -1,0 +1,86 @@
+default_platform(:android)
+
+platform :android do
+
+  desc "Run unit tests"
+  lane :test do
+    gradle(
+      task: "test",
+      project_dir: "."
+    )
+  end
+
+  desc "Build debug APK"
+  lane :build_debug do
+    gradle(
+      task: "assembleDebug",
+      project_dir: "."
+    )
+  end
+
+  desc "Build release AAB (Android App Bundle)"
+  lane :build_release do
+    gradle(
+      task: "bundleRelease",
+      project_dir: ".",
+      properties: {
+        "android.injected.signing.store.file" => ENV["KEYSTORE_FILE"],
+        "android.injected.signing.store.password" => ENV["KEYSTORE_PASSWORD"],
+        "android.injected.signing.key.alias" => ENV["KEY_ALIAS"] || "onera-upload",
+        "android.injected.signing.key.password" => ENV["KEY_PASSWORD"],
+      }.compact
+    )
+  end
+
+  desc "Deploy to Play Store internal testing track"
+  lane :deploy_internal do
+    build_release
+
+    upload_to_play_store(
+      track: "internal",
+      aab: "app/build/outputs/bundle/release/app-release.aab",
+      skip_upload_metadata: false,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      release_status: "draft"
+    )
+  end
+
+  desc "Deploy to Play Store closed alpha track"
+  lane :deploy_alpha do
+    build_release
+
+    upload_to_play_store(
+      track: "alpha",
+      aab: "app/build/outputs/bundle/release/app-release.aab",
+      skip_upload_metadata: false,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      release_status: "draft"
+    )
+  end
+
+  desc "Promote internal to production"
+  lane :deploy_production do
+    build_release
+
+    upload_to_play_store(
+      track: "production",
+      aab: "app/build/outputs/bundle/release/app-release.aab",
+      skip_upload_metadata: false,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      release_status: "draft"  # Manual review before going live
+    )
+  end
+
+  desc "Validate Play Store metadata only (no upload)"
+  lane :validate_metadata do
+    upload_to_play_store(
+      track: "internal",
+      validate_only: true,
+      skip_upload_aab: true
+    )
+  end
+
+end

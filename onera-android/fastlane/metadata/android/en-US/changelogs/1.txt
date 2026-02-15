@@ -1,0 +1,9 @@
+Initial release of Onera for Android!
+
+• Chat with 13+ AI providers (OpenAI, Anthropic, Google, and more)
+• End-to-end encryption for all conversations and notes
+• Passkey and password-based vault protection
+• Voice input and text-to-speech
+• Encrypted notes with folder organization
+• 6 beautiful themes to customize your experience
+• Web search integration with citations
