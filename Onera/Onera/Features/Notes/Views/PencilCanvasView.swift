@@ -92,8 +92,8 @@ struct PencilCanvasView: View {
             .buttonStyle(.bordered)
             .tint(isDrawingMode ? .accentColor : .secondary)
         }
-        .padding(8)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .padding(OneraSpacing.sm)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: OneraRadius.medium))
     }
     
     // MARK: - Private Methods

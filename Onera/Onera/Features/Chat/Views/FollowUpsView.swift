@@ -39,7 +39,7 @@ struct FollowUpsView: View {
                     }
                 }
             }
-            .padding(.top, 8)
+            .padding(.top, OneraSpacing.sm)
             .onAppear {
                 appeared = true
             }
@@ -63,14 +63,14 @@ private struct FollowUpPill: View {
                 .font(.subheadline)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.horizontal, OneraSpacing.md)
+                .padding(.vertical, OneraSpacing.sm)
                 .background(
-                    RoundedRectangle(cornerRadius: 16)
+                    RoundedRectangle(cornerRadius: OneraRadius.large)
                         .fill(isHovered ? theme.accent.opacity(0.15) : theme.secondaryBackground)
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16)
+                    RoundedRectangle(cornerRadius: OneraRadius.large)
                         .stroke(isHovered ? theme.accent.opacity(0.3) : theme.border, lineWidth: 1)
                 )
         }

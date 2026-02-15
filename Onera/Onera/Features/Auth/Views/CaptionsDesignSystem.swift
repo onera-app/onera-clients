@@ -246,7 +246,7 @@ struct CaptionsInputBarStyle: ViewModifier {
         content
             .padding(.horizontal, CaptionsSpacing.md)
             .padding(.vertical, CaptionsSpacing.sm)
-            .background(theme.onboardingPill)
+            .background(theme.secondaryBackground)
             .clipShape(RoundedRectangle(cornerRadius: CaptionsRadius.large, style: .continuous))
             .padding(.horizontal, CaptionsSpacing.md)
             .padding(.bottom, CaptionsSpacing.xs)
@@ -266,7 +266,7 @@ extension View {
     ScrollView {
         VStack(spacing: 16) {
             // Gradient
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: OneraRadius.large)
                 .fill(CaptionsColors.welcomeGradient)
                 .frame(height: 200)
                 .overlay(
@@ -298,7 +298,7 @@ extension View {
 
 private func colorSwatch(_ label: String, _ color: Color) -> some View {
     VStack(spacing: 4) {
-        RoundedRectangle(cornerRadius: 8)
+        RoundedRectangle(cornerRadius: OneraRadius.standard)
             .fill(color)
             .frame(height: 50)
         Text(label)

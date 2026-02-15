@@ -111,7 +111,7 @@ struct MessageInputView: View {
                 }
                 .foregroundStyle(theme.accent)
                 .padding(.horizontal, OneraSpacing.lg)
-                .padding(.vertical, 4)
+                .padding(.vertical, OneraSpacing.xxs)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
             
@@ -127,7 +127,7 @@ struct MessageInputView: View {
                     .lineLimit(1...8)
                     .foregroundStyle(theme.textPrimary)
                     .tint(theme.textPrimary)
-                    .padding(.vertical, 4)
+                    .padding(.vertical, OneraSpacing.xxs)
                     .accessibilityIdentifier("messageInput")
                     .accessibilityLabel("Message input")
                     .accessibilityHint("Type your message here")
@@ -136,8 +136,8 @@ struct MessageInputView: View {
                 rightActionButton
                     .frame(width: 32, height: 32)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
+            .padding(.horizontal, OneraSpacing.md)
+            .padding(.vertical, OneraSpacing.compact)
             .oneraGlassRounded(24, showBorder: true, showShadow: false)
             .frame(maxWidth: maxInputWidth)
             .frame(maxWidth: .infinity)
@@ -646,8 +646,8 @@ private struct MentionPopupView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 8)
-            .padding(.top, 6)
+            .padding(.horizontal, OneraSpacing.sm)
+            .padding(.top, OneraSpacing.xs)
             
             ForEach(Array(prompts.enumerated()), id: \.element.id) { index, prompt in
                 Button {
@@ -675,19 +675,19 @@ private struct MentionPopupView: View {
                         
                         Spacer()
                     }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, OneraSpacing.sm)
+                    .padding(.vertical, OneraSpacing.xs)
                     .background(index == selectedIndex ? theme.accent.opacity(0.15) : Color.clear)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.small))
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Insert prompt: \(prompt.name)")
             }
         }
-        .padding(6)
+        .padding(OneraSpacing.xs)
         .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
         .shadow(color: .black.opacity(0.15), radius: 8, y: 2)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Prompt suggestions")

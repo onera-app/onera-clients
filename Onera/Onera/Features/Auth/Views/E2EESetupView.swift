@@ -108,7 +108,7 @@ struct E2EESetupView: View {
             
             ProgressView()
                 .scaleEffect(1.5)
-                .padding(.bottom, 8)
+                .padding(.bottom, OneraSpacing.sm)
             
             VStack(spacing: 8) {
                 Text("Setting up encryption...")
@@ -161,8 +161,8 @@ struct E2EESetupView: View {
                                         .foregroundStyle(theme.textPrimary)
                                     Text("Recommended")
                                         .font(.caption2.weight(.medium))
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
+                                        .padding(.horizontal, OneraSpacing.xs)
+                                        .padding(.vertical, OneraSpacing.micro)
                                         .background(theme.success)
                                         .foregroundStyle(.white)
                                         .clipShape(Capsule())
@@ -322,7 +322,7 @@ struct E2EESetupView: View {
                         Spacer()
                         if viewModel.isSettingUpPasskey {
                             ProgressView()
-                                .padding(.trailing, 8)
+                                .padding(.trailing, OneraSpacing.sm)
                             Text("Creating...")
                         } else {
                             Text("Create Passkey")
@@ -429,7 +429,7 @@ struct E2EESetupView: View {
                         Spacer()
                         if viewModel.isSettingUpPassword {
                             ProgressView()
-                                .padding(.trailing, 8)
+                                .padding(.trailing, OneraSpacing.sm)
                             Text("Setting up...")
                         } else {
                             Text("Set Password")
@@ -579,8 +579,8 @@ struct E2EESetupView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
-            .padding(.horizontal, 24)
-            .padding(.bottom, 16)
+            .padding(.horizontal, OneraSpacing.xxl)
+            .padding(.bottom, OneraSpacing.lg)
         }
     }
     
@@ -649,10 +649,10 @@ struct RecoveryPhraseGrid: View {
                     
                     Spacer()
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
+                .padding(.horizontal, OneraSpacing.sm)
+                .padding(.vertical, OneraSpacing.xs)
                 .background(theme.tertiaryBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.small, style: .continuous))
             }
         }
     }
@@ -671,7 +671,7 @@ struct WarningBanner: View {
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(theme.warning.opacity(0.1))
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard, style: .continuous))
     }
 }
 

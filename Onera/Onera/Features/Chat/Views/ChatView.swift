@@ -194,7 +194,7 @@ struct ChatView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(theme.textTertiary)
                 .frame(width: 100, height: 100)
-                .background(theme.onboardingPill)
+                .background(theme.secondaryBackground)
                 .clipShape(RoundedRectangle(cornerRadius: OneraRadius.xlarge, style: .continuous))
                 .rotationEffect(.degrees(-5))
                 .shadow(color: .black.opacity(0.3), radius: 12, x: 0, y: 4)

@@ -128,8 +128,8 @@ struct SidebarView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
-            .padding(.vertical, 8)
-            .padding(.horizontal, 4)
+            .padding(.vertical, OneraSpacing.sm)
+            .padding(.horizontal, OneraSpacing.xxs)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -159,9 +159,9 @@ struct SidebarView: View {
                 }
                 .buttonStyle(.plain)
                 .listRowBackground(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: OneraRadius.standard, style: .continuous)
                         .fill(selectedSection == section ? theme.accent.opacity(0.15) : Color.clear)
-                        .padding(.horizontal, 4)
+                        .padding(.horizontal, OneraSpacing.xxs)
                 )
                 #if os(iOS)
                 .hoverEffect(.highlight)
@@ -230,9 +230,9 @@ private struct AllChatsDropTarget: View {
             isHovered = hovering
         }
         .listRowBackground(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: OneraRadius.standard, style: .continuous)
                 .fill(isTargeted ? theme.accent.opacity(0.2) : (isHovered ? theme.secondaryBackground.opacity(0.5) : Color.clear))
-                .padding(.horizontal, 4)
+                .padding(.horizontal, OneraSpacing.xxs)
         )
         .dropDestination(for: String.self) { chatIds, _ in
             for chatId in chatIds {
@@ -270,9 +270,9 @@ private struct FolderRowView: View {
             isHovered = hovering
         }
         .listRowBackground(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: OneraRadius.standard, style: .continuous)
                 .fill(isTargeted ? theme.accent.opacity(0.2) : (isHovered ? theme.secondaryBackground.opacity(0.5) : Color.clear))
-                .padding(.horizontal, 4)
+                .padding(.horizontal, OneraSpacing.xxs)
         )
         .dropDestination(for: String.self) { chatIds, _ in
             for chatId in chatIds {

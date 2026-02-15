@@ -1374,7 +1374,7 @@ struct ThinkingDrawerView: View {
                             Circle()
                                 .fill(theme.reasoning)
                                 .frame(width: 8, height: 8)
-                                .padding(.top, 6)
+                                .padding(.top, OneraSpacing.xs)
                             
                             Text(step)
                                 .font(OneraTypography.body)
@@ -1461,8 +1461,8 @@ struct SelectableTextSheet: View {
     var body: some View {
         NavigationStack {
             SelectableTextViewRepresentable(text: text)
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
+                .padding(.horizontal, OneraSpacing.lg)
+                .padding(.top, OneraSpacing.sm)
                 .navigationTitle("Select Text")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {

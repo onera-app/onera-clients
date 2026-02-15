@@ -733,8 +733,8 @@ private struct DeviceRow: View {
                         Text("This device")
                             .font(OneraTypography.caption2)
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
+                            .padding(.horizontal, OneraSpacing.xs)
+                            .padding(.vertical, OneraSpacing.micro)
                             .background(theme.success)
                             .clipShape(Capsule())
                     }
@@ -759,7 +759,7 @@ private struct DeviceRow: View {
             
             Spacer()
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, OneraSpacing.xxs)
     }
 }
 

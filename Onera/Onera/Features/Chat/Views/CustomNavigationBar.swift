@@ -113,8 +113,8 @@ struct CustomNavigationBar: View {
                         .accessibilityHidden(true)
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, OneraSpacing.md)
+            .padding(.vertical, OneraSpacing.sm)
             .contentShape(Rectangle())
         }
         .menuStyle(.borderlessButton)

@@ -97,7 +97,7 @@ struct CredentialsListView: View {
                 .foregroundStyle(.white)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 32)
+            .padding(.vertical, OneraSpacing.xxxl)
         }
     }
     
@@ -144,7 +144,7 @@ private struct CredentialRowView: View {
                 .fontDesign(.monospaced)
                 .foregroundStyle(theme.textSecondary)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, OneraSpacing.xxs)
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button(role: .destructive) {
                 onDelete()

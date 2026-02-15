@@ -161,8 +161,8 @@ struct ToolInvocationView: View {
                             .foregroundStyle(hasError ? theme.error : theme.textSecondary)
                     }
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
+                .padding(.horizontal, OneraSpacing.md)
+                .padding(.vertical, OneraSpacing.compact)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -170,7 +170,7 @@ struct ToolInvocationView: View {
             // Expanded content
             if isExpanded {
                 Divider()
-                    .padding(.horizontal, 12)
+                    .padding(.horizontal, OneraSpacing.md)
                 
                 VStack(alignment: .leading, spacing: 12) {
                     // Arguments
@@ -184,11 +184,11 @@ struct ToolInvocationView: View {
                             ScrollView(.horizontal, showsIndicators: false) {
                                 Text(formatJSON(args))
                                     .font(.system(.caption, design: .monospaced))
-                                    .padding(8)
+                                    .padding(OneraSpacing.sm)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             }
                             .background(theme.secondaryBackground)
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.small))
                         }
                     }
                     
@@ -203,12 +203,12 @@ struct ToolInvocationView: View {
                             ScrollView {
                                 Text(formatJSON(result))
                                     .font(.system(.caption, design: .monospaced))
-                                    .padding(8)
+                                    .padding(OneraSpacing.sm)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             }
                             .frame(maxHeight: 150)
                             .background(theme.secondaryBackground)
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.small))
                         }
                     }
                     
@@ -223,10 +223,10 @@ struct ToolInvocationView: View {
                             Text(errorText)
                                 .font(.system(.caption, design: .monospaced))
                                 .foregroundStyle(theme.error)
-                                .padding(8)
+                                .padding(OneraSpacing.sm)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .background(theme.error.opacity(0.1))
-                                .clipShape(RoundedRectangle(cornerRadius: 6))
+                                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.small))
                         }
                     }
                     
@@ -263,16 +263,16 @@ struct ToolInvocationView: View {
                             }
                             .buttonStyle(.borderedProminent)
                         }
-                        .padding(.top, 8)
+                        .padding(.top, OneraSpacing.sm)
                     }
                 }
-                .padding(12)
+                .padding(OneraSpacing.md)
             }
         }
         .background(backgroundColor)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: OneraRadius.standard)
                 .stroke(borderColor, lineWidth: 1)
         )
         .onAppear {
@@ -338,7 +338,7 @@ struct ToolInvocationsView: View {
                     )
                 }
             }
-            .padding(.bottom, 8)
+            .padding(.bottom, OneraSpacing.sm)
         }
     }
 }

@@ -13,6 +13,9 @@ enum OneraSpacing {
     
     // MARK: - Base Scale
     
+    /// 2pt - Micro spacing, badge vertical padding
+    static let micro: CGFloat = 2
+    
     /// 4pt - Minimal spacing, tight layouts
     static let xxs: CGFloat = 4
     

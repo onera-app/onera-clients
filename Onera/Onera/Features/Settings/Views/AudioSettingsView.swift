@@ -74,7 +74,7 @@ struct AudioSettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, OneraSpacing.xxs)
                 
                 // Pitch
                 VStack(alignment: .leading, spacing: 8) {
@@ -86,7 +86,7 @@ struct AudioSettingsView: View {
                     }
                     Slider(value: $ttsPitch, in: 0.5...2.0, step: 0.1)
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, OneraSpacing.xxs)
                 
                 // Volume
                 VStack(alignment: .leading, spacing: 8) {
@@ -98,7 +98,7 @@ struct AudioSettingsView: View {
                     }
                     Slider(value: $ttsVolume, in: 0.0...1.0, step: 0.1)
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, OneraSpacing.xxs)
                 
                 Toggle(isOn: $ttsAutoPlay) {
                     VStack(alignment: .leading, spacing: 2) {
@@ -138,7 +138,7 @@ struct AudioSettingsView: View {
                 Text("Speech recognition uses the system language. Change it in System Settings > Language & Region.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .padding(.vertical, 4)
+                    .padding(.vertical, OneraSpacing.xxs)
             }
         }
     }

@@ -97,7 +97,7 @@ struct PromptsListView: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 32)
+            .padding(.vertical, OneraSpacing.xxxl)
         }
     }
     
@@ -181,7 +181,7 @@ private struct PromptRowView: View {
                     .font(.caption)
                     .foregroundStyle(theme.textTertiary)
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, OneraSpacing.xxs)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

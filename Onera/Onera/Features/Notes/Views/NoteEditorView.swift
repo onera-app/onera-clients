@@ -224,10 +224,10 @@ struct NoteEditorView: View {
                         .font(.caption2)
                 }
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+                .padding(.horizontal, OneraSpacing.md)
+                .padding(.vertical, OneraSpacing.xs)
                 .background(theme.secondaryBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
             }
             .disabled(folderViewModel == nil)
             
@@ -280,7 +280,7 @@ struct NoteEditorView: View {
                     Text("Start writing...")
                         .foregroundStyle(.tertiary)
                         .font(.body)
-                        .padding(.top, 8)
+                        .padding(.top, OneraSpacing.sm)
                         .allowsHitTesting(false)
                 }
             }

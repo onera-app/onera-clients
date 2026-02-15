@@ -62,8 +62,8 @@ struct FolderPickerSheet: View {
                                 
                                 Spacer()
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
+                            .padding(.horizontal, OneraSpacing.lg)
+                            .padding(.vertical, OneraSpacing.md)
                         }
                         .buttonStyle(.plain)
                     } else {
@@ -96,11 +96,11 @@ struct FolderPickerSheet: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
+                        .padding(.horizontal, OneraSpacing.lg)
+                        .padding(.vertical, OneraSpacing.sm)
                     }
                 }
-                .padding(.vertical, 8)
+                .padding(.vertical, OneraSpacing.sm)
             }
             .navigationTitle(title)
             #if os(iOS)
@@ -149,10 +149,10 @@ private struct FolderPickerRow: View {
                         .foregroundStyle(theme.accent)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.horizontal, OneraSpacing.lg)
+            .padding(.vertical, OneraSpacing.md)
             .background(isSelected ? theme.accent.opacity(0.1) : Color.clear)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
         }
         .buttonStyle(.plain)
         .foregroundStyle(.primary)
@@ -220,10 +220,10 @@ private struct FolderPickerNodeView: View {
                     }
                 }
                 .padding(.leading, CGFloat(depth * 20) + 16)
-                .padding(.trailing, 16)
-                .padding(.vertical, 12)
+                .padding(.trailing, OneraSpacing.lg)
+                .padding(.vertical, OneraSpacing.md)
                 .background(isSelected ? theme.accent.opacity(0.1) : Color.clear)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
             }
             .buttonStyle(.plain)
             .foregroundStyle(.primary)

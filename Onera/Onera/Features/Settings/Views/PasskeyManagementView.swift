@@ -343,7 +343,7 @@ struct PasskeyManagementView: View {
                     .foregroundStyle(.red)
             }
         }
-        .padding(24)
+        .padding(OneraSpacing.xxl)
         .frame(width: 360)
     }
 }

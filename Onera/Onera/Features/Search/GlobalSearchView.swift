@@ -126,7 +126,7 @@ struct GlobalSearchView: View {
         }
         .frame(width: 600, height: 500)
         .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
         .shadow(color: .black.opacity(0.2), radius: 20, y: 10)
         .onAppear {
             isSearchFocused = true
@@ -181,10 +181,10 @@ struct GlobalSearchView: View {
             Text("esc")
                 .font(.caption)
                 .foregroundStyle(theme.textTertiary)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
+                .padding(.horizontal, OneraSpacing.xs)
+                .padding(.vertical, OneraSpacing.micro)
                 .background(theme.secondaryBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 4))
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.xs))
         }
         .padding()
     }
@@ -210,7 +210,7 @@ struct GlobalSearchView: View {
                 }
             }
             .padding(.horizontal)
-            .padding(.vertical, 8)
+            .padding(.vertical, OneraSpacing.sm)
         }
     }
     
@@ -429,8 +429,8 @@ private struct FilterChip: View {
                 Text(title)
                     .font(.subheadline)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
+            .padding(.horizontal, OneraSpacing.md)
+            .padding(.vertical, OneraSpacing.xs)
             .background(isSelected ? theme.accent : theme.secondaryBackground)
             .foregroundStyle(isSelected ? .white : .primary)
             .clipShape(Capsule())
@@ -482,7 +482,7 @@ private struct SearchResultRow: View {
                 .font(.caption)
                 .foregroundStyle(theme.textTertiary)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, OneraSpacing.xxs)
         .contentShape(Rectangle())
     }
 }

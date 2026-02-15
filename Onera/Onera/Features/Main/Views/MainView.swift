@@ -51,12 +51,6 @@ struct MainView: View {
         return min(max(totalOffset, 0), drawerWidth)
     }
     
-    // Overlay opacity
-    private var overlayOpacity: Double {
-        guard drawerWidth > 0 else { return 0 }
-        return Double(currentOffset / drawerWidth) * 0.3
-    }
-    
     // Sidebar offset
     private var sidebarOffset: CGFloat {
         guard drawerWidth > 0 else { return 0 }
@@ -134,9 +128,8 @@ struct MainView: View {
                         }
                         .allowsHitTesting(!isDrawerOpen)
                     
-                    // Tap/swipe-to-dismiss overlay
-                    Color.black
-                        .opacity(overlayOpacity)
+                    // Tap/swipe-to-dismiss overlay (no dimming)
+                    Color.clear
                         .ignoresSafeArea()
                         .contentShape(Rectangle())
                         .allowsHitTesting(isDrawerOpen || isDragging)
@@ -187,19 +180,19 @@ struct MainView: View {
     
     private var nativeStyleToolbar: some View {
         HStack(spacing: OneraSpacing.md) {
-            // Leading: hamburger menu button (pill shape like Captions)
+            // Leading: sidebar toggle button
             Button {
                 dismissKeyboard()
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                    isDrawerOpen = true
+                    isDrawerOpen.toggle()
                 }
             } label: {
-                Image(systemName: "line.3.horizontal")
-                    .font(.body.weight(.medium))
+                Image(systemName: "sidebar.leading")
+                    .font(.title3.weight(.bold))
+                    .symbolVariant(isDrawerOpen ? .fill : .none)
                     .foregroundStyle(theme.textPrimary)
                     .frame(width: 44, height: 44)
-                    .background(theme.onboardingPill)
-                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard, style: .continuous))
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Toggle sidebar")
@@ -214,20 +207,36 @@ struct MainView: View {
             
             Spacer()
             
-            // Trailing: profile avatar (purple circle like Captions)
-            Button {
-                showSettings = true
-            } label: {
-                let initial = dependencies.authService.currentUser?.displayName.prefix(1).uppercased() ?? "?"
-                Text(initial)
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 36, height: 36)
-                    .background(theme.accent)
-                    .clipShape(Circle())
+            // Trailing: new chat + profile
+            HStack(spacing: OneraSpacing.xs) {
+                // New chat button
+                Button {
+                    createNewChat()
+                } label: {
+                    Image(systemName: "square.and.pencil")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(theme.textPrimary)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("New chat")
+                
+                // Profile avatar
+                Button {
+                    showSettings = true
+                } label: {
+                    let initial = dependencies.authService.currentUser?.displayName.prefix(1).uppercased() ?? "?"
+                    Text(initial)
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 36, height: 36)
+                        .background(theme.accent)
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Profile and settings")
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Profile and settings")
         }
         .padding(.horizontal, OneraSpacing.lg)
         .padding(.vertical, OneraSpacing.sm)
@@ -313,7 +322,7 @@ struct MainView: View {
                 Text("Loading...")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                    .padding(.top, 8)
+                    .padding(.top, OneraSpacing.sm)
                 Spacer()
             }
         }

@@ -111,14 +111,14 @@ struct DemoModeActivationModifier: ViewModifier {
                         
                         Text("Demo Mode Activated")
                             .font(.headline)
-                            .padding(.top, 8)
+                            .padding(.top, OneraSpacing.sm)
                         
                         Text("Signing in...")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
-                    .padding(24)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .padding(OneraSpacing.xxl)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: OneraRadius.large))
                     .transition(.scale.combined(with: .opacity))
                 }
             }

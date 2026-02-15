@@ -158,8 +158,8 @@ struct ArtifactsPanelView: View {
                 .help("Close panel")
                 .accessibilityLabel("Close artifacts panel")
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
+            .padding(.horizontal, OneraSpacing.md)
+            .padding(.vertical, OneraSpacing.compact)
             .background(Color(nsColor: .controlBackgroundColor))
             
             Divider()
@@ -186,8 +186,8 @@ struct ArtifactsPanelView: View {
                 
                 Spacer()
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
+            .padding(.horizontal, OneraSpacing.md)
+            .padding(.vertical, OneraSpacing.xs)
             
             Divider()
             
@@ -198,7 +198,7 @@ struct ArtifactsPanelView: View {
                         .font(.system(.body, design: .monospaced))
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(12)
+                        .padding(OneraSpacing.md)
                 }
             } else {
                 VStack {
@@ -291,10 +291,10 @@ struct ArtifactListView: View {
                                 .font(.caption)
                                 .lineLimit(1)
                         }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
+                        .padding(.horizontal, OneraSpacing.sm)
+                        .padding(.vertical, OneraSpacing.xxs)
                         .background(activeArtifactId == artifact.id ? Color.accentColor.opacity(0.15) : Color(nsColor: .controlBackgroundColor))
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.small))
                     }
                     .buttonStyle(.plain)
                 }
@@ -347,16 +347,16 @@ struct iOSArtifactsSheet: View {
                                             .font(.caption)
                                             .lineLimit(1)
                                     }
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 6)
+                                    .padding(.horizontal, OneraSpacing.compact)
+                                    .padding(.vertical, OneraSpacing.xs)
                                     .background(activeArtifactId == artifact.id ? Color.accentColor.opacity(0.15) : theme.secondaryBackground)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
                                 }
                                 .buttonStyle(.plain)
                             }
                         }
                         .padding(.horizontal)
-                        .padding(.vertical, 8)
+                        .padding(.vertical, OneraSpacing.sm)
                     }
                     
                     Divider()
@@ -391,7 +391,7 @@ struct iOSArtifactsSheet: View {
                     }
                 }
                 .padding(.horizontal)
-                .padding(.vertical, 8)
+                .padding(.vertical, OneraSpacing.sm)
                 
                 Divider()
                 

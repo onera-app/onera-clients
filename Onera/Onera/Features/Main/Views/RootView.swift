@@ -164,7 +164,7 @@ struct LaunchView: View {
                 
                 // Icon container
                 ZStack {
-                    RoundedRectangle(cornerRadius: 24)
+                    RoundedRectangle(cornerRadius: OneraRadius.sheet)
                         .fill(theme.background)
                         .shadow(color: .black.opacity(0.1), radius: 20, y: 10)
                     

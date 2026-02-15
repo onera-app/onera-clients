@@ -76,10 +76,10 @@ struct FolderTreeView: View {
                 
                 Spacer()
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, OneraSpacing.md)
+            .padding(.vertical, OneraSpacing.sm)
             .background(
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: OneraRadius.standard)
                     .fill(selectedFolderId == nil ? theme.secondaryBackground : Color.clear)
             )
         }
@@ -123,8 +123,8 @@ struct FolderTreeView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.horizontal, OneraSpacing.md)
+        .padding(.vertical, OneraSpacing.sm)
     }
     
     // MARK: - New Folder Button
@@ -142,8 +142,8 @@ struct FolderTreeView: View {
                 
                 Spacer()
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, OneraSpacing.md)
+            .padding(.vertical, OneraSpacing.sm)
         }
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)
@@ -221,10 +221,10 @@ private struct FolderNodeView: View {
                 }
             }
             .padding(.leading, CGFloat(depth * 16) + 8)
-            .padding(.trailing, 8)
-            .padding(.vertical, 6)
+            .padding(.trailing, OneraSpacing.sm)
+            .padding(.vertical, OneraSpacing.xs)
             .background(
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: OneraRadius.standard)
                     .fill(isSelected ? theme.secondaryBackground : Color.clear)
             )
             .contentShape(Rectangle())
@@ -347,8 +347,8 @@ private struct FolderNodeView: View {
             }
         }
         .padding(.leading, CGFloat((depth + 1) * 16) + 28)
-        .padding(.trailing, 8)
-        .padding(.vertical, 6)
+        .padding(.trailing, OneraSpacing.sm)
+        .padding(.vertical, OneraSpacing.xs)
     }
 }
 

@@ -94,8 +94,8 @@ struct PromptEditorView: View {
                                 HStack {
                                     Text(variable)
                                         .font(.caption.monospaced())
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 4)
+                                        .padding(.horizontal, OneraSpacing.sm)
+                                        .padding(.vertical, OneraSpacing.xxs)
                                         .background(theme.accent.opacity(0.1))
                                         .foregroundStyle(theme.accent)
                                         .clipShape(Capsule())

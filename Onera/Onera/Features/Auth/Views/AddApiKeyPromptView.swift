@@ -208,8 +208,8 @@ private struct ProviderButton: View {
                         if let badge = badge {
                             Text(badge)
                                 .font(.caption2.weight(.medium))
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
+                                .padding(.horizontal, OneraSpacing.xs)
+                                .padding(.vertical, OneraSpacing.micro)
                                 .background(theme.success.opacity(0.15))
                                 .foregroundStyle(theme.success)
                                 .clipShape(Capsule())

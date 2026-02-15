@@ -82,7 +82,7 @@ struct CitationsView: View {
                     }
                 }
             }
-            .padding(.top, 8)
+            .padding(.top, OneraSpacing.sm)
         }
     }
 }
@@ -124,8 +124,8 @@ private struct CitationCard: View {
                         .font(.caption)
                         .foregroundStyle(theme.textTertiary)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
+                .padding(.horizontal, OneraSpacing.md)
+                .padding(.vertical, OneraSpacing.compact)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -134,7 +134,7 @@ private struct CitationCard: View {
             if isExpanded {
                 VStack(alignment: .leading, spacing: 8) {
                     Divider()
-                        .padding(.horizontal, 12)
+                        .padding(.horizontal, OneraSpacing.md)
                     
                     // Snippet
                     if let snippet = citation.snippet, !snippet.isEmpty {
@@ -142,7 +142,7 @@ private struct CitationCard: View {
                             .font(.caption)
                             .foregroundStyle(theme.textSecondary)
                             .lineLimit(4)
-                            .padding(.horizontal, 12)
+                            .padding(.horizontal, OneraSpacing.md)
                     }
                     
                     // URL link
@@ -160,16 +160,16 @@ private struct CitationCard: View {
                             .foregroundStyle(theme.accent)
                         }
                         .buttonStyle(.plain)
-                        .padding(.horizontal, 12)
+                        .padding(.horizontal, OneraSpacing.md)
                     }
                 }
-                .padding(.bottom, 10)
+                .padding(.bottom, OneraSpacing.compact)
             }
         }
         .background(theme.secondaryBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: OneraRadius.standard)
                 .stroke(theme.border, lineWidth: 1)
         )
     }

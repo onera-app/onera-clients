@@ -329,8 +329,8 @@ struct AdaptiveMainView: View {
                     }
                     .accessibilityLabel("New chat")
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
+                .padding(.horizontal, OneraSpacing.lg)
+                .padding(.vertical, OneraSpacing.compact)
                 .background(.bar)
             }
             #endif
@@ -616,7 +616,7 @@ struct ChatRowView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, OneraSpacing.xxs)
         .contentShape(Rectangle())
         // iPad/macOS: Hover effect for trackpad/mouse users
         #if os(iOS)
@@ -626,7 +626,7 @@ struct ChatRowView: View {
             isHovered = hovering
         }
         .background(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: OneraRadius.standard)
                 .fill(isHovered && !isSelected ? theme.secondaryBackground.opacity(0.5) : Color.clear)
         )
         // iPad/macOS: Drag and drop support
@@ -639,10 +639,10 @@ struct ChatRowView: View {
                     .font(.headline)
                     .lineLimit(1)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, OneraSpacing.md)
+            .padding(.vertical, OneraSpacing.sm)
             .background(.regularMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
         }
     }
 }

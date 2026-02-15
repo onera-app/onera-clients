@@ -193,8 +193,8 @@ struct E2EEUnlockView: View {
                                         .foregroundStyle(Color.primary)
                                     Text("Recommended")
                                         .font(.caption2.weight(.medium))
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
+                                        .padding(.horizontal, OneraSpacing.xs)
+                                        .padding(.vertical, OneraSpacing.micro)
                                         .background(.blue)
                                         .foregroundStyle(.white)
                                         .clipShape(Capsule())
@@ -341,7 +341,7 @@ struct E2EEUnlockView: View {
                         Spacer()
                         if viewModel.isUnlockingWithPasskey {
                             ProgressView()
-                                .padding(.trailing, 8)
+                                .padding(.trailing, OneraSpacing.sm)
                             Text("Unlocking...")
                         } else {
                             Text("Unlock with Passkey")
@@ -410,7 +410,7 @@ struct E2EEUnlockView: View {
                         Spacer()
                         if passwordViewModel.isUnlocking {
                             ProgressView()
-                                .padding(.trailing, 8)
+                                .padding(.trailing, OneraSpacing.sm)
                             Text("Unlocking...")
                         } else {
                             Text("Unlock")
@@ -500,7 +500,7 @@ struct E2EEUnlockView: View {
                         Spacer()
                         if viewModel.isUnlocking {
                             ProgressView()
-                                .padding(.trailing, 8)
+                                .padding(.trailing, OneraSpacing.sm)
                             Text("Unlocking...")
                         } else {
                             Text("Unlock")
@@ -547,10 +547,10 @@ struct E2EEUnlockView: View {
                     }
                 }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 8)
+        .padding(.horizontal, OneraSpacing.sm)
+        .padding(.vertical, OneraSpacing.sm)
         .background(theme.tertiaryBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.small, style: .continuous))
     }
 }
 

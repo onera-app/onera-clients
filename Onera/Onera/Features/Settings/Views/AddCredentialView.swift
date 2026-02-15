@@ -38,7 +38,7 @@ struct AddCredentialView: View {
                             .foregroundStyle(colorForProvider(viewModel.selectedProvider))
                             .frame(width: 44, height: 44)
                             .background(colorForProvider(viewModel.selectedProvider).opacity(0.1))
-                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.mediumSmall, style: .continuous))
                         
                         VStack(alignment: .leading, spacing: 4) {
                             Text(viewModel.selectedProvider.displayName)
@@ -214,7 +214,7 @@ struct AddCredentialView: View {
                     ProgressView("Saving...")
                         .padding()
                         .background(.regularMaterial)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium, style: .continuous))
                 }
             }
             .alert("Error", isPresented: .init(

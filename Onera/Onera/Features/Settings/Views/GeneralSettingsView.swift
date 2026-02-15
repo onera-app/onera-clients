@@ -53,15 +53,15 @@ struct GeneralSettingsView: View {
                     .frame(minHeight: 100)
                     .font(.body)
                     .scrollContentBackground(.hidden)
-                    .padding(8)
+                    .padding(OneraSpacing.sm)
                     .background(theme.secondaryBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
                 
                 Text("This prompt is sent at the beginning of every conversation")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, OneraSpacing.xxs)
         }
     }
     
@@ -111,7 +111,7 @@ struct GeneralSettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, OneraSpacing.xxs)
                 
                 Divider()
                 
@@ -130,7 +130,7 @@ struct GeneralSettingsView: View {
                         }
                     }
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, OneraSpacing.xxs)
             }
         }
     }
@@ -153,7 +153,7 @@ struct GeneralSettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, OneraSpacing.xxs)
                 
                 // Top P
                 VStack(alignment: .leading, spacing: 8) {
@@ -168,7 +168,7 @@ struct GeneralSettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, OneraSpacing.xxs)
                 
                 // Top K
                 VStack(alignment: .leading, spacing: 8) {
@@ -186,7 +186,7 @@ struct GeneralSettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, OneraSpacing.xxs)
                 
                 // Max Tokens
                 VStack(alignment: .leading, spacing: 8) {
@@ -202,7 +202,7 @@ struct GeneralSettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, OneraSpacing.xxs)
                 
                 // Frequency Penalty
                 VStack(alignment: .leading, spacing: 8) {
@@ -217,7 +217,7 @@ struct GeneralSettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, OneraSpacing.xxs)
                 
                 // Presence Penalty
                 VStack(alignment: .leading, spacing: 8) {
@@ -232,7 +232,7 @@ struct GeneralSettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, OneraSpacing.xxs)
                 
                 // Seed
                 VStack(alignment: .leading, spacing: 8) {
@@ -248,7 +248,7 @@ struct GeneralSettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, OneraSpacing.xxs)
                 
                 // Reset Button
                 Button {
@@ -258,7 +258,7 @@ struct GeneralSettingsView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
-                .padding(.vertical, 8)
+                .padding(.vertical, OneraSpacing.sm)
             }
         }
     }

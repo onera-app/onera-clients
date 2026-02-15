@@ -326,7 +326,7 @@ struct MacMainView: View {
                     Text("No chats yet")
                         .foregroundStyle(theme.textSecondary)
                         .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical, 20)
+                        .padding(.vertical, OneraSpacing.xl)
                 }
             } else {
                 ForEach(grouped, id: \.0) { group, chats in
@@ -355,7 +355,7 @@ struct MacMainView: View {
                     Text("No notes yet")
                         .foregroundStyle(theme.textSecondary)
                         .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical, 20)
+                        .padding(.vertical, OneraSpacing.xl)
                 }
             } else {
                 Section("Notes") {
@@ -420,7 +420,7 @@ struct MacMainView: View {
                     Text("No prompts yet")
                         .foregroundStyle(theme.textSecondary)
                         .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical, 20)
+                        .padding(.vertical, OneraSpacing.xl)
                 }
             } else {
                 Section("Prompts") {
@@ -493,7 +493,7 @@ struct MacMainView: View {
                 
                 Spacer()
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, OneraSpacing.md)
             .frame(height: 48)
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
@@ -1308,7 +1308,7 @@ struct MacAuthView: View {
             VStack(spacing: 10) {
                 // Sign in with Apple
                 ZStack {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: OneraRadius.standard, style: .continuous)
                         .fill(theme.textPrimary)
                     
                     SignInWithAppleButton(.continue) { request in
@@ -1319,7 +1319,7 @@ struct MacAuthView: View {
                     .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
                 }
                 .frame(width: 240, height: 40)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard, style: .continuous))
                 .disabled(viewModel?.isLoading ?? false)
                 
                 // Sign in with Google
@@ -1337,9 +1337,9 @@ struct MacAuthView: View {
                     .frame(width: 240, height: 40)
                     .foregroundStyle(theme.textPrimary)
                     .background(theme.secondaryBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        RoundedRectangle(cornerRadius: OneraRadius.standard, style: .continuous)
                             .stroke(theme.border, lineWidth: 1)
                     )
                 }
@@ -1363,10 +1363,10 @@ struct MacAuthView: View {
             .font(.caption)
             .foregroundStyle(theme.textSecondary)
         }
-        .padding(40)
+        .padding(OneraSpacing.max)
         .frame(width: 320)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: OneraRadius.medium, style: .continuous)
                 .fill(theme.background)
                 .shadow(color: theme.textPrimary.opacity(0.15), radius: 20, y: 10)
         )
@@ -1461,7 +1461,7 @@ struct MacApiKeySetupView: View {
                 .buttonStyle(.bordered)
             }
         }
-        .padding(40)
+        .padding(OneraSpacing.max)
     }
 }
 

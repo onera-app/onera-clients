@@ -73,8 +73,8 @@ struct MenuBarView: View {
             .help("Open Main Window")
             .accessibilityLabel("Open main window")
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.horizontal, OneraSpacing.md)
+        .padding(.vertical, OneraSpacing.compact)
         .background(.regularMaterial) // HIG: Use materials for depth
     }
     
@@ -104,9 +104,9 @@ struct MenuBarView: View {
                     .disabled(isLoading)
                 }
             }
-            .padding(10)
+            .padding(OneraSpacing.compact)
             .background(theme.secondaryBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
             
             if isLoading {
                 HStack {
@@ -118,7 +118,7 @@ struct MenuBarView: View {
                 }
             }
         }
-        .padding(12)
+        .padding(OneraSpacing.md)
     }
     
     // MARK: - Recent Chats
@@ -128,15 +128,15 @@ struct MenuBarView: View {
             Text("Recent")
                 .font(.caption)
                 .foregroundStyle(theme.textSecondary)
-                .padding(.horizontal, 12)
-                .padding(.top, 8)
+                .padding(.horizontal, OneraSpacing.md)
+                .padding(.top, OneraSpacing.sm)
             
             if recentChats.isEmpty {
                 Text("No recent chats")
                     .font(.caption)
                     .foregroundStyle(theme.textTertiary)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 20)
+                    .padding(.vertical, OneraSpacing.xl)
             } else {
                 ForEach(recentChats.prefix(5)) { chat in
                     Button {
@@ -159,8 +159,8 @@ struct MenuBarView: View {
                                 .font(.caption)
                                 .foregroundStyle(theme.textTertiary)
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
+                        .padding(.horizontal, OneraSpacing.md)
+                        .padding(.vertical, OneraSpacing.xs)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -168,7 +168,7 @@ struct MenuBarView: View {
                 }
             }
         }
-        .padding(.bottom, 8)
+        .padding(.bottom, OneraSpacing.sm)
     }
     
     // MARK: - Footer Actions
@@ -211,8 +211,8 @@ struct MenuBarView: View {
             .help("Settings (⌘,)")
             .accessibilityLabel("Settings")
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.horizontal, OneraSpacing.md)
+        .padding(.vertical, OneraSpacing.sm)
         .background(.regularMaterial)
     }
     
@@ -473,16 +473,16 @@ struct MacChatView: View {
                             
                             Spacer(minLength: 0)
                         }
-                        .padding(10)
+                        .padding(OneraSpacing.compact)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(.quaternary.opacity(0.5))
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.mediumSmall))
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 24)
-            .padding(.top, 4)
+            .padding(.horizontal, OneraSpacing.xxl)
+            .padding(.top, OneraSpacing.xxs)
             
             Spacer()
         }
@@ -571,7 +571,7 @@ struct MacChatView: View {
                     }
                 )
                 .padding(.horizontal)
-                .padding(.bottom, 4)
+                .padding(.bottom, OneraSpacing.xxs)
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
             
@@ -626,13 +626,13 @@ struct MacChatView: View {
                         .keyboardShortcut(.return, modifiers: .command)
                     }
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.horizontal, OneraSpacing.md)
+                .padding(.vertical, OneraSpacing.sm)
                 .background(theme.secondaryBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.large))
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.horizontal, OneraSpacing.lg)
+            .padding(.vertical, OneraSpacing.md)
         }
     }
     
@@ -772,9 +772,9 @@ struct MacMessageBubble: View {
                         .font(.body)
                         .frame(minHeight: 60, maxHeight: 200)
                         .scrollContentBackground(.hidden)
-                        .padding(8)
+                        .padding(OneraSpacing.sm)
                         .background(theme.secondaryBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
                     
                     HStack(spacing: 8) {
                         Button("Cancel") {
@@ -798,9 +798,9 @@ struct MacMessageBubble: View {
                         .controlSize(.small)
                     }
                 }
-                .padding(12)
+                .padding(OneraSpacing.md)
                 .background(theme.userBubble)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
             } else {
                 // Normal display
                 VStack(alignment: .trailing, spacing: 8) {
@@ -813,7 +813,7 @@ struct MacMessageBubble: View {
                                         .resizable()
                                         .aspectRatio(contentMode: .fill)
                                         .frame(width: 80, height: 80)
-                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
                                 }
                             }
                         }
@@ -830,9 +830,9 @@ struct MacMessageBubble: View {
                             .foregroundStyle(theme.textTertiary)
                     }
                 }
-                .padding(12)
+                .padding(OneraSpacing.md)
                 .background(theme.userBubble)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
                 
                 // Actions
                 if !message.isStreaming {
@@ -854,9 +854,9 @@ struct MacMessageBubble: View {
             // Main content with markdown rendering
             if !parsedContent.displayContent.isEmpty || message.isStreaming {
                 MarkdownContentView(content: parsedContent.displayContent, isStreaming: message.isStreaming)
-                    .padding(12)
+                    .padding(OneraSpacing.md)
                     .background(theme.assistantBubble)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
             }
             
             // Message metadata + branch navigation + actions (below bubble)
@@ -1149,10 +1149,10 @@ struct MacReasoningView: View {
                         .foregroundStyle(theme.textSecondary)
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.horizontal, OneraSpacing.md)
+                .padding(.vertical, OneraSpacing.sm)
                 .background(theme.info.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
             }
             .buttonStyle(.plain)
             
@@ -1162,9 +1162,9 @@ struct MacReasoningView: View {
                     .font(.callout)
                     .foregroundStyle(theme.textSecondary)
                     .textSelection(.enabled)
-                    .padding(12)
+                    .padding(OneraSpacing.md)
                     .background(theme.secondaryBackground.opacity(0.5))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
@@ -1356,7 +1356,7 @@ struct MacNoteEditorView: View {
                 .keyboardShortcut("s", modifiers: .command)
             }
             .padding(.horizontal)
-            .padding(.vertical, 8)
+            .padding(.vertical, OneraSpacing.sm)
             .background(theme.secondaryBackground)
             
             Divider()
@@ -1366,7 +1366,7 @@ struct MacNoteEditorView: View {
                 .font(.title.bold())
                 .textFieldStyle(.plain)
                 .padding(.horizontal)
-                .padding(.top, 16)
+                .padding(.top, OneraSpacing.lg)
                 .onChange(of: title) { _, _ in scheduleAutoSave() }
             
             // Markdown formatting toolbar
@@ -1383,7 +1383,7 @@ struct MacNoteEditorView: View {
                 
                 Divider()
                     .frame(height: 16)
-                    .padding(.horizontal, 4)
+                    .padding(.horizontal, OneraSpacing.xxs)
                 
                 FormatButton(icon: "number", help: "Heading") {
                     insertAtLineStart("# ")
@@ -1400,7 +1400,7 @@ struct MacNoteEditorView: View {
                 
                 Divider()
                     .frame(height: 16)
-                    .padding(.horizontal, 4)
+                    .padding(.horizontal, OneraSpacing.xxs)
                 
                 FormatButton(icon: "chevron.left.forwardslash.chevron.right", help: "Inline Code") {
                     wrapSelection(prefix: "`", suffix: "`")
@@ -1418,7 +1418,7 @@ struct MacNoteEditorView: View {
                 Spacer()
             }
             .padding(.horizontal)
-            .padding(.vertical, 4)
+            .padding(.vertical, OneraSpacing.xxs)
             .background(theme.secondaryBackground.opacity(0.5))
             
             Divider()
@@ -1427,7 +1427,7 @@ struct MacNoteEditorView: View {
             TextEditor(text: $content)
                 .font(.system(.body, design: .monospaced))
                 .scrollContentBackground(.hidden)
-                .padding(.horizontal, 12)
+                .padding(.horizontal, OneraSpacing.md)
                 .focused($isContentFocused)
                 .onChange(of: content) { _, _ in scheduleAutoSave() }
                 .overlay(alignment: .topLeading) {
@@ -1435,8 +1435,8 @@ struct MacNoteEditorView: View {
                         Text("Start writing in Markdown...")
                             .font(.body)
                             .foregroundStyle(theme.textTertiary)
-                            .padding(.horizontal, 16)
-                            .padding(.top, 8)
+                            .padding(.horizontal, OneraSpacing.lg)
+                            .padding(.top, OneraSpacing.sm)
                             .allowsHitTesting(false)
                     }
                 }
@@ -1970,7 +1970,7 @@ private struct MacCredentialRow: View {
                 .font(.system(.caption, design: .monospaced))
                 .foregroundStyle(theme.textTertiary)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, OneraSpacing.xxs)
     }
     
     private var providerColor: Color {
@@ -2124,10 +2124,10 @@ struct SecuritySettingsView: View {
                     Text("Active")
                         .font(.caption)
                         .foregroundStyle(theme.success)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
+                        .padding(.horizontal, OneraSpacing.sm)
+                        .padding(.vertical, OneraSpacing.xxs)
                         .background(theme.success.opacity(0.15))
-                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.xs))
                 }
                 
                 HStack {
@@ -2261,7 +2261,7 @@ struct SecuritySettingsView: View {
                         .font(.caption)
                         .foregroundStyle(theme.textSecondary)
                 }
-                .padding(.vertical, 8)
+                .padding(.vertical, OneraSpacing.sm)
             }
         }
         .formStyle(.grouped)
@@ -2417,7 +2417,7 @@ private struct MacResetEncryptionSheet: View {
                 .keyboardShortcut(.defaultAction)
             }
         }
-        .padding(32)
+        .padding(OneraSpacing.xxxl)
         .frame(width: 420)
     }
 }
@@ -2478,7 +2478,7 @@ private struct MacRecoveryPhraseSheet: View {
                             .padding()
                             .frame(maxWidth: .infinity)
                             .background(theme.secondaryBackground)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
                             .textSelection(.enabled)
                         
                         Button {
@@ -2502,7 +2502,7 @@ private struct MacRecoveryPhraseSheet: View {
                 
                 Spacer()
             }
-            .padding(24)
+            .padding(OneraSpacing.xxl)
         }
         .frame(width: 450, height: 400)
         .task {
@@ -2531,8 +2531,8 @@ struct PromptMentionList: View {
                     .font(.caption)
                     .foregroundStyle(theme.textSecondary)
             }
-            .padding(.horizontal, 8)
-            .padding(.top, 6)
+            .padding(.horizontal, OneraSpacing.sm)
+            .padding(.top, OneraSpacing.xs)
             
             ForEach(Array(prompts.enumerated()), id: \.element.id) { index, prompt in
                 Button {
@@ -2559,18 +2559,18 @@ struct PromptMentionList: View {
                         
                         Spacer()
                     }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, OneraSpacing.sm)
+                    .padding(.vertical, OneraSpacing.xs)
                     .background(index == selectedIndex ? theme.accent.opacity(0.15) : Color.clear)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.small))
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(6)
+        .padding(OneraSpacing.xs)
         .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
         .shadow(color: theme.textPrimary.opacity(0.15), radius: 8, y: 2)
     }
 }

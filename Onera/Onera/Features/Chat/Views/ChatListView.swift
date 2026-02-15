@@ -82,7 +82,7 @@ struct ChatListRow: View {
                 .font(.caption)
                 .foregroundStyle(theme.textSecondary)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, OneraSpacing.xxs)
         .contentShape(Rectangle())
     }
 }

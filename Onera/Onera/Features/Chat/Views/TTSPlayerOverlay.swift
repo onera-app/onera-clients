@@ -47,19 +47,19 @@ struct TTSPlayerOverlay: View {
                     Image(systemName: "xmark")
                         .font(.subheadline.bold())
                         .foregroundStyle(.white.opacity(0.8))
-                        .padding(8)
+                        .padding(OneraSpacing.sm)
                         .background(Circle().fill(Color.white.opacity(0.2)))
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
+            .padding(.horizontal, OneraSpacing.xl)
+            .padding(.vertical, OneraSpacing.md)
             .background(
                 Capsule()
                     .fill(Color.black.opacity(0.85))
                     .shadow(color: .black.opacity(0.3), radius: 10, y: 5)
             )
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
+            .padding(.horizontal, OneraSpacing.lg)
+            .padding(.top, OneraSpacing.sm)
             
             Spacer()
         }

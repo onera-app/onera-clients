@@ -183,8 +183,8 @@ struct ToolsSettingsView: View {
                 ForEach(provider.features, id: \.self) { feature in
                     Text(feature)
                         .font(.caption2)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
+                        .padding(.horizontal, OneraSpacing.xs)
+                        .padding(.vertical, OneraSpacing.micro)
                         .background(Color.secondary.opacity(0.1))
                         .clipShape(Capsule())
                 }
@@ -193,7 +193,7 @@ struct ToolsSettingsView: View {
             // xAI-specific settings
             if provider == .xai && xaiSearchEnabled {
                 Divider()
-                    .padding(.vertical, 4)
+                    .padding(.vertical, OneraSpacing.xxs)
                 
                 Toggle(isOn: $xaiImageUnderstanding) {
                     VStack(alignment: .leading, spacing: 2) {
@@ -206,7 +206,7 @@ struct ToolsSettingsView: View {
                 }
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, OneraSpacing.xxs)
     }
     
     private func bindingForNativeProvider(_ provider: NativeSearchProvider) -> Binding<Bool> {
@@ -244,8 +244,8 @@ struct ToolsSettingsView: View {
                         if isProviderConfigured(provider) {
                             Text("Connected")
                                 .font(.caption2)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
+                                .padding(.horizontal, OneraSpacing.xs)
+                                .padding(.vertical, OneraSpacing.micro)
                                 .background(theme.success.opacity(0.15))
                                 .foregroundStyle(theme.success)
                                 .clipShape(Capsule())
@@ -330,10 +330,10 @@ struct ToolsSettingsView: View {
                     }
                     .buttonStyle(.borderless)
                 }
-                .padding(.top, 4)
+                .padding(.top, OneraSpacing.xxs)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, OneraSpacing.xxs)
     }
     
     // MARK: - Helpers
