@@ -1370,9 +1370,9 @@ struct ThinkingDrawerView: View {
                     // Thinking steps as bullet points
                     ForEach(Array(thinkingSteps.enumerated()), id: \.offset) { index, step in
                         HStack(alignment: .top, spacing: OneraSpacing.md) {
-                            // Yellow bullet point
+                            // Reasoning bullet point
                             Circle()
-                                .fill(Color.yellow)
+                                .fill(theme.reasoning)
                                 .frame(width: 8, height: 8)
                                 .padding(.top, 6)
                             

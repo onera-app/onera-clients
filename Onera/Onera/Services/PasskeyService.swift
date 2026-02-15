@@ -247,15 +247,15 @@ final class PasskeyService: NSObject, PasskeyServiceProtocol, @unchecked Sendabl
     }
     
     func listPasskeys(token: String) async throws -> [WebAuthnPasskey] {
-        let response: WebAuthnListResponse = try await networkService.call(
+        let passkeys: [WebAuthnPasskey] = try await networkService.call(
             procedure: APIEndpoint.WebAuthn.list,
             token: token
         )
-        return response.passkeys
+        return passkeys
     }
     
-    func renamePasskey(credentialId: String, name: String, token: String) async throws {
-        let input = WebAuthnRenameRequest(credentialId: credentialId, name: name)
+    func renamePasskey(credentialId: String, encryptedName: String, nameNonce: String, token: String) async throws {
+        let input = WebAuthnRenameRequest(credentialId: credentialId, encryptedName: encryptedName, nameNonce: nameNonce)
         let _: WebAuthnRenameResponse = try await networkService.call(
             procedure: APIEndpoint.WebAuthn.rename,
             input: input,
@@ -573,10 +573,10 @@ final class MockPasskeyService: PasskeyServiceProtocol, @unchecked Sendable {
     
     func listPasskeys(token: String) async throws -> [WebAuthnPasskey] {
         if shouldFail { throw PasskeyError.serverError("Mock error") }
-        return hasPasskey ? [WebAuthnPasskey(id: "1", credentialId: "mock-cred", name: "Mock Passkey", credentialDeviceType: "multiDevice", credentialBackedUp: true, lastUsedAt: nil, createdAt: Date(), deviceType: "platform")] : []
+        return hasPasskey ? [WebAuthnPasskey(id: "1", credentialId: "mock-cred", encryptedName: nil, nameNonce: nil, credentialDeviceType: "multiDevice", credentialBackedUp: true, lastUsedAt: nil, createdAt: Date(), deviceType: "platform")] : []
     }
     
-    func renamePasskey(credentialId: String, name: String, token: String) async throws {
+    func renamePasskey(credentialId: String, encryptedName: String, nameNonce: String, token: String) async throws {
         if shouldFail { throw PasskeyError.serverError("Mock error") }
     }
     

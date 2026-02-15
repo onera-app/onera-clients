@@ -637,12 +637,12 @@ final class DemoPasskeyService: PasskeyServiceProtocol, @unchecked Sendable {
     
     func listPasskeys(token: String) async throws -> [WebAuthnPasskey] {
         [
-            WebAuthnPasskey(id: "1", credentialId: "demo-cred-1", name: "MacBook Pro", credentialDeviceType: "multiDevice", credentialBackedUp: true, lastUsedAt: Date(), createdAt: Date().addingTimeInterval(-86400 * 30), deviceType: "platform"),
-            WebAuthnPasskey(id: "2", credentialId: "demo-cred-2", name: "iPhone", credentialDeviceType: "singleDevice", credentialBackedUp: false, lastUsedAt: nil, createdAt: Date().addingTimeInterval(-86400 * 7), deviceType: "platform"),
+            WebAuthnPasskey(id: "1", credentialId: "demo-cred-1", encryptedName: nil, nameNonce: nil, credentialDeviceType: "multiDevice", credentialBackedUp: true, lastUsedAt: Date(), createdAt: Date().addingTimeInterval(-86400 * 30), deviceType: "platform"),
+            WebAuthnPasskey(id: "2", credentialId: "demo-cred-2", encryptedName: nil, nameNonce: nil, credentialDeviceType: "singleDevice", credentialBackedUp: false, lastUsedAt: nil, createdAt: Date().addingTimeInterval(-86400 * 7), deviceType: "platform"),
         ]
     }
     
-    func renamePasskey(credentialId: String, name: String, token: String) async throws {}
+    func renamePasskey(credentialId: String, encryptedName: String, nameNonce: String, token: String) async throws {}
     
     func deletePasskey(credentialId: String, token: String) async throws {}
     

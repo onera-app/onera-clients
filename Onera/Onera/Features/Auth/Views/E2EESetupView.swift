@@ -116,7 +116,7 @@ struct E2EESetupView: View {
                 
                 Text("Generating secure keys for your account")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
             }
             
             Spacer()
@@ -131,11 +131,11 @@ struct E2EESetupView: View {
                 VStack(spacing: 16) {
                     Image(systemName: "lock.shield.fill")
                         .font(.largeTitle)
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(theme.accent)
                     
                     Text("Choose how you want to unlock your encrypted data.")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                         .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity)
@@ -151,32 +151,32 @@ struct E2EESetupView: View {
                         HStack {
                             Image(systemName: "person.badge.key.fill")
                                 .font(.title2)
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(theme.accent)
                                 .frame(width: 32)
                             
                             VStack(alignment: .leading, spacing: 2) {
                                 HStack(spacing: 6) {
                                     Text("Passkey")
                                         .font(.body.weight(.medium))
-                                        .foregroundStyle(Color.primary)
+                                        .foregroundStyle(theme.textPrimary)
                                     Text("Recommended")
                                         .font(.caption2.weight(.medium))
                                         .padding(.horizontal, 6)
                                         .padding(.vertical, 2)
-                                        .background(.green)
+                                        .background(theme.success)
                                         .foregroundStyle(.white)
                                         .clipShape(Capsule())
                                 }
                                 Text("Use Face ID or Touch ID")
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(theme.textSecondary)
                             }
                             
                             Spacer()
                             
                             Image(systemName: "chevron.right")
                                 .font(.caption.weight(.semibold))
-                                .foregroundStyle(.tertiary)
+                                .foregroundStyle(theme.textTertiary)
                         }
                     }
                 }
@@ -187,23 +187,23 @@ struct E2EESetupView: View {
                     HStack {
                         Image(systemName: "key.fill")
                             .font(.title2)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(theme.warning)
                             .frame(width: 32)
                         
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Password")
                                 .font(.body.weight(.medium))
-                                .foregroundStyle(Color.primary)
+                                .foregroundStyle(theme.textPrimary)
                             Text("Works on any device")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(theme.textSecondary)
                         }
                         
                         Spacer()
                         
                         Image(systemName: "chevron.right")
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(theme.textTertiary)
                     }
                 }
             } header: {
@@ -228,7 +228,7 @@ struct E2EESetupView: View {
                         HStack {
                             Image(systemName: "rectangle.portrait.and.arrow.right")
                                 .font(.title2)
-                                .foregroundStyle(.red)
+                                .foregroundStyle(theme.error)
                                 .frame(width: 32)
                             
                             VStack(alignment: .leading, spacing: 2) {
@@ -236,7 +236,7 @@ struct E2EESetupView: View {
                                     .font(.body.weight(.medium))
                                 Text("Use a different account")
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(theme.textSecondary)
                             }
                             
                             Spacer()
@@ -269,7 +269,7 @@ struct E2EESetupView: View {
                 VStack(spacing: 20) {
                     Image(systemName: "person.badge.key.fill")
                         .font(.largeTitle)
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(theme.accent)
                     
                     VStack(spacing: 8) {
                         Text("Add a Passkey")
@@ -277,7 +277,7 @@ struct E2EESetupView: View {
                         
                         Text("The easiest and most secure way to unlock your data.")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(theme.textSecondary)
                             .multilineTextAlignment(.center)
                     }
                 }
@@ -289,26 +289,26 @@ struct E2EESetupView: View {
             Section {
                 Label {
                     Text("Unlock with Face ID or Touch ID")
-                        .foregroundStyle(Color.primary)
+                        .foregroundStyle(theme.textPrimary)
                 } icon: {
                     Image(systemName: "faceid")
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(theme.accent)
                 }
                 
                 Label {
                     Text("Phishing resistant")
-                        .foregroundStyle(Color.primary)
+                        .foregroundStyle(theme.textPrimary)
                 } icon: {
                     Image(systemName: "shield.checkered")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(theme.success)
                 }
                 
                 Label {
                     Text("Stays on your device")
-                        .foregroundStyle(Color.primary)
+                        .foregroundStyle(theme.textPrimary)
                 } icon: {
                     Image(systemName: "iphone")
-                        .foregroundStyle(.purple)
+                        .foregroundStyle(theme.accent)
                 }
             } header: {
                 Text("Benefits")
@@ -338,7 +338,7 @@ struct E2EESetupView: View {
                     viewModel.skipPasswordSetup()
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.textSecondary)
                 .disabled(viewModel.isSettingUpPasskey)
             } footer: {
                 Text("You can add a passkey later in Settings.")
@@ -364,7 +364,7 @@ struct E2EESetupView: View {
                 VStack(spacing: 20) {
                     Image(systemName: "key.fill")
                         .font(.largeTitle)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(theme.warning)
                     
                     VStack(spacing: 8) {
                         Text("Set Password")
@@ -372,7 +372,7 @@ struct E2EESetupView: View {
                         
                         Text("This password unlocks your encrypted data.")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(theme.textSecondary)
                             .multilineTextAlignment(.center)
                     }
                 }
@@ -393,7 +393,7 @@ struct E2EESetupView: View {
                         viewModel.togglePasswordVisibility()
                     } label: {
                         Image(systemName: viewModel.showPassword ? "eye.slash" : "eye")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(theme.textSecondary)
                     }
                     .buttonStyle(.plain)
                 }
@@ -410,12 +410,12 @@ struct E2EESetupView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     if !viewModel.passwordLengthValid {
                         Label("At least 8 characters required", systemImage: "xmark.circle.fill")
-                            .foregroundStyle(.red)
+                            .foregroundStyle(theme.error)
                             .font(.caption)
                     }
                     if !viewModel.passwordsMatch {
                         Label("Passwords do not match", systemImage: "xmark.circle.fill")
-                            .foregroundStyle(.red)
+                            .foregroundStyle(theme.error)
                             .font(.caption)
                     }
                 }
@@ -460,7 +460,7 @@ struct E2EESetupView: View {
                 VStack(spacing: 16) {
                     Image(systemName: "lock.doc.fill")
                         .font(.largeTitle)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(theme.warning)
                     
                     VStack(spacing: 8) {
                         Text("Recovery Phrase")
@@ -468,7 +468,7 @@ struct E2EESetupView: View {
                         
                         Text("Save these 24 words as backup. You'll need them if you lose access to your passkey or password.")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(theme.textSecondary)
                             .multilineTextAlignment(.center)
                     }
                 }
@@ -499,18 +499,18 @@ struct E2EESetupView: View {
             Section {
                 Label {
                     Text("Copy to your password manager")
-                        .foregroundStyle(Color.primary)
+                        .foregroundStyle(theme.textPrimary)
                 } icon: {
                     Image(systemName: "key.viewfinder")
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(theme.accent)
                 }
                 
                 Label {
                     Text("Write it down and keep it safe")
-                        .foregroundStyle(Color.primary)
+                        .foregroundStyle(theme.textPrimary)
                 } icon: {
                     Image(systemName: "pencil.and.list.clipboard")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(theme.success)
                 }
             } header: {
                 Text("Quick Save Options")
@@ -532,7 +532,7 @@ struct E2EESetupView: View {
                         HStack {
                             Image(systemName: "rectangle.portrait.and.arrow.right")
                                 .font(.title2)
-                                .foregroundStyle(.red)
+                                .foregroundStyle(theme.error)
                                 .frame(width: 32)
                             
                             VStack(alignment: .leading, spacing: 2) {
@@ -540,7 +540,7 @@ struct E2EESetupView: View {
                                     .font(.body.weight(.medium))
                                 Text("Use a different account")
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(theme.textSecondary)
                             }
                             
                             Spacer()
@@ -561,7 +561,7 @@ struct E2EESetupView: View {
             
             Image(systemName: "checkmark.seal.fill")
                 .font(.largeTitle)
-                .foregroundStyle(.green)
+                .foregroundStyle(theme.success)
             
             VStack(spacing: 12) {
                 Text("Recovery Phrase Saved")
@@ -569,7 +569,7 @@ struct E2EESetupView: View {
                 
                 Text("Great! Your recovery phrase has been saved.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
             }
             
             Spacer()
@@ -640,12 +640,12 @@ struct RecoveryPhraseGrid: View {
                 HStack(spacing: 4) {
                     Text("\(index + 1).")
                         .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                         .frame(width: 20, alignment: .trailing)
                     
                     Text(word)
                         .font(.footnote.monospaced())
-                        .foregroundStyle(Color.primary)
+                        .foregroundStyle(theme.textPrimary)
                     
                     Spacer()
                 }
@@ -662,14 +662,15 @@ struct RecoveryPhraseGrid: View {
 
 struct WarningBanner: View {
     let text: String
+    @Environment(\.theme) private var theme
     
     var body: some View {
         Label(text, systemImage: "exclamationmark.triangle.fill")
             .font(.caption)
-            .foregroundStyle(.orange)
+            .foregroundStyle(theme.warning)
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.orange.opacity(0.1))
+            .background(theme.warning.opacity(0.1))
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 }

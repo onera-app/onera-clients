@@ -65,7 +65,8 @@ final class SettingsViewModel {
         self.passkeyManagementViewModel = PasskeyManagementViewModel(
             passkeyService: passkeyService,
             authService: authService,
-            secureSession: secureSession
+            secureSession: secureSession,
+            cryptoService: extendedCryptoService
         )
     }
     

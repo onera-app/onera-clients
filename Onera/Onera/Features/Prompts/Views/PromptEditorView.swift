@@ -11,6 +11,7 @@ struct PromptEditorView: View {
     
     @Bindable var viewModel: PromptsViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.theme) private var theme
     
     @State private var name: String = ""
     @State private var description: String = ""
@@ -80,7 +81,7 @@ struct PromptEditorView: View {
                         Text("Use {{variable}} syntax for placeholders")
                         if !detectedVariables.isEmpty {
                             Text("Variables: \(detectedVariables.joined(separator: ", "))")
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(theme.accent)
                         }
                     }
                 }
@@ -95,8 +96,8 @@ struct PromptEditorView: View {
                                         .font(.caption.monospaced())
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 4)
-                                        .background(Color.blue.opacity(0.1))
-                                        .foregroundStyle(.blue)
+                                        .background(theme.accent.opacity(0.1))
+                                        .foregroundStyle(theme.accent)
                                         .clipShape(Capsule())
                                     
                                     Spacer()

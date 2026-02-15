@@ -198,23 +198,28 @@ struct WebAuthnHasPasskeysResponse: Codable {
 struct WebAuthnPasskey: Codable, Identifiable {
     let id: String
     let credentialId: String
-    let name: String?
+    let encryptedName: String?
+    let nameNonce: String?
     let credentialDeviceType: String?
     let credentialBackedUp: Bool?
     let lastUsedAt: Date?
     let createdAt: Date
     let deviceType: String?
-}
-
-struct WebAuthnListResponse: Codable {
-    let passkeys: [WebAuthnPasskey]
+    
+    /// Client-side decrypted name (set after decryption, not from server)
+    var displayName: String {
+        // If we have encrypted name data, we'd decrypt here with master key
+        // For now, fall back to a readable default
+        "Passkey"
+    }
 }
 
 // MARK: - Rename Passkey
 
 struct WebAuthnRenameRequest: Codable {
     let credentialId: String
-    let name: String
+    let encryptedName: String
+    let nameNonce: String
 }
 
 struct WebAuthnRenameResponse: Codable {

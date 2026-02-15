@@ -19,6 +19,7 @@ struct NotesListView: View {
     @State private var selectedFilterFolderId: String?
     @State private var selectedNoteId: String?
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.theme) private var theme
     
     /// iPad uses NavigationLink, iPhone uses sheet
     private var isRegularWidth: Bool {
@@ -140,10 +141,10 @@ struct NotesListView: View {
             } label: {
                 HStack {
                     Image(systemName: "folder")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                     
                     Text(selectedFilterFolderName)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(theme.textPrimary)
                     
                     Spacer()
                     
@@ -152,13 +153,13 @@ struct NotesListView: View {
                             selectedFilterFolderId = nil
                         } label: {
                             Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(theme.textSecondary)
                         }
                     }
                     
                     Image(systemName: "chevron.right")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                 }
             }
             .buttonStyle(.plain)
@@ -180,14 +181,14 @@ struct NotesListView: View {
             VStack(spacing: 16) {
                 Image(systemName: "note.text")
                     .font(.largeTitle)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
                 
                 Text(viewModel.showArchived ? "No Archived Notes" : "No Notes")
                     .font(.headline)
                 
                 Text("Your notes will appear here.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
                     .multilineTextAlignment(.center)
                 
                 if !viewModel.showArchived {
@@ -197,7 +198,7 @@ struct NotesListView: View {
                         Label("Create Note", systemImage: "plus")
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(Color(.systemGray))
+                    .tint(theme.textSecondary)
                     .foregroundStyle(.white)
                 }
             }
@@ -262,13 +263,13 @@ private struct NoteRowView: View {
                     if note.pinned {
                         Image(systemName: "pin.fill")
                             .font(.caption2)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(theme.warning)
                     }
                 }
                 
                 Text(formattedDate)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
             }
             .padding(.vertical, 4)
             .contentShape(Rectangle())

@@ -257,7 +257,9 @@ struct SidebarDrawerView: View {
                             canMoveToFolder: folderViewModel != nil && onMoveChatToFolder != nil,
                             onSelect: {
                                 onSelectChat(chat.id)
-                                withAnimation { isOpen = false }
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                                    isOpen = false
+                                }
                             },
                             onDelete: {
                                 Task { await onDeleteChat(chat.id) }

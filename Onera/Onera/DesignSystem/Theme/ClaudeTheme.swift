@@ -123,6 +123,9 @@ struct ClaudeLightThemeColors: ThemeColors {
     var onboardingSelected: Color { Color(red: 0.220, green: 0.216, blue: 0.212) }
     var goldAccent: Color { Color(red: 0.820, green: 0.557, blue: 0.196) }
     var ctaButton: Color { accent }
+    var onboardingTextPrimary: Color { Color(red: 0.098, green: 0.094, blue: 0.090) }
+    var onboardingTextSecondary: Color { Color(red: 0.098, green: 0.094, blue: 0.090).opacity(0.65) }
+    var onboardingTextTertiary: Color { Color(red: 0.098, green: 0.094, blue: 0.090).opacity(0.4) }
 }
 
 /// Claude theme for dark mode
@@ -237,6 +240,9 @@ struct ClaudeDarkThemeColors: ThemeColors {
     var onboardingSelected: Color { Color(red: 0.220, green: 0.216, blue: 0.212) }
     var goldAccent: Color { Color(red: 0.918, green: 0.686, blue: 0.333) }
     var ctaButton: Color { accent }
+    var onboardingTextPrimary: Color { .white }
+    var onboardingTextSecondary: Color { .white.opacity(0.7) }
+    var onboardingTextTertiary: Color { .white.opacity(0.45) }
 }
 
 // MARK: - Claude Theme Wrapper
@@ -272,6 +278,9 @@ struct ClaudeThemeColors: ThemeColors {
     var onboardingSelected: Color { colors.onboardingSelected }
     var goldAccent: Color { colors.goldAccent }
     var ctaButton: Color { colors.ctaButton }
+    var onboardingTextPrimary: Color { colors.onboardingTextPrimary }
+    var onboardingTextSecondary: Color { colors.onboardingTextSecondary }
+    var onboardingTextTertiary: Color { colors.onboardingTextTertiary }
 }
 
 // MARK: - Claude Design Constants

@@ -11,6 +11,7 @@ struct CredentialsListView: View {
     
     @Bindable var viewModel: CredentialsViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.theme) private var theme
     
     var body: some View {
         List {
@@ -76,14 +77,14 @@ struct CredentialsListView: View {
             VStack(spacing: 16) {
                 Image(systemName: "key.horizontal")
                     .font(.largeTitle)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
                 
                 Text("No API Connections")
                     .font(.headline)
                 
                 Text("Add your API keys to start using AI models from different providers.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
                     .multilineTextAlignment(.center)
                 
                 Button {
@@ -92,7 +93,7 @@ struct CredentialsListView: View {
                     Label("Add Connection", systemImage: "plus")
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(Color(.systemGray))
+                .tint(theme.textSecondary)
                 .foregroundStyle(.white)
             }
             .frame(maxWidth: .infinity)
@@ -117,6 +118,7 @@ private struct CredentialRowView: View {
     
     let credential: DecryptedCredential
     let onDelete: () -> Void
+    @Environment(\.theme) private var theme
     
     var body: some View {
         HStack(spacing: 12) {
@@ -131,7 +133,7 @@ private struct CredentialRowView: View {
                 
                 Text(credential.provider.displayName)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
             }
             
             Spacer()
@@ -140,7 +142,7 @@ private struct CredentialRowView: View {
             Text(maskedApiKey)
                 .font(.caption)
                 .fontDesign(.monospaced)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.textSecondary)
         }
         .padding(.vertical, 4)
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {

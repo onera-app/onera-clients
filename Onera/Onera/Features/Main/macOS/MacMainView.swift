@@ -17,6 +17,7 @@ struct MacMainView: View {
     @Environment(\.dependencies) private var dependencies
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
+    @Environment(\.theme) private var theme
     
     // Navigation state
     @State private var selectedFolder: String? = "all"
@@ -323,7 +324,7 @@ struct MacMainView: View {
             if grouped.isEmpty {
                 Section {
                     Text("No chats yet")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.vertical, 20)
                 }
@@ -352,7 +353,7 @@ struct MacMainView: View {
             if notes.isEmpty {
                 Section {
                     Text("No notes yet")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.vertical, 20)
                 }
@@ -417,7 +418,7 @@ struct MacMainView: View {
             if prompts.isEmpty {
                 Section {
                     Text("No prompts yet")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.vertical, 20)
                 }
@@ -476,18 +477,18 @@ struct MacMainView: View {
             HStack(spacing: 10) {
                 // Avatar circle with initials
                 Circle()
-                    .fill(Color.accentColor.opacity(0.2))
+                    .fill(theme.accent.opacity(0.2))
                     .frame(width: avatarSize, height: avatarSize)
                     .overlay {
                         Text(currentUserInitials)
                             .font(.caption.weight(.semibold))
-                            .foregroundColor(Color.accentColor)
+                            .foregroundStyle(theme.accent)
                     }
                 
                 // User name
                 Text(currentUserName)
                     .font(.subheadline.weight(.medium))
-                    .foregroundColor(.primary)
+                    .foregroundStyle(theme.textPrimary)
                     .lineLimit(1)
                 
                 Spacer()
@@ -537,15 +538,15 @@ struct MacMainView: View {
             
             Image(systemName: "text.quote")
                 .font(.largeTitle.weight(.light))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(theme.textTertiary)
             
             Text("Select a prompt")
                 .font(.title3)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.textSecondary)
             
             Text("or create a new one")
                 .font(.callout)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(theme.textTertiary)
             
             Button {
                 promptsViewModel?.createPrompt()
@@ -607,15 +608,15 @@ struct MacMainView: View {
             
             Image(systemName: "note.text")
                 .font(.largeTitle.weight(.light))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(theme.textTertiary)
             
             Text("Select a note")
                 .font(.title3)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.textSecondary)
             
             Text("or create a new one")
                 .font(.callout)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(theme.textTertiary)
             
             Button {
                 notesViewModel?.createNote()
@@ -635,11 +636,11 @@ struct MacMainView: View {
             
             Image(systemName: "bubble.left.and.bubble.right")
                 .font(.largeTitle.weight(.light))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(theme.textTertiary)
             
             Text("Start a conversation")
                 .font(.title3)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.textSecondary)
             
             HStack(spacing: 4) {
                 Image(systemName: "lock.fill")
@@ -647,7 +648,7 @@ struct MacMainView: View {
                 Text("End-to-end encrypted")
             }
             .font(.caption)
-            .foregroundStyle(.tertiary)
+            .foregroundStyle(theme.textTertiary)
             
             Spacer()
         }
@@ -692,7 +693,7 @@ struct MacMainView: View {
                     }
                 } label: {
                     Image(systemName: chatVM.showArtifactsPanel ? "sidebar.trailing" : "sidebar.trailing")
-                        .foregroundStyle(chatVM.showArtifactsPanel ? Color.accentColor : .secondary)
+                        .foregroundStyle(chatVM.showArtifactsPanel ? theme.accent : theme.textSecondary)
                 }
                 .help(chatVM.showArtifactsPanel ? "Hide Artifacts" : "Show Artifacts")
                 .accessibilityLabel("Toggle artifacts panel")
@@ -982,6 +983,7 @@ struct MacMainView: View {
 
 struct MacChatListRow: View {
     let chat: ChatSummary
+    @Environment(\.theme) private var theme
     
     var body: some View {
         HStack {
@@ -991,7 +993,7 @@ struct MacChatListRow: View {
                 
                 Text(chat.updatedAt, style: .relative)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
             }
             
             Spacer()
@@ -999,13 +1001,13 @@ struct MacChatListRow: View {
             if chat.pinned {
                 Image(systemName: "pin.fill")
                     .font(.caption2)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(theme.warning)
             }
             
             if chat.archived {
                 Image(systemName: "archivebox.fill")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
             }
         }
     }
@@ -1015,6 +1017,7 @@ struct MacChatListRow: View {
 
 struct MacNoteListRow: View {
     let note: NoteSummary
+    @Environment(\.theme) private var theme
     
     var body: some View {
         HStack {
@@ -1024,7 +1027,7 @@ struct MacNoteListRow: View {
                 
                 Text(note.updatedAt, style: .relative)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
             }
             
             Spacer()
@@ -1032,7 +1035,7 @@ struct MacNoteListRow: View {
             if note.pinned {
                 Image(systemName: "pin.fill")
                     .font(.caption2)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(theme.warning)
             }
         }
     }
@@ -1042,6 +1045,7 @@ struct MacNoteListRow: View {
 
 struct MacPromptListRow: View {
     let prompt: PromptSummary
+    @Environment(\.theme) private var theme
     
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -1051,12 +1055,12 @@ struct MacPromptListRow: View {
             if let description = prompt.description, !description.isEmpty {
                 Text(description)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
                     .lineLimit(1)
             } else {
                 Text(prompt.updatedAt, style: .relative)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
             }
         }
     }
@@ -1067,6 +1071,7 @@ struct MacPromptListRow: View {
 struct MacModelSelectorButton: View {
     @Bindable var viewModel: ModelSelectorViewModel
     @Environment(\.openSettings) private var openSettings
+    @Environment(\.theme) private var theme
     
     private var isPrivateSelected: Bool {
         viewModel.isPrivateModelSelected
@@ -1111,7 +1116,7 @@ struct MacModelSelectorButton: View {
             } else if isPrivateSelected {
                 Image(systemName: "lock.shield.fill")
                     .font(.caption2)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(theme.success)
             }
             
             Text(viewModel.selectedModel?.displayName ?? "Select Model")
@@ -1163,7 +1168,7 @@ struct MacModelSelectorButton: View {
                 if model.provider == .private {
                     Image(systemName: "lock.shield.fill")
                         .font(.caption)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(theme.success)
                 }
                 
                 Text(model.displayName)
@@ -1173,7 +1178,7 @@ struct MacModelSelectorButton: View {
                 if viewModel.isPinned(model.id) {
                     Image(systemName: "pin.fill")
                         .font(.caption2)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(theme.warning)
                 }
                 
                 if viewModel.selectedModel?.id == model.id {
@@ -1211,7 +1216,7 @@ struct MacModelSelectorButton: View {
                         HStack {
                             if provider == .private {
                                 Image(systemName: "lock.shield.fill")
-                                    .foregroundStyle(.green)
+                                    .foregroundStyle(theme.success)
                             }
                             Text(provider.displayName)
                             if viewModel.connectionFilter == provider {
@@ -1237,7 +1242,7 @@ struct MacModelSelectorButton: View {
                     HStack {
                         if model.provider == .private {
                             Image(systemName: "lock.shield.fill")
-                                .foregroundStyle(.green)
+                                .foregroundStyle(theme.success)
                         }
                         Text(model.displayName)
                         Spacer()
@@ -1254,12 +1259,14 @@ struct MacModelSelectorButton: View {
 // MARK: - Launch View
 
 struct MacLaunchView: View {
+    @Environment(\.theme) private var theme
+    
     var body: some View {
         VStack(spacing: 20) {
             ProgressView()
                 .scaleEffect(1.5)
             Text("Loading...")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -1271,6 +1278,7 @@ struct MacAuthView: View {
     @Bindable var coordinator: AppCoordinator
     @Environment(\.dependencies) private var dependencies
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.theme) private var theme
     
     @State private var viewModel: AuthViewModel?
     @State private var isHoveringGoogle = false
@@ -1283,7 +1291,7 @@ struct MacAuthView: View {
                 // App icon
                 Image(systemName: "bubble.left.and.bubble.right.fill")
                     .font(.largeTitle.weight(.light))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(theme.textPrimary)
                 
                 VStack(spacing: 4) {
                     Text("Onera")
@@ -1291,7 +1299,7 @@ struct MacAuthView: View {
                     
                     Text("Private AI conversations")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                 }
             }
             .demoModeActivation()
@@ -1301,7 +1309,7 @@ struct MacAuthView: View {
                 // Sign in with Apple
                 ZStack {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(colorScheme == .dark ? Color.white : Color.black)
+                        .fill(theme.textPrimary)
                     
                     SignInWithAppleButton(.continue) { request in
                         viewModel?.configureAppleRequest(request)
@@ -1327,12 +1335,12 @@ struct MacAuthView: View {
                             .font(.subheadline.weight(.medium))
                     }
                     .frame(width: 240, height: 40)
-                    .foregroundStyle(.primary)
-                    .background(Color(nsColor: .controlBackgroundColor))
+                    .foregroundStyle(theme.textPrimary)
+                    .background(theme.secondaryBackground)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+                            .stroke(theme.border, lineWidth: 1)
                     )
                 }
                 .buttonStyle(.plain)
@@ -1349,21 +1357,21 @@ struct MacAuthView: View {
             HStack(spacing: 4) {
                 Link("Terms", destination: URL(string: "https://onera.app/terms")!)
                 Text("·")
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(theme.textTertiary)
                 Link("Privacy", destination: URL(string: "https://onera.app/privacy")!)
             }
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(theme.textSecondary)
         }
         .padding(40)
         .frame(width: 320)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(nsColor: .windowBackgroundColor))
-                .shadow(color: .black.opacity(0.15), radius: 20, y: 10)
+                .fill(theme.background)
+                .shadow(color: theme.textPrimary.opacity(0.15), radius: 20, y: 10)
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(nsColor: .underPageBackgroundColor))
+        .background(theme.tertiaryBackground)
         .onAppear {
             viewModel = AuthViewModel(
                 authService: dependencies.authService,
@@ -1432,6 +1440,7 @@ struct MacSetupFlowView: View {
 struct MacApiKeySetupView: View {
     @Bindable var coordinator: AppCoordinator
     @Environment(\.dependencies) private var dependencies
+    @Environment(\.theme) private var theme
     @State private var selectedProvider: LLMProvider?
     
     var body: some View {
@@ -1441,7 +1450,7 @@ struct MacApiKeySetupView: View {
                 .fontWeight(.bold)
             
             Text("Choose a provider to get started")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.textSecondary)
             
             // Provider selection would go here
             

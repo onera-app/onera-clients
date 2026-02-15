@@ -109,7 +109,7 @@ struct MessageInputView: View {
                     }
                     .accessibilityLabel("Disable web search")
                 }
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(theme.accent)
                 .padding(.horizontal, OneraSpacing.lg)
                 .padding(.vertical, 4)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -138,7 +138,7 @@ struct MessageInputView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
-            .oneraGlassRounded(24, showBorder: true, showShadow: true)
+            .oneraGlassRounded(24, showBorder: true, showShadow: false)
             .frame(maxWidth: maxInputWidth)
             .frame(maxWidth: .infinity)
             .padding(.horizontal, OneraSpacing.md)
@@ -421,7 +421,7 @@ struct MessageInputView: View {
                 // Web search enabled indicator dot
                 if let searchEnabled = searchEnabled, searchEnabled.wrappedValue {
                     Circle()
-                        .fill(Color.accentColor)
+                        .fill(theme.accent)
                         .frame(width: 8, height: 8)
                         .offset(x: 2, y: -2)
                 }
@@ -677,7 +677,7 @@ private struct MentionPopupView: View {
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 6)
-                    .background(index == selectedIndex ? Color.accentColor.opacity(0.15) : Color.clear)
+                    .background(index == selectedIndex ? theme.accent.opacity(0.15) : Color.clear)
                     .clipShape(RoundedRectangle(cornerRadius: 6))
                     .contentShape(Rectangle())
                 }

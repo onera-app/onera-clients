@@ -8,9 +8,11 @@
 
 import SwiftUI
 
-// MARK: - Captions Color Palette
+// MARK: - Captions Color Palette (Deprecated)
 
-/// Design tokens inspired by the Captions app aesthetic
+/// Design tokens inspired by the Captions app aesthetic.
+/// - Note: Deprecated — use `@Environment(\.theme)` tokens instead.
+/// These constants are only retained for the onboarding button styles.
 enum CaptionsColors {
     
     // MARK: Gradients

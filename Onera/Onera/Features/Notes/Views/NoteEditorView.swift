@@ -156,7 +156,7 @@ struct NoteEditorView: View {
             .disabled(isSaving)
             .overlay {
                 if isSaving {
-                    Color.black.opacity(0.2)
+                    theme.textPrimary.opacity(0.2)
                         .ignoresSafeArea()
                     ProgressView()
                 }
@@ -239,7 +239,7 @@ struct NoteEditorView: View {
             } label: {
                 Image(systemName: isPinned ? "pin.fill" : "pin")
                     .font(.body)
-                    .foregroundStyle(isPinned ? .orange : .secondary)
+                    .foregroundStyle(isPinned ? theme.warning : theme.textSecondary)
             }
             
             // Archive button
@@ -248,7 +248,7 @@ struct NoteEditorView: View {
             } label: {
                 Image(systemName: isArchived ? "archivebox.fill" : "archivebox")
                     .font(.body)
-                    .foregroundStyle(isArchived ? .blue : .secondary)
+                    .foregroundStyle(isArchived ? theme.accent : theme.textSecondary)
             }
         }
     }

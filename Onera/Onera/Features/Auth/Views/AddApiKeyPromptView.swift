@@ -11,6 +11,7 @@ import SwiftUI
 struct AddApiKeyPromptView: View {
     
     @Environment(\.openURL) private var openURL
+    @Environment(\.theme) private var theme
     
     let onSelectProvider: (LLMProvider) -> Void
     let onSkip: () -> Void
@@ -22,7 +23,7 @@ struct AddApiKeyPromptView: View {
                     VStack(spacing: 16) {
                         Image(systemName: "key.fill")
                             .font(.largeTitle)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(theme.warning)
                         
                         VStack(spacing: 8) {
                             Text("Add Your First API Key")
@@ -30,7 +31,7 @@ struct AddApiKeyPromptView: View {
                             
                             Text("Connect an AI provider to start chatting")
                                 .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(theme.textSecondary)
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -164,7 +165,7 @@ struct AddApiKeyPromptView: View {
                         onSkip()
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
                 } footer: {
                     Text("You can add API keys anytime in Settings.")
                 }
@@ -186,6 +187,7 @@ private struct ProviderButton: View {
     let iconColor: Color
     var badge: String? = nil
     let onSelect: (LLMProvider) -> Void
+    @Environment(\.theme) private var theme
     
     var body: some View {
         Button {
@@ -201,29 +203,29 @@ private struct ProviderButton: View {
                     HStack(spacing: 8) {
                         Text(provider.displayName)
                             .font(.body.weight(.medium))
-                            .foregroundStyle(Color.primary)
+                            .foregroundStyle(theme.textPrimary)
                         
                         if let badge = badge {
                             Text(badge)
                                 .font(.caption2.weight(.medium))
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(.green.opacity(0.15))
-                                .foregroundStyle(.green)
+                                .background(theme.success.opacity(0.15))
+                                .foregroundStyle(theme.success)
                                 .clipShape(Capsule())
                         }
                     }
                     
                     Text(description)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                 }
                 
                 Spacer()
                 
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(theme.textTertiary)
             }
         }
     }

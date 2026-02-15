@@ -11,6 +11,8 @@ import SwiftUI
 @Observable
 final class PasskeyManagementViewModel {
     private(set) var passkeys: [WebAuthnPasskey] = []
+    /// Decrypted display names keyed by passkey id
+    private(set) var decryptedNames: [String: String] = [:]
     private(set) var isLoading = false
     private(set) var error: String?
     private(set) var isRegistering = false
@@ -20,11 +22,18 @@ final class PasskeyManagementViewModel {
     private let passkeyService: PasskeyServiceProtocol
     private let authService: AuthServiceProtocol
     private let secureSession: SecureSessionProtocol
+    private let cryptoService: ExtendedCryptoServiceProtocol
     
-    init(passkeyService: PasskeyServiceProtocol, authService: AuthServiceProtocol, secureSession: SecureSessionProtocol) {
+    init(passkeyService: PasskeyServiceProtocol, authService: AuthServiceProtocol, secureSession: SecureSessionProtocol, cryptoService: ExtendedCryptoServiceProtocol) {
         self.passkeyService = passkeyService
         self.authService = authService
         self.secureSession = secureSession
+        self.cryptoService = cryptoService
+    }
+    
+    /// Get the display name for a passkey (decrypted or fallback)
+    func displayName(for passkey: WebAuthnPasskey) -> String {
+        decryptedNames[passkey.id] ?? "Passkey"
     }
     
     func loadPasskeys() async {
@@ -33,16 +42,46 @@ final class PasskeyManagementViewModel {
         do {
             let token = try await authService.getToken()
             passkeys = try await passkeyService.listPasskeys(token: token)
+            decryptPasskeyNames()
         } catch {
             self.error = error.localizedDescription
         }
         isLoading = false
     }
     
+    /// Decrypt all passkey names using the master key
+    private func decryptPasskeyNames() {
+        guard let masterKey = secureSession.masterKey else { return }
+        var names: [String: String] = [:]
+        for passkey in passkeys {
+            if let encName = passkey.encryptedName, let nonce = passkey.nameNonce {
+                do {
+                    let name = try cryptoService.decryptString(ciphertext: encName, nonce: nonce, key: masterKey)
+                    names[passkey.id] = name
+                } catch {
+                    names[passkey.id] = "Passkey"
+                }
+            } else {
+                names[passkey.id] = "Passkey"
+            }
+        }
+        decryptedNames = names
+    }
+    
     func renamePasskey(credentialId: String, newName: String) async {
+        guard let masterKey = secureSession.masterKey else {
+            error = "Session must be unlocked to rename a passkey"
+            return
+        }
         do {
             let token = try await authService.getToken()
-            try await passkeyService.renamePasskey(credentialId: credentialId, name: newName, token: token)
+            let encrypted = try cryptoService.encryptString(newName, key: masterKey)
+            try await passkeyService.renamePasskey(
+                credentialId: credentialId,
+                encryptedName: encrypted.ciphertext,
+                nameNonce: encrypted.nonce,
+                token: token
+            )
             await loadPasskeys()
         } catch {
             self.error = error.localizedDescription
@@ -154,7 +193,7 @@ struct PasskeyManagementView: View {
                 Task { await viewModel.deletePasskey(credentialId: passkey.credentialId) }
             }
         } message: { passkey in
-            Text("Are you sure you want to delete \"\(passkey.name ?? "this passkey")\"? This action cannot be undone.")
+            Text("Are you sure you want to delete \"\(viewModel.displayName(for: passkey))\"? This action cannot be undone.")
         }
         .sheet(isPresented: $showRegisterSheet) {
             registerSheet
@@ -203,7 +242,7 @@ struct PasskeyManagementView: View {
                     .frame(width: 24)
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(passkey.name ?? "Unnamed Passkey")
+                    Text(viewModel.displayName(for: passkey))
                         .fontWeight(.medium)
                     
                     HStack(spacing: 8) {
@@ -229,7 +268,7 @@ struct PasskeyManagementView: View {
             }
             .contextMenu {
                 Button {
-                    editName = passkey.name ?? ""
+                    editName = viewModel.displayName(for: passkey)
                     editingPasskeyId = passkey.id
                 } label: {
                     Label("Rename", systemImage: "pencil")

@@ -38,20 +38,20 @@ final class ThemeManager {
     /// - Parameter colorScheme: The current system color scheme (light/dark)
     /// - Returns: ThemeColors instance with appropriate colors
     func colors(for colorScheme: ColorScheme) -> ThemeColors {
-        let base: ThemeColors
         switch currentTheme {
         case .system:
-            base = DefaultThemeColors()
+            return DefaultThemeColors()
         case .claude:
-            base = ClaudeThemeColors(colorScheme: colorScheme)
+            return ClaudeThemeColors(colorScheme: colorScheme)
+        case .chatgpt:
+            return ChatGPTThemeColors(colorScheme: colorScheme)
+        case .t3chat:
+            return T3ChatThemeColors(colorScheme: colorScheme)
+        case .gemini:
+            return GeminiThemeColors(colorScheme: colorScheme)
+        case .groq:
+            return GroqThemeColors(colorScheme: colorScheme)
         }
-        
-        // Apply OLED black override when in dark mode and user has enabled it
-        if colorScheme == .dark && UserDefaults.standard.bool(forKey: "oledDark") {
-            return OLEDDarkThemeColors(wrapping: base)
-        }
-        
-        return base
     }
     
     /// Check if Claude theme is active

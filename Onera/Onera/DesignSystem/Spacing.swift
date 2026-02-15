@@ -74,6 +74,17 @@ enum OneraSpacing {
     
     /// Button internal padding (vertical)
     static let buttonPaddingV: CGFloat = 12
+    
+    // MARK: - Dynamic Spacing
+    
+    /// Message spacing based on chat density preference
+    static func messageSpacing(for density: String) -> CGFloat {
+        switch density {
+        case "compact": return sm     // 8pt
+        case "spacious": return xxl   // 24pt
+        default: return lg            // 16pt (comfortable)
+        }
+    }
 }
 
 // MARK: - View Extension for Semantic Padding

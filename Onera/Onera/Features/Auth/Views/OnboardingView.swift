@@ -47,7 +47,7 @@ struct OnboardingView: View {
                     } label: {
                         Image(systemName: "questionmark.circle.fill")
                             .font(.title2)
-                            .foregroundStyle(.black.opacity(0.5))
+                            .foregroundStyle(theme.onboardingTextPrimary.opacity(0.5))
                             .frame(width: 44, height: 44)
                     }
                     .buttonStyle(.plain)
@@ -167,15 +167,17 @@ struct OnboardingView: View {
 // MARK: - Welcome Branding
 
 private struct WelcomeBrandingContent: View {
+    @Environment(\.theme) private var theme
+    
     var body: some View {
         VStack(spacing: OneraSpacing.md) {
             Text("onera")
                 .font(.system(size: 52, weight: .bold, design: .default))
-                .foregroundStyle(.black)
+                .foregroundStyle(theme.onboardingTextPrimary)
             
             Text("Private AI chat, built differently.")
                 .font(.title3)
-                .foregroundStyle(.black.opacity(0.65))
+                .foregroundStyle(theme.onboardingTextSecondary)
                 .multilineTextAlignment(.center)
         }
     }
@@ -184,34 +186,36 @@ private struct WelcomeBrandingContent: View {
 // MARK: - Security Branding
 
 private struct SecurityBrandingContent: View {
+    @Environment(\.theme) private var theme
+    
     var body: some View {
         VStack(spacing: OneraSpacing.xxl) {
             Image(systemName: "lock.shield.fill")
                 .font(.system(size: 56))
-                .foregroundStyle(.black.opacity(0.75))
+                .foregroundStyle(theme.onboardingTextPrimary.opacity(0.75))
             
             VStack(spacing: OneraSpacing.md) {
                 Text("Your Data, Your Control")
                     .font(.title.bold())
-                    .foregroundStyle(.black)
+                    .foregroundStyle(theme.onboardingTextPrimary)
                 
                 Text("Everything is encrypted before it leaves your device. We never see your chats or API keys.")
                     .font(.body)
-                    .foregroundStyle(.black.opacity(0.6))
+                    .foregroundStyle(theme.onboardingTextSecondary)
                     .multilineTextAlignment(.center)
             }
             
             HStack(spacing: OneraSpacing.lg) {
                 encryptionNode(icon: "doc.text", label: "Your Data")
                 Image(systemName: "arrow.right")
-                    .foregroundStyle(.black.opacity(0.4))
+                    .foregroundStyle(theme.onboardingTextTertiary)
                 encryptionNode(icon: "lock.fill", label: "Encrypted")
                 Image(systemName: "arrow.right")
-                    .foregroundStyle(.black.opacity(0.4))
+                    .foregroundStyle(theme.onboardingTextTertiary)
                 encryptionNode(icon: "icloud.fill", label: "Stored")
             }
             .padding()
-            .background(.white.opacity(0.35))
+            .background(theme.onboardingTextPrimary.opacity(0.15))
             .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium, style: .continuous))
         }
     }
@@ -220,10 +224,10 @@ private struct SecurityBrandingContent: View {
         VStack(spacing: 4) {
             Image(systemName: icon)
                 .font(.title3)
-                .foregroundStyle(.black.opacity(0.7))
+                .foregroundStyle(theme.onboardingTextPrimary.opacity(0.7))
             Text(label)
                 .font(.caption)
-                .foregroundStyle(.black.opacity(0.5))
+                .foregroundStyle(theme.onboardingTextTertiary)
         }
     }
 }
@@ -237,16 +241,16 @@ private struct ReadyBrandingContent: View {
         VStack(spacing: OneraSpacing.xxl) {
             Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 56))
-                .foregroundStyle(.black.opacity(0.75))
+                .foregroundStyle(theme.onboardingTextPrimary.opacity(0.75))
             
             VStack(spacing: OneraSpacing.md) {
                 Text("You're All Set")
                     .font(.title.bold())
-                    .foregroundStyle(.black)
+                    .foregroundStyle(theme.onboardingTextPrimary)
                 
                 Text("Sign in, set up encryption, and add your API keys to get started.")
                     .font(.body)
-                    .foregroundStyle(.black.opacity(0.6))
+                    .foregroundStyle(theme.onboardingTextSecondary)
                     .multilineTextAlignment(.center)
             }
             
@@ -264,22 +268,22 @@ private struct ReadyBrandingContent: View {
                 .font(.headline.weight(.bold))
                 .foregroundStyle(.white)
                 .frame(width: 32, height: 32)
-                .background(.black.opacity(0.7))
+                .background(theme.onboardingTextPrimary.opacity(0.7))
                 .clipShape(Circle())
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.black)
+                    .foregroundStyle(theme.onboardingTextPrimary)
                 Text(subtitle)
                     .font(.caption)
-                    .foregroundStyle(.black.opacity(0.5))
+                    .foregroundStyle(theme.onboardingTextTertiary)
             }
             
             Spacer()
         }
         .padding()
-        .background(.white.opacity(0.35))
+        .background(theme.onboardingTextPrimary.opacity(0.15))
         .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard, style: .continuous))
     }
 }

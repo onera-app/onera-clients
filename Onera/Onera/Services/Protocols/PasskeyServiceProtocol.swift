@@ -42,7 +42,7 @@ protocol PasskeyServiceProtocol: Sendable {
     func listPasskeys(token: String) async throws -> [WebAuthnPasskey]
     
     /// Renames a passkey
-    func renamePasskey(credentialId: String, name: String, token: String) async throws
+    func renamePasskey(credentialId: String, encryptedName: String, nameNonce: String, token: String) async throws
     
     /// Deletes a passkey
     func deletePasskey(credentialId: String, token: String) async throws

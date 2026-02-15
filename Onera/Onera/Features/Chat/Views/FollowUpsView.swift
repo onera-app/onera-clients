@@ -13,6 +13,7 @@ struct FollowUpsView: View {
     let onSelect: (String) -> Void
     
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.theme) private var theme
     
     @State private var appeared = false
     
@@ -21,7 +22,7 @@ struct FollowUpsView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Suggested follow-ups")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
                 
                 FlowLayout(spacing: 8) {
                     ForEach(Array(followUps.enumerated()), id: \.element) { index, followUp in
@@ -54,6 +55,7 @@ private struct FollowUpPill: View {
     let action: () -> Void
     
     @State private var isHovered = false
+    @Environment(\.theme) private var theme
     
     var body: some View {
         Button(action: action) {
@@ -65,11 +67,11 @@ private struct FollowUpPill: View {
                 .padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(isHovered ? Color.accentColor.opacity(0.15) : Color.secondary.opacity(0.1))
+                        .fill(isHovered ? theme.accent.opacity(0.15) : theme.secondaryBackground)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
-                        .stroke(isHovered ? Color.accentColor.opacity(0.3) : Color.secondary.opacity(0.2), lineWidth: 1)
+                        .stroke(isHovered ? theme.accent.opacity(0.3) : theme.border, lineWidth: 1)
                 )
         }
         .buttonStyle(.plain)

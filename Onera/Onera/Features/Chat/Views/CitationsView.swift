@@ -54,6 +54,7 @@ struct CitationsView: View {
     let citations: [Citation]
     
     @State private var expandedCitationId: String?
+    @Environment(\.theme) private var theme
     
     var body: some View {
         if !citations.isEmpty {
@@ -61,7 +62,7 @@ struct CitationsView: View {
                 Text("Sources")
                     .font(.caption)
                     .fontWeight(.medium)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
                 
                 VStack(spacing: 6) {
                     ForEach(citations) { citation in
@@ -95,6 +96,7 @@ private struct CitationCard: View {
     let onToggle: () -> Void
     
     @Environment(\.openURL) private var openURL
+    @Environment(\.theme) private var theme
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -104,14 +106,14 @@ private struct CitationCard: View {
                     // Source type icon
                     Image(systemName: citation.sourceType.iconName)
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                         .frame(width: 20)
                     
                     // Title
                     Text(citation.title)
                         .font(.subheadline)
                         .fontWeight(.medium)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(theme.textPrimary)
                         .lineLimit(isExpanded ? nil : 1)
                         .multilineTextAlignment(.leading)
                     
@@ -120,7 +122,7 @@ private struct CitationCard: View {
                     // Expand/collapse indicator
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                         .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(theme.textTertiary)
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
@@ -138,7 +140,7 @@ private struct CitationCard: View {
                     if let snippet = citation.snippet, !snippet.isEmpty {
                         Text(snippet)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(theme.textSecondary)
                             .lineLimit(4)
                             .padding(.horizontal, 12)
                     }
@@ -155,7 +157,7 @@ private struct CitationCard: View {
                                     .font(.caption)
                                     .lineLimit(1)
                             }
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(theme.accent)
                         }
                         .buttonStyle(.plain)
                         .padding(.horizontal, 12)
@@ -164,11 +166,11 @@ private struct CitationCard: View {
                 .padding(.bottom, 10)
             }
         }
-        .background(Color.secondary.opacity(0.08))
+        .background(theme.secondaryBackground)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+                .stroke(theme.border, lineWidth: 1)
         )
     }
 }
@@ -180,12 +182,13 @@ struct InlineCitationMarker: View {
     
     let number: Int
     let action: () -> Void
+    @Environment(\.theme) private var theme
     
     var body: some View {
         Button(action: action) {
             Text("[\(number)]")
                 .font(.caption2.weight(.medium))
-                .foregroundStyle(.blue)
+                .foregroundStyle(theme.accent)
                 .baselineOffset(4)
         }
         .buttonStyle(.plain)

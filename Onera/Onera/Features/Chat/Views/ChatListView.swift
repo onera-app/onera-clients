@@ -70,6 +70,7 @@ struct ChatListRow: View {
     
     let chat: ChatSummary
     let isSelected: Bool
+    @Environment(\.theme) private var theme
     
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -79,7 +80,7 @@ struct ChatListRow: View {
             
             Text(chat.updatedAt, style: .relative)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.textSecondary)
         }
         .padding(.vertical, 4)
         .contentShape(Rectangle())

@@ -29,6 +29,8 @@ struct ChatView: View {
     @State private var activeArtifactId: String?
     #endif
     
+    @AppStorage("chatDensity") private var chatDensity: String = "comfortable"
+    
     // @mention prompt support
     var promptSummaries: [PromptSummary] = []
     var onFetchPromptContent: ((PromptSummary) async -> String?)? = nil
@@ -61,7 +63,7 @@ struct ChatView: View {
                     emptyStateView
                 } else {
                     messagesView
-                        .tint(.blue) // Blue text selection color
+                        .tint(theme.accent)
                 }
             }
             .safeAreaInset(edge: .bottom) {
@@ -125,7 +127,7 @@ struct ChatView: View {
     
     private var messagesView: some View {
         ScrollView {
-            LazyVStack(spacing: 16) {
+            LazyVStack(spacing: OneraSpacing.messageSpacing(for: chatDensity)) {
                 ForEach(Array(viewModel.messages.enumerated()), id: \.element.id) { index, message in
                     messageBubble(for: message)
                         .frame(maxWidth: maxMessageWidth, alignment: message.isUser ? .trailing : .leading)

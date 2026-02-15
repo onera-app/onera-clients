@@ -13,6 +13,7 @@ struct AddCredentialView: View {
     @Bindable var viewModel: CredentialsViewModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+    @Environment(\.theme) private var theme
     @FocusState private var focusedField: Field?
     
     /// Optional: Pre-select a provider (for use from onboarding)
@@ -44,7 +45,7 @@ struct AddCredentialView: View {
                                 .font(.headline)
                             Text(descriptionForProvider(viewModel.selectedProvider))
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(theme.textSecondary)
                         }
                         
                         Spacer()
@@ -54,7 +55,7 @@ struct AddCredentialView: View {
                                 openURL(url)
                             } label: {
                                 Image(systemName: "arrow.up.right.square")
-                                    .foregroundStyle(.blue)
+                                    .foregroundStyle(theme.accent)
                             }
                             .buttonStyle(.plain)
                         }
@@ -75,7 +76,7 @@ struct AddCredentialView: View {
                 } header: {
                     HStack {
                         Text("Name")
-                        Text("*").foregroundStyle(.red)
+                        Text("*").foregroundStyle(theme.error)
                     }
                 }
                 
@@ -99,7 +100,7 @@ struct AddCredentialView: View {
                         HStack {
                             Text("API Key")
                             if !isLocalProvider {
-                                Text("*").foregroundStyle(.red)
+                                Text("*").foregroundStyle(theme.error)
                             }
                         }
                     } footer: {
@@ -151,7 +152,7 @@ struct AddCredentialView: View {
                     } header: {
                         HStack {
                             Text("Server URL")
-                            Text("*").foregroundStyle(.red)
+                            Text("*").foregroundStyle(theme.error)
                         }
                     } footer: {
                         if viewModel.selectedProvider == .ollama {
@@ -167,10 +168,10 @@ struct AddCredentialView: View {
                     Label {
                         Text("Your credentials are encrypted with your E2EE key and stored securely. They are never visible to the server.")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(theme.textSecondary)
                     } icon: {
                         Image(systemName: "lock.shield.fill")
-                            .foregroundStyle(.green)
+                            .foregroundStyle(theme.success)
                     }
                 }
             }
@@ -208,7 +209,7 @@ struct AddCredentialView: View {
             .disabled(viewModel.isSaving)
             .overlay {
                 if viewModel.isSaving {
-                    Color.black.opacity(0.2)
+                    theme.textPrimary.opacity(0.2)
                         .ignoresSafeArea()
                     ProgressView("Saving...")
                         .padding()

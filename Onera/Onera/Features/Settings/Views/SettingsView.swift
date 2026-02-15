@@ -18,11 +18,7 @@ struct SettingsView: View {
     @Environment(\.theme) private var theme
     @Bindable var viewModel: SettingsViewModel
     @AppStorage("colorScheme") private var selectedColorScheme = 0
-    @AppStorage("oledDark") private var oledDark = false
     @AppStorage("chatDensity") private var chatDensity: String = "comfortable"
-    @State private var showResetEncryption = false
-    @State private var resetConfirmText = ""
-    @State private var isResetting = false
     
     @Environment(\.dependencies) private var dependencies
     
@@ -79,17 +75,7 @@ struct SettingsView: View {
                     onDismiss: { viewModel.clearRecoveryPhrase() }
                 )
             }
-            .sheet(isPresented: $showResetEncryption) {
-                ResetEncryptionSheet(
-                    confirmText: $resetConfirmText,
-                    isResetting: isResetting,
-                    onReset: performEncryptionReset,
-                    onCancel: {
-                        showResetEncryption = false
-                        resetConfirmText = ""
-                    }
-                )
-            }
+
             .onAppear {
                 viewModel.loadSettings()
             }
@@ -231,12 +217,6 @@ struct SettingsView: View {
                 Label("API Connections", systemImage: "key.horizontal")
             }
             
-            Button(role: .destructive) {
-                showResetEncryption = true
-            } label: {
-                Label("Reset Encryption", systemImage: "exclamationmark.triangle")
-            }
-            .disabled(!viewModel.isSessionUnlocked)
         }
     }
     
@@ -248,12 +228,6 @@ struct SettingsView: View {
                 GeneralSettingsView()
             } label: {
                 Label("General", systemImage: "slider.horizontal.3")
-            }
-            
-            NavigationLink {
-                DataSettingsView()
-            } label: {
-                Label("Data", systemImage: "externaldrive")
             }
             
             NavigationLink {
@@ -280,19 +254,8 @@ struct SettingsView: View {
                 set: { themeManager.currentTheme = $0 }
             )) {
                 ForEach(AppTheme.allCases) { appTheme in
-                    HStack {
-                        Text(appTheme.displayName)
-                        if appTheme == .claude {
-                            Text("New")
-                                .font(OneraTypography.caption2)
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color(red: 0.851, green: 0.467, blue: 0.341)) // Claude Coral #D97757
-                                .clipShape(Capsule())
-                        }
-                    }
-                    .tag(appTheme)
+                    Text(appTheme.displayName)
+                        .tag(appTheme)
                 }
             } label: {
                 Label("Theme", systemImage: "paintbrush")
@@ -307,13 +270,6 @@ struct SettingsView: View {
                 Label("Appearance", systemImage: "sun.max")
             }
             .accessibilityIdentifier("themeSelector")
-            
-            // OLED Dark mode - only show when Dark mode is selected
-            if selectedColorScheme == 2 {
-                Toggle(isOn: $oledDark) {
-                    Label("OLED Dark", systemImage: "moon.fill")
-                }
-            }
             
             // Chat density
             Picker(selection: $chatDensity) {
@@ -408,38 +364,6 @@ struct SettingsView: View {
         }
     }
     
-    // MARK: - Encryption Reset
-    
-    private func performEncryptionReset() async {
-        guard resetConfirmText == "RESET MY ENCRYPTION" else { return }
-        isResetting = true
-        defer { isResetting = false }
-        
-        do {
-            let token = try await dependencies.authService.getToken()
-            
-            struct ResetInput: Encodable {
-                let confirmPhrase: String
-            }
-            struct ResetResponse: Decodable {
-                let success: Bool
-            }
-            
-            let _: ResetResponse = try await dependencies.networkService.call(
-                procedure: "keyShares.resetEncryption",
-                input: ResetInput(confirmPhrase: "RESET MY ENCRYPTION"),
-                token: token
-            )
-            
-            dependencies.secureSession.lock()
-            dependencies.secureSession.clearPersistedSession()
-            
-            showResetEncryption = false
-            resetConfirmText = ""
-        } catch {
-            // Error handling - could show an alert
-        }
-    }
 }
 
 // MARK: - Recovery Phrase Display
@@ -563,7 +487,7 @@ struct DeviceManagementView: View {
                     VStack(spacing: 8) {
                         Image(systemName: "exclamationmark.triangle")
                             .font(.title2)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(theme.warning)
                         Text("Failed to load devices")
                             .font(OneraTypography.headline)
                         Text(error.localizedDescription)
@@ -610,7 +534,7 @@ struct DeviceManagementView: View {
                 Section {
                     HStack(spacing: 12) {
                         Image(systemName: "lock.shield")
-                            .foregroundStyle(.green)
+                            .foregroundStyle(theme.success)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("End-to-End Encrypted")
                                 .font(OneraTypography.subheadline)
@@ -796,7 +720,7 @@ private struct DeviceRow: View {
             // Device icon
             Image(systemName: deviceIcon)
                 .font(.title2)
-                .foregroundStyle(isCurrentDevice ? .green : .primary)
+                .foregroundStyle(isCurrentDevice ? theme.success : theme.textPrimary)
                 .frame(width: 32)
             
             // Device info
@@ -811,14 +735,14 @@ private struct DeviceRow: View {
                             .foregroundStyle(.white)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color.green)
+                            .background(theme.success)
                             .clipShape(Capsule())
                     }
                     
                     if device.trusted {
                         Image(systemName: "checkmark.shield.fill")
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(theme.success)
                     }
                 }
                 
@@ -859,7 +783,7 @@ struct WatchSyncButton: View {
                         .controlSize(.small)
                 } else if syncSuccess {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(theme.success)
                 }
             }
         }
@@ -910,64 +834,6 @@ struct AppearanceSettingsView: View {
         }
         .formStyle(.grouped)
         .navigationTitle("Appearance")
-    }
-}
-
-// MARK: - Reset Encryption Sheet
-
-private struct ResetEncryptionSheet: View {
-    @Binding var confirmText: String
-    let isResetting: Bool
-    let onReset: () async -> Void
-    let onCancel: () -> Void
-    
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 24) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.largeTitle)
-                    .foregroundStyle(.red)
-                
-                Text("Reset Encryption")
-                    .font(.title2.bold())
-                
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("This will permanently delete all your encryption keys.")
-                    Text("All your encrypted chats and notes will become unreadable. This cannot be undone.")
-                        .foregroundStyle(.red)
-                }
-                .font(.body)
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Type **RESET MY ENCRYPTION** to confirm:")
-                        .font(.callout)
-                    TextField("Confirmation", text: $confirmText)
-                        .textFieldStyle(.roundedBorder)
-                        .autocorrectionDisabled()
-                        #if os(iOS)
-                        .textInputAutocapitalization(.characters)
-                        #endif
-                }
-                
-                Spacer()
-            }
-            .padding(24)
-            .navigationTitle("Reset Encryption")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { onCancel() }
-                }
-                ToolbarItem(placement: .destructiveAction) {
-                    Button("Reset", role: .destructive) {
-                        Task { await onReset() }
-                    }
-                    .disabled(confirmText != "RESET MY ENCRYPTION" || isResetting)
-                }
-            }
-        }
     }
 }
 

@@ -16,6 +16,7 @@ struct MenuBarView: View {
     @Environment(\.dependencies) private var dependencies
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
+    @Environment(\.theme) private var theme
     @State private var inputText = ""
     @State private var recentChats: [ChatSummary] = []
     @State private var isLoading = false
@@ -53,7 +54,7 @@ struct MenuBarView: View {
     private var header: some View {
         HStack {
             Image(systemName: "bubble.left.and.bubble.right.fill")
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(theme.accent)
                 .font(.title3)
             
             Text("Onera")
@@ -66,7 +67,7 @@ struct MenuBarView: View {
                 NSApp.activate(ignoringOtherApps: true)
             } label: {
                 Image(systemName: "macwindow")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
             }
             .buttonStyle(.plain)
             .help("Open Main Window")
@@ -96,7 +97,7 @@ struct MenuBarView: View {
                     } label: {
                         Image(systemName: "arrow.up.circle.fill")
                             .font(.title2)
-                            .foregroundStyle(Color.accentColor)
+                            .foregroundStyle(theme.accent)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Send message")
@@ -104,7 +105,7 @@ struct MenuBarView: View {
                 }
             }
             .padding(10)
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(theme.secondaryBackground)
             .clipShape(RoundedRectangle(cornerRadius: 8))
             
             if isLoading {
@@ -113,7 +114,7 @@ struct MenuBarView: View {
                         .scaleEffect(0.7)
                     Text("Thinking...")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                 }
             }
         }
@@ -126,14 +127,14 @@ struct MenuBarView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Recent")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.textSecondary)
                 .padding(.horizontal, 12)
                 .padding(.top, 8)
             
             if recentChats.isEmpty {
                 Text("No recent chats")
                     .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(theme.textTertiary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 20)
             } else {
@@ -149,14 +150,14 @@ struct MenuBarView: View {
                                 
                                 Text(chat.updatedAt, style: .relative)
                                     .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(theme.textSecondary)
                             }
                             
                             Spacer()
                             
                             Image(systemName: "chevron.right")
                                 .font(.caption)
-                                .foregroundStyle(.tertiary)
+                                .foregroundStyle(theme.textTertiary)
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
@@ -204,7 +205,7 @@ struct MenuBarView: View {
             } label: {
                 Image(systemName: "gearshape")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
             }
             .buttonStyle(.plain)
             .help("Settings (⌘,)")
@@ -431,7 +432,7 @@ struct MacChatView: View {
             
             Image(systemName: "bubble.left.and.text.bubble.right")
                 .font(.largeTitle.weight(.light))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(theme.textTertiary)
             
             VStack(spacing: 4) {
                 Text("Start a conversation")
@@ -444,7 +445,7 @@ struct MacChatView: View {
                     Text("End-to-end encrypted")
                 }
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.textSecondary)
             }
             
             // Starter prompts grid
@@ -457,7 +458,7 @@ struct MacChatView: View {
                         HStack(spacing: 8) {
                             Image(systemName: item.icon)
                                 .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(theme.textSecondary)
                                 .frame(width: 20)
                             
                             VStack(alignment: .leading, spacing: 2) {
@@ -466,7 +467,7 @@ struct MacChatView: View {
                                     .fontWeight(.medium)
                                 Text(item.prompt)
                                     .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(theme.textSecondary)
                                     .lineLimit(1)
                             }
                             
@@ -493,11 +494,7 @@ struct MacChatView: View {
     @AppStorage("chatDensity") private var chatDensity: String = "comfortable"
     
     private var messageSpacing: CGFloat {
-        switch chatDensity {
-        case "compact": return 8
-        case "spacious": return 24
-        default: return 16
-        }
+        OneraSpacing.messageSpacing(for: chatDensity)
     }
     
     private var messagesScrollView: some View {
@@ -607,7 +604,7 @@ struct MacChatView: View {
                                 .font(.caption2)
                                 .foregroundStyle(.white)
                                 .frame(width: 24, height: 24)
-                                .background(Color.red)
+                                .background(theme.error)
                                 .clipShape(Circle())
                         }
                         .buttonStyle(.plain)
@@ -620,7 +617,7 @@ struct MacChatView: View {
                                 .font(.caption.bold())
                                 .foregroundStyle(.white)
                                 .frame(width: 24, height: 24)
-                                .background(viewModel.canSend ? Color.accentColor : Color.secondary.opacity(0.5))
+                                .background(viewModel.canSend ? theme.accent : theme.textSecondary.opacity(0.5))
                                 .clipShape(Circle())
                         }
                         .buttonStyle(.plain)
@@ -631,7 +628,7 @@ struct MacChatView: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(Color(.controlBackgroundColor))
+                .background(theme.secondaryBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 18))
             }
             .padding(.horizontal, 16)
@@ -694,7 +691,7 @@ struct MacChatView: View {
                 } else {
                     Image(systemName: "globe")
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(viewModel.searchEnabled ? Color.accentColor : .secondary)
+                        .foregroundStyle(viewModel.searchEnabled ? theme.accent : theme.textSecondary)
                         .frame(width: 32, height: 32)
                 }
             }
@@ -705,7 +702,7 @@ struct MacChatView: View {
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
-        .background(Color(.controlBackgroundColor))
+        .background(theme.secondaryBackground)
         .clipShape(Circle())
         .help(
             !hasSearchProvider ? "Configure a search provider in Settings > Tools" :
@@ -776,7 +773,7 @@ struct MacMessageBubble: View {
                         .frame(minHeight: 60, maxHeight: 200)
                         .scrollContentBackground(.hidden)
                         .padding(8)
-                        .background(Color(nsColor: .controlBackgroundColor))
+                        .background(theme.secondaryBackground)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                     
                     HStack(spacing: 8) {
@@ -830,7 +827,7 @@ struct MacMessageBubble: View {
                     if message.edited == true {
                         Text("edited")
                             .font(.caption2)
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(theme.textTertiary)
                     }
                 }
                 .padding(12)
@@ -878,7 +875,7 @@ struct MacMessageBubble: View {
                     // Actions
                     assistantActionButtons
                 }
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.textSecondary)
                 .transition(.opacity)
             }
         }
@@ -892,12 +889,12 @@ struct MacMessageBubble: View {
             if let model = message.model {
                 Text(ModelOption.formatModelName(model))
                     .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(theme.textTertiary)
             }
             
             Text(message.createdAt, style: .time)
                 .font(.caption2)
-                .foregroundStyle(.quaternary)
+                .foregroundStyle(theme.textTertiary)
         }
     }
     
@@ -929,7 +926,7 @@ struct MacMessageBubble: View {
             .accessibilityLabel("Next response version")
             .disabled(info.current >= info.total)
         }
-        .foregroundStyle(.secondary)
+        .foregroundStyle(theme.textSecondary)
     }
     
     // MARK: - Action Buttons
@@ -946,7 +943,7 @@ struct MacMessageBubble: View {
                 deleteButton
             }
         }
-        .foregroundStyle(.secondary)
+        .foregroundStyle(theme.textSecondary)
         .transition(.opacity.combined(with: .move(edge: .top)))
     }
     
@@ -977,7 +974,7 @@ struct MacMessageBubble: View {
                         .font(.caption)
                 }
             }
-            .foregroundStyle(showCopiedFeedback ? theme.success : .secondary)
+            .foregroundStyle(showCopiedFeedback ? theme.success : theme.textSecondary)
         }
         .buttonStyle(.plain)
         .help(showCopiedFeedback ? "Copied!" : "Copy message")
@@ -1005,7 +1002,7 @@ struct MacMessageBubble: View {
         } label: {
             Image(systemName: "trash")
                 .font(.caption)
-                .foregroundStyle(.red.opacity(0.7))
+                .foregroundStyle(theme.error.opacity(0.7))
         }
         .buttonStyle(.plain)
         .help("Delete message")
@@ -1069,7 +1066,7 @@ struct MacMessageBubble: View {
         } label: {
             Image(systemName: isSpeaking ? "stop.fill" : "speaker.wave.2")
                 .font(.caption)
-                .foregroundStyle(isSpeaking ? theme.error : .secondary)
+                .foregroundStyle(isSpeaking ? theme.error : theme.textSecondary)
         }
         .buttonStyle(.plain)
         .help(isSpeaking ? "Stop speaking" : "Read aloud")
@@ -1215,6 +1212,7 @@ struct DetachedNoteView: View {
     let noteId: String
     @Environment(\.dependencies) private var dependencies
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.theme) private var theme
     @State private var notesViewModel: NotesViewModel?
     @State private var isLoading = true
     @State private var error: Error?
@@ -1226,19 +1224,19 @@ struct DetachedNoteView: View {
                     ProgressView()
                     Text("Loading note...")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = error {
                 VStack(spacing: 16) {
                     Image(systemName: "exclamationmark.triangle")
                         .font(.largeTitle)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                     Text("Failed to load note")
                         .font(.headline)
                     Text(error.localizedDescription)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                     Button("Try Again") {
                         Task { await loadNote() }
                     }
@@ -1252,7 +1250,7 @@ struct DetachedNoteView: View {
                 VStack(spacing: 16) {
                     Image(systemName: "note.text")
                         .font(.largeTitle)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                     Text("Note not found")
                         .font(.headline)
                 }
@@ -1322,7 +1320,7 @@ struct MacNoteEditorView: View {
                     scheduleAutoSave()
                 } label: {
                     Image(systemName: isPinned ? "pin.fill" : "pin")
-                        .foregroundStyle(isPinned ? .orange : .secondary)
+                        .foregroundStyle(isPinned ? theme.warning : theme.textSecondary)
                 }
                 .buttonStyle(.plain)
                 .help(isPinned ? "Unpin Note" : "Pin Note")
@@ -1337,12 +1335,12 @@ struct MacNoteEditorView: View {
                             .scaleEffect(0.6)
                         Text("Saving...")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(theme.textSecondary)
                     }
                 } else if let lastSave = lastSaveTime {
                     Text("Saved \(lastSave, style: .relative) ago")
                         .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(theme.textTertiary)
                 }
                 
                 // Manual save button
@@ -1359,7 +1357,7 @@ struct MacNoteEditorView: View {
             }
             .padding(.horizontal)
             .padding(.vertical, 8)
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(theme.secondaryBackground)
             
             Divider()
             
@@ -1421,7 +1419,7 @@ struct MacNoteEditorView: View {
             }
             .padding(.horizontal)
             .padding(.vertical, 4)
-            .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
+            .background(theme.secondaryBackground.opacity(0.5))
             
             Divider()
             
@@ -1436,7 +1434,7 @@ struct MacNoteEditorView: View {
                     if content.isEmpty {
                         Text("Start writing in Markdown...")
                             .font(.body)
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(theme.textTertiary)
                             .padding(.horizontal, 16)
                             .padding(.top, 8)
                             .allowsHitTesting(false)
@@ -1516,6 +1514,7 @@ private struct FormatButton: View {
     let icon: String
     let help: String
     let action: () -> Void
+    @Environment(\.theme) private var theme
     
     /// Accessibility label derived from help text, stripping keyboard shortcuts
     private var accessibilityText: String {
@@ -1527,7 +1526,7 @@ private struct FormatButton: View {
             Image(systemName: icon)
                 .font(.caption)
                 .frame(width: 26, height: 26)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.textSecondary)
         }
         .buttonStyle(.plain)
         .help(help)
@@ -1815,6 +1814,7 @@ struct CredentialsSettingsView: View {
 
 private struct MacCredentialsListView: View {
     @Bindable var viewModel: CredentialsViewModel
+    @Environment(\.theme) private var theme
     @State private var selectedCredentialId: String?
     
     var body: some View {
@@ -1850,7 +1850,7 @@ private struct MacCredentialsListView: View {
                 .accessibilityLabel("Add API key")
             }
             .padding()
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(theme.secondaryBackground)
             
             Divider()
             
@@ -1890,7 +1890,7 @@ private struct MacCredentialsListView: View {
             
             Image(systemName: "key.horizontal")
                 .font(.largeTitle.weight(.light))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(theme.textTertiary)
             
             VStack(spacing: 8) {
                 Text("No API Keys")
@@ -1899,7 +1899,7 @@ private struct MacCredentialsListView: View {
                 
                 Text("Add your API keys to use AI models\nfrom different providers.")
                     .font(.callout)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
                     .multilineTextAlignment(.center)
             }
             
@@ -1937,6 +1937,7 @@ private struct MacCredentialsListView: View {
 
 private struct MacCredentialRow: View {
     let credential: DecryptedCredential
+    @Environment(\.theme) private var theme
     
     var body: some View {
         HStack(spacing: 12) {
@@ -1959,7 +1960,7 @@ private struct MacCredentialRow: View {
                 
                 Text(credential.provider.displayName)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
             }
             
             Spacer()
@@ -1967,7 +1968,7 @@ private struct MacCredentialRow: View {
             // Masked key
             Text(maskedApiKey)
                 .font(.system(.caption, design: .monospaced))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(theme.textTertiary)
         }
         .padding(.vertical, 4)
     }
@@ -2005,6 +2006,7 @@ private struct MacCredentialRow: View {
 private struct MacAddCredentialSheet: View {
     @Bindable var viewModel: CredentialsViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.theme) private var theme
     
     var body: some View {
         VStack(spacing: 0) {
@@ -2034,7 +2036,7 @@ private struct MacAddCredentialSheet: View {
                 .disabled(!viewModel.canSave || viewModel.isSaving)
             }
             .padding()
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(theme.secondaryBackground)
             
             Divider()
             
@@ -2070,7 +2072,7 @@ private struct MacAddCredentialSheet: View {
                 if let error = viewModel.error {
                     Section {
                         Text(error.localizedDescription)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(theme.error)
                             .font(.caption)
                     }
                 }
@@ -2080,7 +2082,7 @@ private struct MacAddCredentialSheet: View {
             .disabled(viewModel.isSaving)
             .overlay {
                 if viewModel.isSaving {
-                    Color.black.opacity(0.1)
+                    theme.textPrimary.opacity(0.1)
                     ProgressView()
                 }
             }
@@ -2091,6 +2093,7 @@ private struct MacAddCredentialSheet: View {
 
 struct SecuritySettingsView: View {
     @Environment(\.dependencies) private var dependencies
+    @Environment(\.theme) private var theme
     @State private var isCheckingStatus = true
     @State private var hasPasswordEncryption = false
     @State private var hasPasskeys = false
@@ -2113,43 +2116,43 @@ struct SecuritySettingsView: View {
                         Text("End-to-End Encryption")
                     } icon: {
                         Image(systemName: "lock.shield.fill")
-                            .foregroundStyle(.green)
+                            .foregroundStyle(theme.success)
                     }
                     
                     Spacer()
                     
                     Text("Active")
                         .font(.caption)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(theme.success)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(.green.opacity(0.15))
+                        .background(theme.success.opacity(0.15))
                         .clipShape(RoundedRectangle(cornerRadius: 4))
                 }
                 
                 HStack {
                     Text("Session Status")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                     Spacer()
                     if dependencies.secureSession.isUnlocked {
                         Text("Unlocked")
                             .font(.caption)
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(theme.accent)
                     } else {
                         Text("Locked")
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(theme.warning)
                     }
                 }
                 
                 if dependencies.secureSession.isUnlocked {
                     HStack {
                         Text("Last Activity")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(theme.textSecondary)
                         Spacer()
                         Text(dependencies.secureSession.lastActivityDate, style: .relative)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(theme.textSecondary)
                     }
                 }
             }
@@ -2161,7 +2164,7 @@ struct SecuritySettingsView: View {
                         ProgressView()
                             .scaleEffect(0.8)
                         Text("Checking...")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(theme.textSecondary)
                     }
                 } else {
                     HStack {
@@ -2169,11 +2172,11 @@ struct SecuritySettingsView: View {
                         Spacer()
                         if hasPasswordEncryption {
                             Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
+                                .foregroundStyle(theme.success)
                         } else {
                             Text("Not Set")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(theme.textSecondary)
                         }
                     }
                     
@@ -2183,11 +2186,11 @@ struct SecuritySettingsView: View {
                             Spacer()
                             if hasPasskeys {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
+                                    .foregroundStyle(theme.success)
                             } else {
                                 Text("Not Set")
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(theme.textSecondary)
                             }
                         }
                     }
@@ -2196,7 +2199,7 @@ struct SecuritySettingsView: View {
                         Label("Recovery Phrase", systemImage: "doc.text")
                         Spacer()
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
+                            .foregroundStyle(theme.success)
                     }
                 }
             }
@@ -2211,14 +2214,14 @@ struct SecuritySettingsView: View {
                         Spacer()
                         Image(systemName: "chevron.right")
                             .font(.caption)
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(theme.textTertiary)
                     }
                 }
                 .disabled(!dependencies.secureSession.isUnlocked)
                 
                 Text("Keep your recovery phrase safe. It's the only way to recover your data if you lose access to all your devices.")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
             }
             
             // Actions Section
@@ -2241,7 +2244,7 @@ struct SecuritySettingsView: View {
                 
                 Text("Deletes all encryption keys. You will need to set up encryption again. All existing encrypted data will be lost.")
                     .font(.caption)
-                    .foregroundStyle(.red.opacity(0.8))
+                    .foregroundStyle(theme.error.opacity(0.8))
             }
             
             // About Section
@@ -2252,11 +2255,11 @@ struct SecuritySettingsView: View {
                     
                     Text("Onera uses end-to-end encryption to protect your conversations and notes. Your data is encrypted on your device before being sent to our servers, and can only be decrypted by you.")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                     
                     Text("We cannot read your messages or notes, even if compelled to do so.")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                 }
                 .padding(.vertical, 8)
             }
@@ -2364,12 +2367,13 @@ private struct MacResetEncryptionSheet: View {
     let isResetting: Bool
     let onReset: () async -> Void
     let onCancel: () -> Void
+    @Environment(\.theme) private var theme
     
     var body: some View {
         VStack(spacing: 24) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.largeTitle)
-                .foregroundStyle(.red)
+                .foregroundStyle(theme.error)
             
             Text("Reset Encryption")
                 .font(.title2.bold())
@@ -2380,7 +2384,7 @@ private struct MacResetEncryptionSheet: View {
                 
                 Text("All your encrypted chats and notes will become unreadable. This cannot be undone.")
                     .font(.body)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(theme.error)
             }
             
             VStack(alignment: .leading, spacing: 4) {
@@ -2426,6 +2430,7 @@ private struct MacRecoveryPhraseSheet: View {
     let onLoad: () async -> Void
     
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.theme) private var theme
     @State private var hasCopied = false
     
     var body: some View {
@@ -2443,7 +2448,7 @@ private struct MacRecoveryPhraseSheet: View {
                 .keyboardShortcut(.escape, modifiers: [])
             }
             .padding()
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(theme.secondaryBackground)
             
             Divider()
             
@@ -2451,7 +2456,7 @@ private struct MacRecoveryPhraseSheet: View {
             VStack(spacing: 24) {
                 Image(systemName: "exclamationmark.shield.fill")
                     .font(.largeTitle)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(theme.warning)
                 
                 VStack(spacing: 8) {
                     Text("Keep this phrase secret!")
@@ -2459,7 +2464,7 @@ private struct MacRecoveryPhraseSheet: View {
                     
                     Text("Anyone with this phrase can access your encrypted data.")
                         .font(.callout)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                         .multilineTextAlignment(.center)
                 }
                 
@@ -2472,7 +2477,7 @@ private struct MacRecoveryPhraseSheet: View {
                             .font(.system(.body, design: .monospaced))
                             .padding()
                             .frame(maxWidth: .infinity)
-                            .background(Color(nsColor: .controlBackgroundColor))
+                            .background(theme.secondaryBackground)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                             .textSelection(.enabled)
                         
@@ -2492,7 +2497,7 @@ private struct MacRecoveryPhraseSheet: View {
                     }
                 } else {
                     Text("Unable to load recovery phrase")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                 }
                 
                 Spacer()
@@ -2514,16 +2519,17 @@ struct PromptMentionList: View {
     let prompts: [PromptSummary]
     let selectedIndex: Int
     let onSelect: (PromptSummary) -> Void
+    @Environment(\.theme) private var theme
     
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 4) {
                 Image(systemName: "at")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
                 Text("Prompts")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
             }
             .padding(.horizontal, 8)
             .padding(.top, 6)
@@ -2535,7 +2541,7 @@ struct PromptMentionList: View {
                     HStack(spacing: 8) {
                         Image(systemName: "text.quote")
                             .font(.caption)
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(theme.textTertiary)
                             .frame(width: 16)
                         
                         VStack(alignment: .leading, spacing: 1) {
@@ -2546,7 +2552,7 @@ struct PromptMentionList: View {
                             if let desc = prompt.description, !desc.isEmpty {
                                 Text(desc)
                                     .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(theme.textSecondary)
                                     .lineLimit(1)
                             }
                         }
@@ -2555,7 +2561,7 @@ struct PromptMentionList: View {
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 6)
-                    .background(index == selectedIndex ? Color.accentColor.opacity(0.15) : Color.clear)
+                    .background(index == selectedIndex ? theme.accent.opacity(0.15) : Color.clear)
                     .clipShape(RoundedRectangle(cornerRadius: 6))
                     .contentShape(Rectangle())
                 }
@@ -2565,7 +2571,7 @@ struct PromptMentionList: View {
         .padding(6)
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 8))
-        .shadow(color: .black.opacity(0.15), radius: 8, y: 2)
+        .shadow(color: theme.textPrimary.opacity(0.15), radius: 8, y: 2)
     }
 }
 
@@ -2577,6 +2583,7 @@ struct PromptVariableSheet: View {
     @Binding var values: [String: String]
     let onConfirm: () -> Void
     let onCancel: () -> Void
+    @Environment(\.theme) private var theme
     
     var body: some View {
         VStack(spacing: 0) {
@@ -2597,7 +2604,7 @@ struct PromptVariableSheet: View {
                     .buttonStyle(.borderedProminent)
             }
             .padding()
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(theme.secondaryBackground)
             
             Divider()
             
@@ -2606,7 +2613,7 @@ struct PromptVariableSheet: View {
                 Section {
                     Text("Prompt: \(promptName)")
                         .font(.callout)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                 }
                 
                 Section("Variables") {

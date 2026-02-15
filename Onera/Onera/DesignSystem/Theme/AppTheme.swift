@@ -9,8 +9,12 @@ import SwiftUI
 
 /// Available app themes
 enum AppTheme: String, CaseIterable, Identifiable {
-    case system   // Current Onera default (iOS system colors)
-    case claude   // Claude-inspired warm, calm theme
+    case system    // Current Onera default (iOS system colors)
+    case claude    // Claude-inspired warm, calm theme
+    case chatgpt   // OpenAI ChatGPT-inspired clean teal
+    case t3chat    // T3 Chat-inspired dark, modern purple
+    case gemini    // Google Gemini-inspired cool blue
+    case groq      // Groq-inspired bold orange
     
     var id: String { rawValue }
     
@@ -18,6 +22,10 @@ enum AppTheme: String, CaseIterable, Identifiable {
         switch self {
         case .system: return "Default"
         case .claude: return "Claude"
+        case .chatgpt: return "ChatGPT"
+        case .t3chat: return "T3 Chat"
+        case .gemini: return "Gemini"
+        case .groq: return "Groq"
         }
     }
     
@@ -25,6 +33,10 @@ enum AppTheme: String, CaseIterable, Identifiable {
         switch self {
         case .system: return "iOS system colors"
         case .claude: return "Warm, calm, academic"
+        case .chatgpt: return "Clean, minimal, teal accent"
+        case .t3chat: return "Dark, modern, developer-focused"
+        case .gemini: return "Cool blue, Google AI-inspired"
+        case .groq: return "Bold orange, speed-focused"
         }
     }
 }
@@ -117,6 +129,17 @@ protocol ThemeColors {
     
     /// CTA button colour for onboarding
     var ctaButton: Color { get }
+    
+    // MARK: - Onboarding Text Colors (on gradient)
+    
+    /// Primary text on onboarding gradient background
+    var onboardingTextPrimary: Color { get }
+    
+    /// Secondary text on onboarding gradient background
+    var onboardingTextSecondary: Color { get }
+    
+    /// Tertiary text on onboarding gradient background
+    var onboardingTextTertiary: Color { get }
 }
 
 // MARK: - Default Theme (System Colors)
@@ -193,6 +216,9 @@ struct DefaultThemeColors: ThemeColors {
     var onboardingSelected: Color { Color(white: 0.22) }
     var goldAccent: Color { Color(red: 0.85, green: 0.68, blue: 0.30) }
     var ctaButton: Color { .blue }
+    var onboardingTextPrimary: Color { .black }
+    var onboardingTextSecondary: Color { .black.opacity(0.65) }
+    var onboardingTextTertiary: Color { .black.opacity(0.4) }
 }
 
 // MARK: - OLED Dark Theme Wrapper
@@ -234,4 +260,7 @@ struct OLEDDarkThemeColors: ThemeColors {
     var onboardingSelected: Color { Color(white: 0.14) }
     var goldAccent: Color { base.goldAccent }
     var ctaButton: Color { base.ctaButton }
+    var onboardingTextPrimary: Color { base.onboardingTextPrimary }
+    var onboardingTextSecondary: Color { base.onboardingTextSecondary }
+    var onboardingTextTertiary: Color { base.onboardingTextTertiary }
 }

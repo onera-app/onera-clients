@@ -246,8 +246,8 @@ struct ToolsSettingsView: View {
                                 .font(.caption2)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(Color.green.opacity(0.15))
-                                .foregroundStyle(.green)
+                                .background(theme.success.opacity(0.15))
+                                .foregroundStyle(theme.success)
                                 .clipShape(Capsule())
                         }
                     }
@@ -280,7 +280,7 @@ struct ToolsSettingsView: View {
                             showRemoveConfirmation = true
                         } label: {
                             Image(systemName: "trash")
-                                .foregroundStyle(.red)
+                                .foregroundStyle(theme.error)
                         }
                         .buttonStyle(.borderless)
                     }
@@ -310,7 +310,7 @@ struct ToolsSettingsView: View {
                 .font(.caption)
             }
             .buttonStyle(.plain)
-            .foregroundStyle(.blue)
+            .foregroundStyle(theme.accent)
             
             // API key input (when editing)
             if editingProvider == provider {

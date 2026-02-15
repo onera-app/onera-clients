@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import BIP39
 
 final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
     
@@ -489,16 +490,14 @@ final class E2EEService: E2EEServiceProtocol, @unchecked Sendable {
             throw E2EEError.keySharesFetchFailed
         }
         
-        _ = try cryptoService.decrypt(
+        let recoveryKey = try cryptoService.decrypt(
             ciphertext: encryptedRecoveryKey,
             nonce: recoveryKeyNonce,
             key: masterKey
         )
         
-        // TODO: Convert recovery key back to mnemonic
-        // return BIP39.entropyToMnemonic([UInt8](recoveryKey))
-        
-        throw CryptoError.mnemonicGenerationFailed
+        let words = try Mnemonic.toMnemonic([UInt8](recoveryKey))
+        return words.joined(separator: " ")
     }
     
     // MARK: - Verification

@@ -195,12 +195,12 @@ struct AuthenticationView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: buttonHeight)
-                .foregroundStyle(colorScheme == .dark ? Color.white : Color(.darkGray))
-                .background(colorScheme == .dark ? Color.white.opacity(0.12) : Color.white)
+                .foregroundStyle(theme.textPrimary)
+                .background(theme.secondaryBackground)
                 .clipShape(RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous)
-                        .stroke(colorScheme == .dark ? Color.white.opacity(0.2) : Color.gray.opacity(0.3), lineWidth: 1)
+                        .stroke(theme.border, lineWidth: 1)
                 )
             }
             .disabled(viewModel.isLoading)

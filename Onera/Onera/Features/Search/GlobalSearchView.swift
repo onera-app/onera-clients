@@ -68,6 +68,7 @@ struct GlobalSearchView: View {
     
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dependencies) private var dependencies
+    @Environment(\.theme) private var theme
     
     @State private var searchText = ""
     @State private var results: [SearchResult] = []
@@ -160,7 +161,7 @@ struct GlobalSearchView: View {
         HStack(spacing: 12) {
             Image(systemName: "magnifyingglass")
                 .font(.title3)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.textSecondary)
             
             TextField("Search chats, notes, and prompts...", text: $searchText)
                 .textFieldStyle(.plain)
@@ -172,17 +173,17 @@ struct GlobalSearchView: View {
                     searchText = ""
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                 }
                 .buttonStyle(.plain)
             }
             
             Text("esc")
                 .font(.caption)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(theme.textTertiary)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
-                .background(Color.secondary.opacity(0.1))
+                .background(theme.secondaryBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 4))
         }
         .padding()
@@ -250,24 +251,24 @@ struct GlobalSearchView: View {
             
             Image(systemName: searchText.isEmpty ? "magnifyingglass" : "magnifyingglass.circle")
                 .font(.largeTitle.weight(.light))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(theme.textTertiary)
             
             if searchText.isEmpty {
                 Text("Start typing to search")
                     .font(.title3)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
                 
                 Text("Search across chats, notes, and prompts")
                     .font(.callout)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(theme.textTertiary)
             } else {
                 Text("No results found")
                     .font(.title3)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
                 
                 Text("Try a different search term")
                     .font(.callout)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(theme.textTertiary)
             }
             
             Spacer()
@@ -282,7 +283,7 @@ struct GlobalSearchView: View {
             ProgressView()
             Text("Searching...")
                 .font(.callout)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.textSecondary)
             Spacer()
         }
     }
@@ -416,6 +417,7 @@ private struct FilterChip: View {
     var icon: String?
     let isSelected: Bool
     let action: () -> Void
+    @Environment(\.theme) private var theme
     
     var body: some View {
         Button(action: action) {
@@ -429,7 +431,7 @@ private struct FilterChip: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.1))
+            .background(isSelected ? theme.accent : theme.secondaryBackground)
             .foregroundStyle(isSelected ? .white : .primary)
             .clipShape(Capsule())
         }
@@ -441,13 +443,14 @@ private struct FilterChip: View {
 
 private struct SearchResultRow: View {
     let result: SearchResult
+    @Environment(\.theme) private var theme
     
     var body: some View {
         HStack(spacing: 12) {
             // Type icon
             Image(systemName: result.type.iconName)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.textSecondary)
                 .frame(width: 24)
             
             // Content
@@ -460,14 +463,14 @@ private struct SearchResultRow: View {
                     if result.isPinned {
                         Image(systemName: "pin.fill")
                             .font(.caption2)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(theme.warning)
                     }
                 }
                 
                 if let subtitle = result.subtitle {
                     Text(subtitle)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                         .lineLimit(1)
                 }
             }
@@ -477,7 +480,7 @@ private struct SearchResultRow: View {
             // Date
             Text(result.date, style: .relative)
                 .font(.caption)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(theme.textTertiary)
         }
         .padding(.vertical, 4)
         .contentShape(Rectangle())

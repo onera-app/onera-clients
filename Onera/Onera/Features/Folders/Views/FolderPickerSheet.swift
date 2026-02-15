@@ -12,6 +12,7 @@ struct FolderPickerSheet: View {
     @Bindable var viewModel: FolderViewModel
     @Binding var selectedFolderId: String?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.theme) private var theme
     
     var title: String = "Select Folder"
     var allowNone: Bool = true
@@ -53,11 +54,11 @@ struct FolderPickerSheet: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "folder.badge.plus")
                                     .font(.body)
-                                    .foregroundStyle(.blue)
+                                    .foregroundStyle(theme.accent)
                                 
                                 Text("Create new folder")
                                     .font(.body)
-                                    .foregroundStyle(.blue)
+                                    .foregroundStyle(theme.accent)
                                 
                                 Spacer()
                             }
@@ -83,7 +84,7 @@ struct FolderPickerSheet: View {
                             } label: {
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(.title2)
-                                    .foregroundStyle(.green)
+                                    .foregroundStyle(theme.success)
                             }
                             .disabled(viewModel.newFolderName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                             
@@ -128,13 +129,14 @@ private struct FolderPickerRow: View {
     let icon: String
     let isSelected: Bool
     let onTap: () -> Void
+    @Environment(\.theme) private var theme
     
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
                     .font(.body)
-                    .foregroundStyle(isSelected ? .blue : .secondary)
+                    .foregroundStyle(isSelected ? theme.accent : theme.textSecondary)
                 
                 Text(name)
                     .font(.body)
@@ -144,12 +146,12 @@ private struct FolderPickerRow: View {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(theme.accent)
                 }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background(isSelected ? Color.blue.opacity(0.1) : Color.clear)
+            .background(isSelected ? theme.accent.opacity(0.1) : Color.clear)
             .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)
@@ -165,6 +167,7 @@ private struct FolderPickerNodeView: View {
     @Binding var selectedFolderId: String?
     let depth: Int
     let onSelect: () -> Void
+    @Environment(\.theme) private var theme
     
     private var isExpanded: Bool {
         viewModel.isExpanded(node.id)
@@ -203,7 +206,7 @@ private struct FolderPickerNodeView: View {
                     
                     Image(systemName: "folder.fill")
                         .font(.body)
-                        .foregroundStyle(isSelected ? .blue : .secondary)
+                        .foregroundStyle(isSelected ? theme.accent : theme.textSecondary)
                     
                     Text(node.name)
                         .font(.body)
@@ -213,13 +216,13 @@ private struct FolderPickerNodeView: View {
                     if isSelected {
                         Image(systemName: "checkmark")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(theme.accent)
                     }
                 }
                 .padding(.leading, CGFloat(depth * 20) + 16)
                 .padding(.trailing, 16)
                 .padding(.vertical, 12)
-                .background(isSelected ? Color.blue.opacity(0.1) : Color.clear)
+                .background(isSelected ? theme.accent.opacity(0.1) : Color.clear)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .buttonStyle(.plain)

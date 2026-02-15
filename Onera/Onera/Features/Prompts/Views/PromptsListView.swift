@@ -10,6 +10,7 @@ import SwiftUI
 struct PromptsListView: View {
     
     @Bindable var viewModel: PromptsViewModel
+    @Environment(\.theme) private var theme
     
     @State private var showDeleteConfirmation = false
     @State private var promptToDelete: PromptSummary?
@@ -71,7 +72,7 @@ struct PromptsListView: View {
             VStack(spacing: 16) {
                 Image(systemName: "text.quote")
                     .font(.largeTitle)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
                     .accessibilityHidden(true)
                 
                 Text(viewModel.searchText.isEmpty ? "No Prompts" : "No Results")
@@ -81,7 +82,7 @@ struct PromptsListView: View {
                      ? "Create custom prompts to reuse in your chats."
                      : "No prompts match your search.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
                     .multilineTextAlignment(.center)
                 
                 if viewModel.searchText.isEmpty {
@@ -91,7 +92,7 @@ struct PromptsListView: View {
                         Label("Create Prompt", systemImage: "plus")
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(Color(.systemGray))
+                    .tint(theme.textSecondary)
                     .foregroundStyle(.white)
                 }
             }
@@ -123,7 +124,7 @@ struct PromptsListView: View {
                         } label: {
                             Label("Duplicate", systemImage: "doc.on.doc")
                         }
-                        .tint(.blue)
+                        .tint(theme.accent)
                     }
                     .contextMenu {
                         Button {
@@ -159,6 +160,7 @@ private struct PromptRowView: View {
     
     let prompt: PromptSummary
     let onTap: () -> Void
+    @Environment(\.theme) private var theme
     
     var body: some View {
         Button(action: onTap) {
@@ -171,13 +173,13 @@ private struct PromptRowView: View {
                 if let description = prompt.description, !description.isEmpty {
                     Text(description)
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                         .lineLimit(2)
                 }
                 
                 Text(formattedDate)
                     .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(theme.textTertiary)
             }
             .padding(.vertical, 4)
             .contentShape(Rectangle())

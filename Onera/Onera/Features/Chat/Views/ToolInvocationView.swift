@@ -52,6 +52,17 @@ enum ToolState: String, Codable, Sendable {
         }
     }
     
+    func themedIconColor(_ theme: ThemeColors) -> Color {
+        switch self {
+        case .inputStreaming, .inputAvailable: return theme.info
+        case .approvalRequested: return theme.warning
+        case .approvalResponded: return theme.info
+        case .outputAvailable: return theme.success
+        case .outputError: return theme.error
+        case .outputDenied: return theme.warning
+        }
+    }
+    
     var isLoading: Bool {
         self == .inputStreaming || self == .inputAvailable
     }
@@ -106,6 +117,7 @@ struct ToolInvocationView: View {
     
     @State private var isExpanded = false
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.theme) private var theme
     
     private var needsApproval: Bool { tool.state == .approvalRequested }
     private var hasError: Bool { tool.state == .outputError }
@@ -122,15 +134,15 @@ struct ToolInvocationView: View {
                 HStack(spacing: 8) {
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                     
                     Image(systemName: "wrench")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                     
                     Text(tool.displayName)
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(theme.textPrimary)
                     
                     Spacer()
                     
@@ -141,12 +153,12 @@ struct ToolInvocationView: View {
                                 .controlSize(.small)
                         } else {
                             Image(systemName: tool.state.iconName)
-                                .foregroundStyle(tool.state.iconColor)
+                                .foregroundStyle(tool.state.themedIconColor(theme))
                         }
                         
                         Text(tool.state.label)
                             .font(.caption)
-                            .foregroundStyle(hasError ? .red : .secondary)
+                            .foregroundStyle(hasError ? theme.error : theme.textSecondary)
                     }
                 }
                 .padding(.horizontal, 12)
@@ -167,7 +179,7 @@ struct ToolInvocationView: View {
                             Text("Input")
                                 .font(.caption)
                                 .fontWeight(.medium)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(theme.textSecondary)
                             
                             ScrollView(.horizontal, showsIndicators: false) {
                                 Text(formatJSON(args))
@@ -175,7 +187,7 @@ struct ToolInvocationView: View {
                                     .padding(8)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             }
-                            .background(Color.secondary.opacity(0.1))
+                            .background(theme.secondaryBackground)
                             .clipShape(RoundedRectangle(cornerRadius: 6))
                         }
                     }
@@ -186,7 +198,7 @@ struct ToolInvocationView: View {
                             Text("Output")
                                 .font(.caption)
                                 .fontWeight(.medium)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(theme.textSecondary)
                             
                             ScrollView {
                                 Text(formatJSON(result))
@@ -195,7 +207,7 @@ struct ToolInvocationView: View {
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             }
                             .frame(maxHeight: 150)
-                            .background(Color.secondary.opacity(0.1))
+                            .background(theme.secondaryBackground)
                             .clipShape(RoundedRectangle(cornerRadius: 6))
                         }
                     }
@@ -206,14 +218,14 @@ struct ToolInvocationView: View {
                             Text("Error")
                                 .font(.caption)
                                 .fontWeight(.medium)
-                                .foregroundStyle(.red)
+                                .foregroundStyle(theme.error)
                             
                             Text(errorText)
                                 .font(.system(.caption, design: .monospaced))
-                                .foregroundStyle(.red)
+                                .foregroundStyle(theme.error)
                                 .padding(8)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Color.red.opacity(0.1))
+                                .background(theme.error.opacity(0.1))
                                 .clipShape(RoundedRectangle(cornerRadius: 6))
                         }
                     }
@@ -225,7 +237,7 @@ struct ToolInvocationView: View {
                                 .controlSize(.small)
                             Text("Executing tool...")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(theme.textSecondary)
                         }
                     }
                     
@@ -233,7 +245,7 @@ struct ToolInvocationView: View {
                     if wasDenied {
                         Text("Tool execution was denied by the user.")
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(theme.warning)
                     }
                     
                     // Approval buttons
@@ -273,25 +285,25 @@ struct ToolInvocationView: View {
     
     private var backgroundColor: Color {
         if hasError {
-            return Color.red.opacity(0.05)
+            return theme.error.opacity(0.05)
         } else if wasDenied {
-            return Color.orange.opacity(0.05)
+            return theme.warning.opacity(0.05)
         } else if needsApproval {
-            return Color.yellow.opacity(0.05)
+            return theme.warning.opacity(0.05)
         } else {
-            return Color.secondary.opacity(0.08)
+            return theme.secondaryBackground
         }
     }
     
     private var borderColor: Color {
         if hasError {
-            return Color.red.opacity(0.3)
+            return theme.error.opacity(0.3)
         } else if wasDenied {
-            return Color.orange.opacity(0.3)
+            return theme.warning.opacity(0.3)
         } else if needsApproval {
-            return Color.yellow.opacity(0.3)
+            return theme.warning.opacity(0.3)
         } else {
-            return Color.secondary.opacity(0.2)
+            return theme.border
         }
     }
     
