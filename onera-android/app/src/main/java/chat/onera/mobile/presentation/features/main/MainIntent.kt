@@ -57,6 +57,12 @@ sealed interface MainIntent : UiIntent {
     // E2EE intents
     data object OnE2EEUnlocked : MainIntent
     
+    // Follow-up intents
+    data class SelectFollowUp(val text: String) : MainIntent
+    
+    // Artifacts panel
+    data object ToggleArtifactsPanel : MainIntent
+    
     // Error handling
     data object ClearError : MainIntent
 }

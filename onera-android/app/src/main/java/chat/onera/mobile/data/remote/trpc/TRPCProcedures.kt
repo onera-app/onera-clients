@@ -83,6 +83,15 @@ object CredentialsProcedures {
     const val REMOVE = "credentials.remove"  // Server uses "remove" not "delete"
 }
 
+// Prompts procedures - matches server tRPC router
+object PromptsProcedures {
+    const val LIST = "prompts.list"
+    const val GET = "prompts.get"
+    const val CREATE = "prompts.create"
+    const val UPDATE = "prompts.update"
+    const val REMOVE = "prompts.remove"  // Server uses "remove" not "delete"
+}
+
 // Enclaves procedures - matches server tRPC router for private inference
 object EnclavesProcedures {
     const val LIST_MODELS = "enclaves.listModels"

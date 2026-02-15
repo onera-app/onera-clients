@@ -38,6 +38,8 @@ fun MainScreen(
     refreshOnStart: Boolean = false,
     onNavigateToSettings: () -> Unit,
     onNavigateToNotes: () -> Unit,
+    onNavigateToPrompts: () -> Unit = {},
+    onNavigateToSearch: () -> Unit = {},
     onSignOut: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -200,6 +202,14 @@ fun MainScreen(
                     isDrawerOpen = false
                     onNavigateToNotes()
                 },
+                onOpenPrompts = {
+                    isDrawerOpen = false
+                    onNavigateToPrompts()
+                },
+                onOpenSearch = {
+                    isDrawerOpen = false
+                    onNavigateToSearch()
+                },
                 onRefresh = { viewModel.sendIntent(MainIntent.RefreshChats) },
                 onCreateFolder = { name, parentId ->
                     viewModel.sendIntent(MainIntent.CreateFolder(name, parentId))
@@ -305,7 +315,11 @@ fun MainScreen(
                 onAddAttachment = { viewModel.sendIntent(MainIntent.AddAttachment(it)) },
                 onRemoveAttachment = { viewModel.sendIntent(MainIntent.RemoveAttachment(it)) },
                 onNavigateToPreviousBranch = { viewModel.sendIntent(MainIntent.NavigateToPreviousBranch(it)) },
-                onNavigateToNextBranch = { viewModel.sendIntent(MainIntent.NavigateToNextBranch(it)) }
+                onNavigateToNextBranch = { viewModel.sendIntent(MainIntent.NavigateToNextBranch(it)) },
+                onSelectFollowUp = { viewModel.sendIntent(MainIntent.SelectFollowUp(it)) },
+                onToggleArtifactsPanel = { viewModel.sendIntent(MainIntent.ToggleArtifactsPanel) },
+                promptSummaries = state.promptSummaries,
+                onFetchPromptContent = { summary -> viewModel.fetchPromptContent(summary) }
             )
             
             // Dimmed overlay when drawer is open - allows swipe to close

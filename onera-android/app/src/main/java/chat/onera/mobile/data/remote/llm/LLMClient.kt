@@ -400,25 +400,71 @@ class LLMClient @Inject constructor() {
         maxTokens: Int,
         images: List<ImageData> = emptyList()
     ): Request {
-        // TODO: Add Anthropic vision support (different format)
         // Anthropic uses a different format - convert messages
         // System message goes to a separate field
         val systemMessage = messages.find { it.role == ChatMessage.ROLE_SYSTEM }?.content
         val chatMessages = messages.filter { it.role != ChatMessage.ROLE_SYSTEM }
         
-        val anthropicRequest = buildMap {
-            put("model", model)
-            put("max_tokens", maxTokens)
-            put("stream", true)
-            put("messages", chatMessages.map { mapOf("role" to it.role, "content" to it.content) })
-            systemMessage?.let { put("system", it) }
+        val requestBody = if (images.isEmpty()) {
+            val anthropicRequest = buildMap {
+                put("model", model)
+                put("max_tokens", maxTokens)
+                put("stream", true)
+                put("messages", chatMessages.map { mapOf("role" to it.role, "content" to it.content) })
+                systemMessage?.let { put("system", it) }
+            }
+            json.encodeToString(anthropicRequest)
+        } else {
+            // Multimodal request with images
+            val jsonMessages = buildJsonArray {
+                chatMessages.forEachIndexed { index, msg ->
+                    if (index == chatMessages.lastIndex && msg.role == ChatMessage.ROLE_USER) {
+                        // Convert last user message to multimodal format
+                        add(buildJsonObject {
+                            put("role", msg.role)
+                            put("content", buildJsonArray {
+                                // Add image content first
+                                images.forEach { img ->
+                                    add(buildJsonObject {
+                                        put("type", "image")
+                                        put("source", buildJsonObject {
+                                            put("type", "base64")
+                                            put("media_type", img.mimeType)
+                                            put("data", img.base64Data)
+                                        })
+                                    })
+                                }
+                                // Add text content
+                                add(buildJsonObject {
+                                    put("type", "text")
+                                    put("text", msg.content)
+                                })
+                            })
+                        })
+                    } else {
+                        add(buildJsonObject {
+                            put("role", msg.role)
+                            put("content", msg.content)
+                        })
+                    }
+                }
+            }
+            
+            val requestJson = buildJsonObject {
+                put("model", model)
+                put("max_tokens", maxTokens)
+                put("stream", true)
+                put("messages", jsonMessages)
+                systemMessage?.let { put("system", it) }
+            }
+            requestJson.toString()
         }
         
         val url = credential.provider.getChatUrl(credential.baseUrl)
         
         return Request.Builder()
             .url(url)
-            .post(json.encodeToString(anthropicRequest).toRequestBody(JSON_MEDIA_TYPE))
+            .post(requestBody.toRequestBody(JSON_MEDIA_TYPE))
             .header("Accept", "text/event-stream")
             .header("Cache-Control", "no-cache")
             .header("x-api-key", credential.apiKey)
@@ -434,13 +480,42 @@ class LLMClient @Inject constructor() {
         maxTokens: Int,
         images: List<ImageData> = emptyList()
     ): Request {
-        // TODO: Add Google vision support (different format)
         // Google Gemini uses a different format
-        val contents = messages.filter { it.role != ChatMessage.ROLE_SYSTEM }.map { msg ->
-            mapOf(
-                "role" to if (msg.role == ChatMessage.ROLE_USER) "user" else "model",
-                "parts" to listOf(mapOf("text" to msg.content))
-            )
+        val chatMessages = messages.filter { it.role != ChatMessage.ROLE_SYSTEM }
+        
+        val contents = if (images.isEmpty()) {
+            // Standard text-only contents
+            chatMessages.map { msg ->
+                mapOf(
+                    "role" to if (msg.role == ChatMessage.ROLE_USER) "user" else "model",
+                    "parts" to listOf(mapOf("text" to msg.content))
+                )
+            }
+        } else {
+            // Multimodal contents with images on last user message
+            chatMessages.mapIndexed { index, msg ->
+                val role = if (msg.role == ChatMessage.ROLE_USER) "user" else "model"
+                if (index == chatMessages.lastIndex && msg.role == ChatMessage.ROLE_USER) {
+                    // Build multimodal parts: images first, then text
+                    val parts = buildList {
+                        images.forEach { img ->
+                            add(mapOf(
+                                "inline_data" to mapOf(
+                                    "mime_type" to img.mimeType,
+                                    "data" to img.base64Data
+                                )
+                            ))
+                        }
+                        add(mapOf("text" to msg.content))
+                    }
+                    mapOf("role" to role, "parts" to parts)
+                } else {
+                    mapOf(
+                        "role" to role,
+                        "parts" to listOf(mapOf("text" to msg.content))
+                    )
+                }
+            }
         }
         
         val systemInstruction = messages.find { it.role == ChatMessage.ROLE_SYSTEM }?.let {
@@ -507,16 +582,58 @@ class LLMClient @Inject constructor() {
         }
     }
     
+    // Accumulator for tool call arguments across deltas
+    private val toolCallArgsAccumulator = StringBuilder()
+    private var currentToolCallName: String? = null
+    
     private fun parseAnthropicChunk(data: String): StreamEvent? {
         // Anthropic has different event types
-        val eventData = json.decodeFromString<Map<String, Any?>>(data)
+        val eventData = json.decodeFromString<JsonObject>(data)
+        val type = (eventData["type"] as? JsonPrimitive)?.content ?: return null
         
-        return when (eventData["type"]) {
+        return when (type) {
+            "content_block_start" -> {
+                val contentBlock = eventData["content_block"] as? JsonObject ?: return null
+                val blockType = (contentBlock["type"] as? JsonPrimitive)?.content ?: return null
+                
+                when (blockType) {
+                    "thinking" -> StreamEvent.Reasoning("")
+                    "tool_use" -> {
+                        val name = (contentBlock["name"] as? JsonPrimitive)?.content ?: ""
+                        currentToolCallName = name
+                        toolCallArgsAccumulator.clear()
+                        StreamEvent.ToolCall(name, "")
+                    }
+                    else -> null
+                }
+            }
             "content_block_delta" -> {
-                @Suppress("UNCHECKED_CAST")
-                val delta = eventData["delta"] as? Map<String, Any?> ?: return null
-                val text = delta["text"] as? String ?: return null
-                StreamEvent.Text(text)
+                val delta = eventData["delta"] as? JsonObject ?: return null
+                val deltaType = (delta["type"] as? JsonPrimitive)?.content ?: return null
+                
+                when (deltaType) {
+                    "text_delta" -> {
+                        val text = (delta["text"] as? JsonPrimitive)?.content ?: return null
+                        StreamEvent.Text(text)
+                    }
+                    "thinking_delta" -> {
+                        val thinking = (delta["thinking"] as? JsonPrimitive)?.content ?: return null
+                        StreamEvent.Reasoning(thinking)
+                    }
+                    "input_json_delta" -> {
+                        val partialJson = (delta["partial_json"] as? JsonPrimitive)?.content ?: return null
+                        toolCallArgsAccumulator.append(partialJson)
+                        // Emit accumulated args so far
+                        StreamEvent.ToolCall(currentToolCallName ?: "", toolCallArgsAccumulator.toString())
+                    }
+                    else -> null
+                }
+            }
+            "content_block_stop" -> {
+                // Reset tool call state when block ends
+                currentToolCallName = null
+                toolCallArgsAccumulator.clear()
+                null
             }
             "message_stop" -> StreamEvent.Done
             else -> null

@@ -36,7 +36,11 @@ fun SettingsScreen(
     onAccountSettings: () -> Unit,
     onEncryptionKeys: () -> Unit,
     onAPICredentials: (() -> Unit)? = null,
+    onPrompts: (() -> Unit)? = null,
     onAppearance: (() -> Unit)? = null,
+    onGeneralSettings: (() -> Unit)? = null,
+    onAudioSettings: (() -> Unit)? = null,
+    onToolsSettings: (() -> Unit)? = null,
     onSignOut: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -153,12 +157,44 @@ fun SettingsScreen(
             // App section
             item {
                 SettingsSection(title = "App") {
+                    if (onGeneralSettings != null) {
+                        SettingsItem(
+                            icon = Icons.Outlined.Tune,
+                            title = "General",
+                            subtitle = "Model parameters, system prompt",
+                            onClick = onGeneralSettings
+                        )
+                    }
+                    if (onPrompts != null) {
+                        SettingsItem(
+                            icon = Icons.Outlined.AutoAwesome,
+                            title = "Prompts",
+                            subtitle = "Manage prompt templates",
+                            onClick = onPrompts
+                        )
+                    }
                     if (onAppearance != null) {
                         SettingsItem(
                             icon = Icons.Outlined.Palette,
                             title = "Appearance",
                             subtitle = state.themeMode,
                             onClick = onAppearance
+                        )
+                    }
+                    if (onAudioSettings != null) {
+                        SettingsItem(
+                            icon = Icons.Outlined.VolumeUp,
+                            title = "Audio",
+                            subtitle = "Text-to-speech, speech-to-text",
+                            onClick = onAudioSettings
+                        )
+                    }
+                    if (onToolsSettings != null) {
+                        SettingsItem(
+                            icon = Icons.Outlined.Build,
+                            title = "Tools",
+                            subtitle = "Web search, external providers",
+                            onClick = onToolsSettings
                         )
                     }
                     SettingsItem(

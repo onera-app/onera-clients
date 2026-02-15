@@ -3,6 +3,8 @@ package chat.onera.mobile.presentation.features.main
 import chat.onera.mobile.domain.model.Attachment
 import chat.onera.mobile.domain.model.Folder
 import chat.onera.mobile.domain.model.Message
+import chat.onera.mobile.domain.model.PromptSummary
+import chat.onera.mobile.domain.model.ToolCallData
 import chat.onera.mobile.domain.model.User
 import chat.onera.mobile.presentation.base.UiState
 import chat.onera.mobile.presentation.features.main.model.ChatGroup
@@ -24,6 +26,9 @@ data class MainState(
     val selectedFolderId: String? = null,
     val expandedFolderIds: Set<String> = emptySet(),
     val isLoadingFolders: Boolean = false,
+    
+    // Prompt state
+    val promptSummaries: List<PromptSummary> = emptyList(),
     
     // Chat state
     val chatState: ChatState = ChatState()
@@ -56,6 +61,9 @@ data class ChatState(
     val isSending: Boolean = false,
     val isStreaming: Boolean = false,
     val streamingMessage: String = "",
+    val streamingReasoningContent: String = "",
+    val streamingToolCalls: List<ToolCallData> = emptyList(),
+    val followUps: List<String> = emptyList(),
     val selectedModel: ModelOption? = null,
     val availableModels: List<ModelOption> = emptyList(),
     val isEncrypted: Boolean = true,
@@ -66,7 +74,9 @@ data class ChatState(
     val speakingMessageId: String? = null,
     val speakingStartTime: Long? = null,
     // Attachments
-    val attachments: List<Attachment> = emptyList()
+    val attachments: List<Attachment> = emptyList(),
+    // Artifacts panel
+    val showArtifactsPanel: Boolean = false
 ) {
     /**
      * Get the visible messages (only the selected branch for each message group).

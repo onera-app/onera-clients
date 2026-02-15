@@ -159,11 +159,11 @@ private fun AppThemeSelector(
                             
                             Text(theme.displayName)
                             
-                            // "New" badge for Claude theme
-                            if (theme == AppTheme.CLAUDE) {
+                            // "New" badge for new themes
+                            if (theme in listOf(AppTheme.CHATGPT, AppTheme.T3CHAT, AppTheme.GEMINI, AppTheme.GROQ)) {
                                 Surface(
                                     shape = RoundedCornerShape(4.dp),
-                                    color = Color(0xFFD97757) // Claude coral color
+                                    color = getThemePreviewColor(theme)
                                 ) {
                                     Text(
                                         text = "New",
@@ -202,9 +202,11 @@ private fun AppThemeSelector(
 
 private fun getThemePreviewColor(theme: AppTheme): Color {
     return when (theme) {
-        AppTheme.DEFAULT -> Color(0xFF6750A4) // Material You purple
+        AppTheme.DEFAULT -> Color(0xFF6366F1) // Indigo
         AppTheme.CLAUDE -> Color(0xFFD97757) // Claude coral
-        AppTheme.OCEAN -> Color(0xFF006590) // Ocean blue
-        AppTheme.FOREST -> Color(0xFF2E7D32) // Forest green
+        AppTheme.CHATGPT -> Color(0xFF10A37F) // ChatGPT teal
+        AppTheme.T3CHAT -> Color(0xFFA855F7) // T3 Chat purple
+        AppTheme.GEMINI -> Color(0xFF4285F4) // Gemini blue
+        AppTheme.GROQ -> Color(0xFFF55036) // Groq orange-red
     }
 }

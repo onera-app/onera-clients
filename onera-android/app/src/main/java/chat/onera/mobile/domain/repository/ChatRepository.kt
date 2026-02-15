@@ -1,6 +1,7 @@
 package chat.onera.mobile.domain.repository
 
 import chat.onera.mobile.data.remote.llm.ImageData
+import chat.onera.mobile.data.remote.llm.StreamChunkEvent
 import chat.onera.mobile.domain.model.Chat
 import chat.onera.mobile.domain.model.Message
 import kotlinx.coroutines.flow.Flow
@@ -40,6 +41,7 @@ interface ChatRepository {
     suspend fun getChatMessages(chatId: String): List<Message>
     fun observeMessages(chatId: String): Flow<List<Message>>
     fun sendMessageStream(chatId: String?, message: String, model: String, images: List<ImageData> = emptyList()): Flow<String>
+    fun sendMessageStreamRich(chatId: String?, message: String, model: String, images: List<ImageData> = emptyList()): Flow<StreamChunkEvent>
     suspend fun saveMessage(message: Message)
     suspend fun deleteMessage(messageId: String)
     

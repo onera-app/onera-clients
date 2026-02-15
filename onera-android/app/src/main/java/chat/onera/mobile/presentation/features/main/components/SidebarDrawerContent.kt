@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.MoveToInbox
@@ -65,6 +66,8 @@ fun SidebarDrawerContent(
     onMoveChatToFolder: ((String, String?) -> Unit)? = null,
     onOpenSettings: () -> Unit,
     onOpenNotes: () -> Unit,
+    onOpenPrompts: () -> Unit = {},
+    onOpenSearch: () -> Unit = {},
     onRefresh: () -> Unit,
     // Folder callbacks
     onCreateFolder: ((String, String?) -> Unit)? = null,
@@ -122,6 +125,8 @@ fun SidebarDrawerContent(
                     expandedFolderIds = expandedFolderIds,
                     onToggleFolders = { showFolders = !showFolders },
                     onOpenNotes = onOpenNotes,
+                    onOpenPrompts = onOpenPrompts,
+                    onOpenSearch = onOpenSearch,
                     onSelectFolder = onSelectFolder,
                     onToggleFolderExpanded = onToggleFolderExpanded,
                     onCreateFolder = if (onCreateFolder != null) {
@@ -385,6 +390,8 @@ private fun NavigationItems(
     expandedFolderIds: Set<String>,
     onToggleFolders: () -> Unit,
     onOpenNotes: () -> Unit,
+    onOpenPrompts: () -> Unit = {},
+    onOpenSearch: () -> Unit = {},
     onSelectFolder: ((String?) -> Unit)?,
     onToggleFolderExpanded: ((String) -> Unit)?,
     onCreateFolder: (() -> Unit)?
@@ -398,11 +405,25 @@ private fun NavigationItems(
         modifier = Modifier.padding(horizontal = 8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
+        // Search
+        NavigationItemRow(
+            icon = Icons.Default.Search,
+            title = "Search",
+            onClick = onOpenSearch
+        )
+        
         // Notes
         NavigationItemRow(
             icon = Icons.Outlined.NoteAlt,
             title = "Notes",
             onClick = onOpenNotes
+        )
+        
+        // Prompts
+        NavigationItemRow(
+            icon = Icons.Outlined.AutoAwesome,
+            title = "Prompts",
+            onClick = onOpenPrompts
         )
         
         // Folders (expandable)

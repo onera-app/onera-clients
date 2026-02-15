@@ -94,77 +94,157 @@ val ClaudeOutlineLight = Color(0xFFE5DDD5)
 val ClaudeOutlineDark = Color(0xFF5A4F45)
 
 // ==============================================================================
-// OCEAN THEME (Blue/Teal)
+// CHATGPT THEME (Teal/Green)
 // ==============================================================================
 
-// Ocean Primary colors
-val OceanPrimary = Color(0xFF0077B6)
-val OceanPrimaryVariant = Color(0xFF005A8C)
-val OceanOnPrimary = Color(0xFFFFFFFF)
+// ChatGPT Primary colors
+val ChatGPTPrimary = Color(0xFF10A37F)
+val ChatGPTPrimaryVariant = Color(0xFF0D8A6A)
+val ChatGPTOnPrimary = Color(0xFFFFFFFF)
 
-// Ocean Secondary colors
-val OceanSecondary = Color(0xFF00B4D8)
-val OceanSecondaryVariant = Color(0xFF0096B4)
-val OceanOnSecondary = Color(0xFFFFFFFF)
+// ChatGPT Secondary colors
+val ChatGPTSecondary = Color(0xFF10A37F)
+val ChatGPTSecondaryVariant = Color(0xFF0D8A6A)
+val ChatGPTOnSecondary = Color(0xFFFFFFFF)
 
-// Ocean Tertiary colors
-val OceanTertiary = Color(0xFF90E0EF)
-val OceanOnTertiary = Color(0xFF003045)
+// ChatGPT Tertiary colors
+val ChatGPTTertiary = Color(0xFF19C37D)
+val ChatGPTOnTertiary = Color(0xFFFFFFFF)
 
-// Ocean Background colors - Light
-val OceanBackgroundLight = Color(0xFFF7FBFC)
-val OceanSurfaceLight = Color(0xFFFFFFFF)
-val OceanSurfaceVariantLight = Color(0xFFE8F4F8)
-val OceanOnBackgroundLight = Color(0xFF1A3A47)
-val OceanOnSurfaceLight = Color(0xFF1A3A47)
-val OceanOnSurfaceVariantLight = Color(0xFF506A75)
+// ChatGPT Background colors - Light
+val ChatGPTBackgroundLight = Color(0xFFFFFFFF)
+val ChatGPTSurfaceLight = Color(0xFFF7F7F8)
+val ChatGPTSurfaceVariantLight = Color(0xFFEFEFEF)
+val ChatGPTOnBackgroundLight = Color(0xFF2D2D2D)
+val ChatGPTOnSurfaceLight = Color(0xFF2D2D2D)
+val ChatGPTOnSurfaceVariantLight = Color(0xFF6E6E80)
 
-// Ocean Background colors - Dark
-val OceanBackgroundDark = Color(0xFF0A1A20)
-val OceanSurfaceDark = Color(0xFF142A35)
-val OceanSurfaceVariantDark = Color(0xFF1F3A48)
-val OceanOnBackgroundDark = Color(0xFFE0F0F5)
-val OceanOnSurfaceDark = Color(0xFFE0F0F5)
-val OceanOnSurfaceVariantDark = Color(0xFF8AAFBD)
+// ChatGPT Background colors - Dark
+val ChatGPTBackgroundDark = Color(0xFF212121)
+val ChatGPTSurfaceDark = Color(0xFF2A2A2A)
+val ChatGPTSurfaceVariantDark = Color(0xFF343541)
+val ChatGPTOnBackgroundDark = Color(0xFFECECEC)
+val ChatGPTOnSurfaceDark = Color(0xFFECECEC)
+val ChatGPTOnSurfaceVariantDark = Color(0xFF9E9E9E)
 
-// Ocean Outline colors
-val OceanOutlineLight = Color(0xFFCCE5EF)
-val OceanOutlineDark = Color(0xFF2F4A58)
+// ChatGPT Outline colors
+val ChatGPTOutlineLight = Color(0xFFE5E5E5)
+val ChatGPTOutlineDark = Color(0xFF444654)
 
 // ==============================================================================
-// FOREST THEME (Green/Earth)
+// T3 CHAT THEME (Purple/Developer)
 // ==============================================================================
 
-// Forest Primary colors
-val ForestPrimary = Color(0xFF2E7D32)
-val ForestPrimaryVariant = Color(0xFF1B5E20)
-val ForestOnPrimary = Color(0xFFFFFFFF)
+// T3 Chat Primary colors
+val T3ChatPrimary = Color(0xFFA855F7)
+val T3ChatPrimaryVariant = Color(0xFF9333EA)
+val T3ChatOnPrimary = Color(0xFFFFFFFF)
 
-// Forest Secondary colors
-val ForestSecondary = Color(0xFF66BB6A)
-val ForestSecondaryVariant = Color(0xFF4CAF50)
-val ForestOnSecondary = Color(0xFFFFFFFF)
+// T3 Chat Secondary colors
+val T3ChatSecondary = Color(0xFFC084FC)
+val T3ChatSecondaryVariant = Color(0xFFA855F7)
+val T3ChatOnSecondary = Color(0xFFFFFFFF)
 
-// Forest Tertiary colors
-val ForestTertiary = Color(0xFFA5D6A7)
-val ForestOnTertiary = Color(0xFF1B3E1D)
+// T3 Chat Tertiary colors
+val T3ChatTertiary = Color(0xFFE879F9)
+val T3ChatOnTertiary = Color(0xFFFFFFFF)
 
-// Forest Background colors - Light
-val ForestBackgroundLight = Color(0xFFF5F9F5)
-val ForestSurfaceLight = Color(0xFFFFFFFF)
-val ForestSurfaceVariantLight = Color(0xFFE8F0E8)
-val ForestOnBackgroundLight = Color(0xFF1B3E1D)
-val ForestOnSurfaceLight = Color(0xFF1B3E1D)
-val ForestOnSurfaceVariantLight = Color(0xFF4A6B4C)
+// T3 Chat Background colors - Light
+val T3ChatBackgroundLight = Color(0xFFFFFFFF)
+val T3ChatSurfaceLight = Color(0xFFFAF5FF)
+val T3ChatSurfaceVariantLight = Color(0xFFF3E8FF)
+val T3ChatOnBackgroundLight = Color(0xFF1C1C1E)
+val T3ChatOnSurfaceLight = Color(0xFF1C1C1E)
+val T3ChatOnSurfaceVariantLight = Color(0xFF6B6B7B)
 
-// Forest Background colors - Dark
-val ForestBackgroundDark = Color(0xFF0D1A0D)
-val ForestSurfaceDark = Color(0xFF1A2E1A)
-val ForestSurfaceVariantDark = Color(0xFF264026)
-val ForestOnBackgroundDark = Color(0xFFE8F0E8)
-val ForestOnSurfaceDark = Color(0xFFE8F0E8)
-val ForestOnSurfaceVariantDark = Color(0xFF8FB890)
+// T3 Chat Background colors - Dark
+val T3ChatBackgroundDark = Color(0xFF0A0A0A)
+val T3ChatSurfaceDark = Color(0xFF161616)
+val T3ChatSurfaceVariantDark = Color(0xFF1E1E1E)
+val T3ChatOnBackgroundDark = Color(0xFFE5E5E5)
+val T3ChatOnSurfaceDark = Color(0xFFE5E5E5)
+val T3ChatOnSurfaceVariantDark = Color(0xFF9E9E9E)
 
-// Forest Outline colors
-val ForestOutlineLight = Color(0xFFCCDECC)
-val ForestOutlineDark = Color(0xFF3A5A3A)
+// T3 Chat Outline colors
+val T3ChatOutlineLight = Color(0xFFE9D5FF)
+val T3ChatOutlineDark = Color(0xFF2E2E2E)
+
+// ==============================================================================
+// GEMINI THEME (Google Blue)
+// ==============================================================================
+
+// Gemini Primary colors
+val GeminiPrimary = Color(0xFF4285F4)
+val GeminiPrimaryVariant = Color(0xFF3367D6)
+val GeminiOnPrimary = Color(0xFFFFFFFF)
+
+// Gemini Primary colors - Dark (lighter blue for dark mode)
+val GeminiPrimaryDark = Color(0xFF8AB4F8)
+val GeminiPrimaryVariantDark = Color(0xFF669DF6)
+
+// Gemini Secondary colors
+val GeminiSecondary = Color(0xFF34A853)
+val GeminiSecondaryVariant = Color(0xFF2D9249)
+val GeminiOnSecondary = Color(0xFFFFFFFF)
+
+// Gemini Tertiary colors (reasoning purple)
+val GeminiTertiary = Color(0xFFA855F7)
+val GeminiOnTertiary = Color(0xFFFFFFFF)
+
+// Gemini Background colors - Light
+val GeminiBackgroundLight = Color(0xFFFFFFFF)
+val GeminiSurfaceLight = Color(0xFFF8F9FA)
+val GeminiSurfaceVariantLight = Color(0xFFF1F3F4)
+val GeminiOnBackgroundLight = Color(0xFF202124)
+val GeminiOnSurfaceLight = Color(0xFF202124)
+val GeminiOnSurfaceVariantLight = Color(0xFF5F6368)
+
+// Gemini Background colors - Dark
+val GeminiBackgroundDark = Color(0xFF1A1A2E)
+val GeminiSurfaceDark = Color(0xFF232340)
+val GeminiSurfaceVariantDark = Color(0xFF2D2D4A)
+val GeminiOnBackgroundDark = Color(0xFFE8EAED)
+val GeminiOnSurfaceDark = Color(0xFFE8EAED)
+val GeminiOnSurfaceVariantDark = Color(0xFF9AA0A6)
+
+// Gemini Outline colors
+val GeminiOutlineLight = Color(0xFFDADCE0)
+val GeminiOutlineDark = Color(0xFF3C3C5C)
+
+// ==============================================================================
+// GROQ THEME (Bold Orange-Red)
+// ==============================================================================
+
+// Groq Primary colors
+val GroqPrimary = Color(0xFFF55036)
+val GroqPrimaryVariant = Color(0xFFD9432C)
+val GroqOnPrimary = Color(0xFFFFFFFF)
+
+// Groq Secondary colors
+val GroqSecondary = Color(0xFFFF7A5C)
+val GroqSecondaryVariant = Color(0xFFF55036)
+val GroqOnSecondary = Color(0xFFFFFFFF)
+
+// Groq Tertiary colors
+val GroqTertiary = Color(0xFFFF9A76)
+val GroqOnTertiary = Color(0xFF1A1A1A)
+
+// Groq Background colors - Light
+val GroqBackgroundLight = Color(0xFFFFFFFF)
+val GroqSurfaceLight = Color(0xFFFAFAFA)
+val GroqSurfaceVariantLight = Color(0xFFF5F0EE)
+val GroqOnBackgroundLight = Color(0xFF1A1A1A)
+val GroqOnSurfaceLight = Color(0xFF1A1A1A)
+val GroqOnSurfaceVariantLight = Color(0xFF6B6B6B)
+
+// Groq Background colors - Dark
+val GroqBackgroundDark = Color(0xFF0D0D0D)
+val GroqSurfaceDark = Color(0xFF1A1A1A)
+val GroqSurfaceVariantDark = Color(0xFF252525)
+val GroqOnBackgroundDark = Color(0xFFE5E5E5)
+val GroqOnSurfaceDark = Color(0xFFE5E5E5)
+val GroqOnSurfaceVariantDark = Color(0xFF9E9E9E)
+
+// Groq Outline colors
+val GroqOutlineLight = Color(0xFFE5E0DE)
+val GroqOutlineDark = Color(0xFF2E2E2E)

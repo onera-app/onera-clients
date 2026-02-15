@@ -2,6 +2,7 @@ package chat.onera.mobile.demo
 
 import android.app.Activity
 import chat.onera.mobile.data.remote.llm.ImageData
+import chat.onera.mobile.data.remote.llm.StreamChunkEvent
 import chat.onera.mobile.domain.model.Chat
 import chat.onera.mobile.domain.model.Credential
 import chat.onera.mobile.domain.model.LLMProvider
@@ -305,6 +306,23 @@ class DemoChatRepository : ChatRepository {
             emit(char.toString())
             delay(15 + (Math.random() * 20).toLong()) // 15-35ms per char
         }
+    }
+    
+    override fun sendMessageStreamRich(
+        chatId: String?,
+        message: String,
+        model: String,
+        images: List<ImageData>
+    ): Flow<StreamChunkEvent> = flow {
+        Timber.d("DemoChat: Rich streaming response for: $message")
+        
+        val response = DemoData.generateResponse(message)
+        
+        for (char in response) {
+            emit(StreamChunkEvent.TextDelta(char.toString()))
+            delay(15 + (Math.random() * 20).toLong())
+        }
+        emit(StreamChunkEvent.Done)
     }
     
     override suspend fun saveMessage(message: Message) {

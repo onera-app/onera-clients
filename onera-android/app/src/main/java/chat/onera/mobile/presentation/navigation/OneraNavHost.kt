@@ -15,11 +15,19 @@ import chat.onera.mobile.presentation.features.main.MainScreen
 import chat.onera.mobile.presentation.features.notes.NotesListScreen
 import chat.onera.mobile.presentation.features.notes.editor.NoteEditorScreen
 import chat.onera.mobile.presentation.features.onboarding.OnboardingScreen
+import chat.onera.mobile.presentation.features.prompts.PromptsListScreen
+import chat.onera.mobile.presentation.features.prompts.editor.PromptEditorScreen
+import chat.onera.mobile.presentation.features.search.GlobalSearchScreen
 import chat.onera.mobile.presentation.features.settings.SettingsScreen
 import chat.onera.mobile.presentation.features.settings.account.AccountSettingsScreen
 import chat.onera.mobile.presentation.features.settings.appearance.AppearanceScreen
 import chat.onera.mobile.presentation.features.settings.credentials.AddCredentialScreen
 import chat.onera.mobile.presentation.features.settings.credentials.CredentialsListScreen
+import chat.onera.mobile.presentation.features.settings.general.GeneralSettingsScreen
+import chat.onera.mobile.presentation.features.settings.audio.AudioSettingsScreen
+import chat.onera.mobile.presentation.features.settings.tools.ToolsSettingsScreen
+import chat.onera.mobile.presentation.features.settings.security.SecuritySettingsScreen
+import chat.onera.mobile.presentation.features.settings.recovery.RecoveryPhraseScreen
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -139,6 +147,12 @@ fun OneraNavHost(
                 onNavigateToNotes = {
                     navController.navigate(Routes.Notes.route)
                 },
+                onNavigateToPrompts = {
+                    navController.navigate(Routes.Prompts.route)
+                },
+                onNavigateToSearch = {
+                    navController.navigate(Routes.GlobalSearch.route)
+                },
                 onSignOut = {
                     navController.navigate(Routes.Auth.route) {
                         popUpTo(0) { inclusive = true }
@@ -178,6 +192,55 @@ fun OneraNavHost(
             )
         }
         
+        // Prompts
+        composable(Routes.Prompts.route) {
+            PromptsListScreen(
+                onBack = { navController.popBackStack() },
+                onPromptSelected = { promptId ->
+                    navController.navigate(Routes.PromptEditor.createRoute(promptId))
+                },
+                onCreatePrompt = {
+                    navController.navigate(Routes.PromptEditor.createRoute(null))
+                }
+            )
+        }
+        
+        // Prompt Editor
+        composable(
+            route = Routes.PromptEditor.route,
+            arguments = listOf(
+                navArgument(NavArgs.PROMPT_ID) {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val promptId = backStackEntry.arguments?.getString(NavArgs.PROMPT_ID)
+            PromptEditorScreen(
+                promptId = promptId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        
+        // Global Search
+        composable(Routes.GlobalSearch.route) {
+            GlobalSearchScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToChat = { chatId ->
+                    navController.popBackStack()
+                    // Navigate to main and select the chat
+                    navController.navigate(Routes.Main.route) {
+                        popUpTo(Routes.Main.route) { inclusive = true }
+                    }
+                },
+                onNavigateToNote = { noteId ->
+                    navController.popBackStack()
+                    navController.navigate(Routes.NoteEditor.createRoute(noteId))
+                }
+            )
+        }
+        
         // Settings
         composable(Routes.Settings.route) {
             SettingsScreen(
@@ -194,8 +257,20 @@ fun OneraNavHost(
                 onAPICredentials = {
                     navController.navigate(Routes.APICredentials.route)
                 },
+                onPrompts = {
+                    navController.navigate(Routes.Prompts.route)
+                },
                 onAppearance = {
                     navController.navigate(Routes.AppearanceSettings.route)
+                },
+                onGeneralSettings = {
+                    navController.navigate(Routes.GeneralSettings.route)
+                },
+                onAudioSettings = {
+                    navController.navigate(Routes.AudioSettings.route)
+                },
+                onToolsSettings = {
+                    navController.navigate(Routes.ToolsSettings.route)
                 },
                 onSignOut = {
                     navController.navigate(Routes.Auth.route) {
@@ -237,18 +312,42 @@ fun OneraNavHost(
             )
         }
         
-        // Security Settings (placeholder)
-        composable(Routes.SecuritySettings.route) {
-            ComingSoonScreen(
-                title = "E2EE Security",
+        // General Settings
+        composable(Routes.GeneralSettings.route) {
+            GeneralSettingsScreen(
                 onBack = { navController.popBackStack() }
             )
         }
         
-        // Encryption Keys (placeholder)
+        // Audio Settings
+        composable(Routes.AudioSettings.route) {
+            AudioSettingsScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+        
+        // Tools Settings
+        composable(Routes.ToolsSettings.route) {
+            ToolsSettingsScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+        
+        // Security Settings
+        composable(Routes.SecuritySettings.route) {
+            SecuritySettingsScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToUnlock = {
+                    navController.navigate(Routes.E2EEUnlock.route) {
+                        popUpTo(Routes.Settings.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+        
+        // Recovery Phrase
         composable(Routes.EncryptionKeys.route) {
-            ComingSoonScreen(
-                title = "Recovery Phrase",
+            RecoveryPhraseScreen(
                 onBack = { navController.popBackStack() }
             )
         }

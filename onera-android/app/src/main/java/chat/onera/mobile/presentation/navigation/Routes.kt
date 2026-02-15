@@ -35,6 +35,16 @@ sealed class Routes(val route: String) {
         fun createRoute(folderId: String) = "folder/$folderId"
     }
     
+    // Prompts flow
+    data object Prompts : Routes("prompts")
+    data object PromptEditor : Routes("prompt_editor?promptId={promptId}") {
+        fun createRoute(promptId: String?) = if (promptId != null) {
+            "prompt_editor?promptId=$promptId"
+        } else {
+            "prompt_editor"
+        }
+    }
+    
     // Settings flow
     data object Settings : Routes("settings")
     data object SecuritySettings : Routes("security_settings")
@@ -43,12 +53,18 @@ sealed class Routes(val route: String) {
     data object APICredentials : Routes("api_credentials")
     data object AddCredential : Routes("add_credential")
     data object AppearanceSettings : Routes("appearance_settings")
+    data object GeneralSettings : Routes("general_settings")
+    data object AudioSettings : Routes("audio_settings")
+    data object ToolsSettings : Routes("tools_settings")
     
     // E2EE flow
     data object E2EESetup : Routes("e2ee_setup")
     data object E2EEUnlock : Routes("e2ee_unlock")
     data object KeyBackup : Routes("key_backup")
     data object KeyRestore : Routes("key_restore")
+    
+    // Search flow
+    data object GlobalSearch : Routes("global_search")
     
     // API Key flow
     data object AddApiKeyPrompt : Routes("add_api_key_prompt")
@@ -61,4 +77,5 @@ object NavArgs {
     const val CHAT_ID = "chatId"
     const val NOTE_ID = "noteId"
     const val FOLDER_ID = "folderId"
+    const val PROMPT_ID = "promptId"
 }

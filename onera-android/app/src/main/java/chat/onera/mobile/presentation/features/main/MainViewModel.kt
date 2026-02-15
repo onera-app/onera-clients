@@ -5,13 +5,20 @@ import chat.onera.mobile.demo.DemoData
 import chat.onera.mobile.demo.DemoModeManager
 import chat.onera.mobile.demo.DemoRepositoryContainer
 import chat.onera.mobile.domain.model.Message
+import chat.onera.mobile.data.remote.ChatTasksService
+import chat.onera.mobile.data.remote.llm.ChatMessage
+import chat.onera.mobile.data.remote.llm.DecryptedCredential
+import chat.onera.mobile.domain.model.PromptSummary
 import chat.onera.mobile.domain.repository.AuthRepository
 import chat.onera.mobile.domain.repository.ChatRepository
 import chat.onera.mobile.domain.repository.CredentialRepository
 import chat.onera.mobile.domain.repository.FoldersRepository
 import chat.onera.mobile.domain.repository.LLMRepository
+import chat.onera.mobile.domain.repository.PromptRepository
 import chat.onera.mobile.data.remote.private_inference.EnclaveService
 import chat.onera.mobile.data.remote.private_inference.PRIVATE_MODEL_PREFIX
+import chat.onera.mobile.data.remote.trpc.AuthTokenProvider
+import chat.onera.mobile.data.remote.websocket.WebSocketService
 import chat.onera.mobile.presentation.base.BaseViewModel
 import chat.onera.mobile.presentation.features.main.handlers.AttachmentProcessor
 import chat.onera.mobile.presentation.features.main.handlers.TTSHandler
@@ -41,12 +48,17 @@ class MainViewModel @Inject constructor(
     private val foldersRepository: FoldersRepository,
     private val llmRepository: LLMRepository,
     private val enclaveService: EnclaveService,
+    private val webSocketService: WebSocketService,
+    private val authTokenProvider: AuthTokenProvider,
     private val voiceInputHandler: VoiceInputHandler,
     private val ttsHandler: TTSHandler,
-    private val attachmentProcessor: AttachmentProcessor
+    private val attachmentProcessor: AttachmentProcessor,
+    private val chatTasksService: ChatTasksService,
+    private val promptRepository: PromptRepository
 ) : BaseViewModel<MainState, MainIntent, MainEffect>(MainState()) {
 
     private var streamingJob: Job? = null
+    private var followUpJob: Job? = null
     
     /**
      * Get the effective chat repository - demo or real based on mode.
@@ -62,8 +74,10 @@ class MainViewModel @Inject constructor(
         loadInitialData()
         observeChats()
         observeFolders()
+        observePrompts()
         setupVoiceInputHandler()
         setupTTSHandler()
+        setupWebSocket()
     }
     
     // MARK: - Handler Setup
@@ -99,6 +113,61 @@ class MainViewModel @Inject constructor(
             }
         }
     }
+    
+    private fun setupWebSocket() {
+        // Skip WebSocket in demo mode
+        if (DemoModeManager.isActiveNow()) {
+            Timber.d("Demo mode: skipping WebSocket setup")
+            return
+        }
+        
+        viewModelScope.launch {
+            try {
+                // Get auth token and configure WebSocket
+                val token = authTokenProvider.getToken()
+                if (token != null) {
+                    webSocketService.setAuthToken(token)
+                    webSocketService.connect()
+                    Timber.d("WebSocket connected with auth token")
+                } else {
+                    Timber.w("No auth token available for WebSocket")
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to setup WebSocket")
+            }
+        }
+        
+        // Collect WebSocket messages for real-time sync
+        viewModelScope.launch {
+            webSocketService.messages.collect { message ->
+                Timber.d("WebSocket message received: type=${message.type}")
+                when (message.type) {
+                    "chat_sync" -> {
+                        Timber.d("Chat sync event, refreshing chats")
+                        refreshChats()
+                    }
+                    "note_sync" -> {
+                        Timber.d("Note sync event received")
+                        // Notes are handled by NotesViewModel, but refresh chats in case of related changes
+                    }
+                    "folder_sync" -> {
+                        Timber.d("Folder sync event, refreshing folders")
+                        loadFolders()
+                    }
+                }
+            }
+        }
+    }
+    
+    private fun cleanupWebSocket() {
+        webSocketService.disconnect()
+        Timber.d("WebSocket disconnected")
+    }
+    
+    override fun onCleared() {
+        super.onCleared()
+        cleanupWebSocket()
+    }
 
     override fun handleIntent(intent: MainIntent) {
         when (intent) {
@@ -133,6 +202,8 @@ class MainViewModel @Inject constructor(
             is MainIntent.SelectFolder -> selectFolder(intent.folderId)
             is MainIntent.MoveChatToFolder -> moveChatToFolder(intent.chatId, intent.folderId)
             is MainIntent.ToggleFolderExpanded -> toggleFolderExpanded(intent.folderId)
+            is MainIntent.SelectFollowUp -> selectFollowUp(intent.text)
+            is MainIntent.ToggleArtifactsPanel -> toggleArtifactsPanel()
             is MainIntent.ClearError -> updateState { copy(error = null) }
         }
     }
@@ -458,6 +529,48 @@ class MainViewModel @Inject constructor(
         updateState { copy(searchQuery = query) }
     }
     
+    // MARK: - Prompt Methods
+    
+    private fun observePrompts() {
+        // Skip in demo mode
+        if (DemoModeManager.isActiveNow()) {
+            Timber.d("Demo mode: skipping prompt observation")
+            return
+        }
+        
+        promptRepository.observePrompts()
+            .onEach { prompts ->
+                val summaries = prompts.map { PromptSummary(it.id, it.name, it.description) }
+                updateState { copy(promptSummaries = summaries) }
+            }
+            .catch { e ->
+                Timber.e(e, "Failed to observe prompts")
+            }
+            .launchIn(viewModelScope)
+        
+        // Initial refresh
+        viewModelScope.launch {
+            try {
+                promptRepository.refreshPrompts()
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to refresh prompts")
+            }
+        }
+    }
+    
+    /**
+     * Fetch the full content of a prompt by its summary.
+     * Used by the @mention system in MessageInputBar.
+     */
+    suspend fun fetchPromptContent(summary: PromptSummary): String? {
+        return try {
+            promptRepository.getPrompt(summary.id)?.content
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to fetch prompt content for ${summary.id}")
+            null
+        }
+    }
+    
     // MARK: - Folder Methods
     
     private fun observeFolders() {
@@ -591,7 +704,9 @@ class MainViewModel @Inject constructor(
         }
 
         // Set isSending synchronously BEFORE launching coroutine to prevent race condition
-        updateState { copy(chatState = chatState.copy(isSending = true)) }
+        // Clear follow-ups when sending a new message
+        followUpJob?.cancel()
+        updateState { copy(chatState = chatState.copy(isSending = true, followUps = emptyList())) }
 
         // Capture attachments before clearing
         val attachmentsToSend = currentState.chatState.attachments.toList()
@@ -743,9 +858,77 @@ class MainViewModel @Inject constructor(
                 } catch (e: Exception) {
                     Timber.w(e, "Failed to sync chat")
                 }
+                
+                // Generate follow-up suggestions in background
+                generateFollowUps()
             } catch (e: Exception) {
                 updateState { copy(chatState = chatState.copy(isStreaming = false)) }
                 sendEffect(MainEffect.ShowError(e.message ?: "Failed to send message"))
+            }
+        }
+    }
+
+    private fun selectFollowUp(text: String) {
+        // Clear follow-ups and send the selected text as a message
+        updateState { copy(chatState = chatState.copy(followUps = emptyList())) }
+        sendMessage(text)
+    }
+    
+    private fun toggleArtifactsPanel() {
+        updateState {
+            copy(chatState = chatState.copy(showArtifactsPanel = !chatState.showArtifactsPanel))
+        }
+    }
+    
+    // MARK: - Follow-up Generation
+    
+    private fun generateFollowUps() {
+        // Cancel any existing follow-up job
+        followUpJob?.cancel()
+        
+        val selectedModel = currentState.chatState.selectedModel ?: return
+        // Skip for private models (no credential)
+        if (selectedModel.provider == ModelProvider.PRIVATE) return
+        val credentialId = selectedModel.credentialId ?: return
+        
+        followUpJob = viewModelScope.launch {
+            try {
+                // Get the decrypted credential
+                val credential = credentialRepository.getCredential(credentialId) ?: return@launch
+                
+                val llmProvider = chat.onera.mobile.data.remote.llm.LLMProvider.fromName(credential.provider.name)
+                    ?: chat.onera.mobile.data.remote.llm.LLMProvider.OPENAI
+                
+                val decrypted = DecryptedCredential(
+                    id = credential.id,
+                    provider = llmProvider,
+                    apiKey = credential.apiKey,
+                    name = credential.name,
+                    baseUrl = credential.baseUrl
+                )
+                
+                // Convert recent messages to ChatMessage format
+                val recentMessages = currentState.chatState.messages.takeLast(6).map { msg ->
+                    when (msg.role) {
+                        chat.onera.mobile.domain.model.MessageRole.USER -> ChatMessage.user(msg.content)
+                        chat.onera.mobile.domain.model.MessageRole.ASSISTANT -> ChatMessage.assistant(msg.content)
+                        chat.onera.mobile.domain.model.MessageRole.SYSTEM -> ChatMessage.system(msg.content)
+                    }
+                }
+                
+                val followUps = chatTasksService.generateFollowUps(
+                    recentMessages = recentMessages,
+                    credential = decrypted,
+                    model = selectedModel.id
+                )
+                
+                if (followUps.isNotEmpty()) {
+                    updateState {
+                        copy(chatState = chatState.copy(followUps = followUps))
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to generate follow-ups")
             }
         }
     }

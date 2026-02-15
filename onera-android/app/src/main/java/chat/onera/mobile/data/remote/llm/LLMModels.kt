@@ -346,6 +346,24 @@ sealed interface StreamEvent {
     data class Error(val message: String, val cause: Throwable? = null) : StreamEvent
 }
 
+/**
+ * Events emitted to the UI during streaming (richer than raw StreamEvent).
+ * Preserves reasoning content and tool calls that StreamEvent parses
+ * but the basic Flow<String> pipeline discards.
+ */
+sealed interface StreamChunkEvent {
+    /** Text content delta */
+    data class TextDelta(val content: String) : StreamChunkEvent
+    /** Reasoning/thinking content delta */
+    data class ReasoningDelta(val content: String) : StreamChunkEvent
+    /** Tool call started/updated */
+    data class ToolCallDelta(val id: String, val name: String, val arguments: String) : StreamChunkEvent
+    /** Stream completed */
+    data object Done : StreamChunkEvent
+    /** Error */
+    data class Error(val message: String) : StreamChunkEvent
+}
+
 // ============================================================================
 // Error Models
 // ============================================================================

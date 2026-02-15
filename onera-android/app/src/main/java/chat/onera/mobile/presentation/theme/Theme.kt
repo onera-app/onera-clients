@@ -125,107 +125,211 @@ private val ClaudeLightColorScheme = lightColorScheme(
 )
 
 // ==============================================================================
-// OCEAN THEME SCHEMES
+// CHATGPT THEME SCHEMES
 // ==============================================================================
 
-private val OceanDarkColorScheme = darkColorScheme(
-    primary = OceanPrimary,
-    onPrimary = OceanOnPrimary,
-    primaryContainer = OceanPrimaryVariant,
-    onPrimaryContainer = OceanOnPrimary,
-    secondary = OceanSecondary,
-    onSecondary = OceanOnSecondary,
-    secondaryContainer = OceanSecondaryVariant,
-    onSecondaryContainer = OceanOnSecondary,
-    tertiary = OceanTertiary,
-    onTertiary = OceanOnTertiary,
-    background = OceanBackgroundDark,
-    onBackground = OceanOnBackgroundDark,
-    surface = OceanSurfaceDark,
-    onSurface = OceanOnSurfaceDark,
-    surfaceVariant = OceanSurfaceVariantDark,
-    onSurfaceVariant = OceanOnSurfaceVariantDark,
+private val ChatGPTDarkColorScheme = darkColorScheme(
+    primary = ChatGPTPrimary,
+    onPrimary = ChatGPTOnPrimary,
+    primaryContainer = ChatGPTPrimaryVariant,
+    onPrimaryContainer = ChatGPTOnPrimary,
+    secondary = ChatGPTSecondary,
+    onSecondary = ChatGPTOnSecondary,
+    secondaryContainer = ChatGPTSecondaryVariant,
+    onSecondaryContainer = ChatGPTOnSecondary,
+    tertiary = ChatGPTTertiary,
+    onTertiary = ChatGPTOnTertiary,
+    background = ChatGPTBackgroundDark,
+    onBackground = ChatGPTOnBackgroundDark,
+    surface = ChatGPTSurfaceDark,
+    onSurface = ChatGPTOnSurfaceDark,
+    surfaceVariant = ChatGPTSurfaceVariantDark,
+    onSurfaceVariant = ChatGPTOnSurfaceVariantDark,
     error = Error,
     onError = OnError,
     errorContainer = ErrorContainer,
     onErrorContainer = OnErrorContainer,
-    outline = OceanOutlineDark
+    outline = ChatGPTOutlineDark
 )
 
-private val OceanLightColorScheme = lightColorScheme(
-    primary = OceanPrimary,
-    onPrimary = OceanOnPrimary,
-    primaryContainer = OceanPrimaryVariant,
-    onPrimaryContainer = OceanOnPrimary,
-    secondary = OceanSecondary,
-    onSecondary = OceanOnSecondary,
-    secondaryContainer = OceanSecondaryVariant,
-    onSecondaryContainer = OceanOnSecondary,
-    tertiary = OceanTertiary,
-    onTertiary = OceanOnTertiary,
-    background = OceanBackgroundLight,
-    onBackground = OceanOnBackgroundLight,
-    surface = OceanSurfaceLight,
-    onSurface = OceanOnSurfaceLight,
-    surfaceVariant = OceanSurfaceVariantLight,
-    onSurfaceVariant = OceanOnSurfaceVariantLight,
+private val ChatGPTLightColorScheme = lightColorScheme(
+    primary = ChatGPTPrimary,
+    onPrimary = ChatGPTOnPrimary,
+    primaryContainer = ChatGPTPrimaryVariant,
+    onPrimaryContainer = ChatGPTOnPrimary,
+    secondary = ChatGPTSecondary,
+    onSecondary = ChatGPTOnSecondary,
+    secondaryContainer = ChatGPTSecondaryVariant,
+    onSecondaryContainer = ChatGPTOnSecondary,
+    tertiary = ChatGPTTertiary,
+    onTertiary = ChatGPTOnTertiary,
+    background = ChatGPTBackgroundLight,
+    onBackground = ChatGPTOnBackgroundLight,
+    surface = ChatGPTSurfaceLight,
+    onSurface = ChatGPTOnSurfaceLight,
+    surfaceVariant = ChatGPTSurfaceVariantLight,
+    onSurfaceVariant = ChatGPTOnSurfaceVariantLight,
     error = Error,
     onError = OnError,
     errorContainer = ErrorContainer,
     onErrorContainer = OnErrorContainer,
-    outline = OceanOutlineLight
+    outline = ChatGPTOutlineLight
 )
 
 // ==============================================================================
-// FOREST THEME SCHEMES
+// T3 CHAT THEME SCHEMES
 // ==============================================================================
 
-private val ForestDarkColorScheme = darkColorScheme(
-    primary = ForestPrimary,
-    onPrimary = ForestOnPrimary,
-    primaryContainer = ForestPrimaryVariant,
-    onPrimaryContainer = ForestOnPrimary,
-    secondary = ForestSecondary,
-    onSecondary = ForestOnSecondary,
-    secondaryContainer = ForestSecondaryVariant,
-    onSecondaryContainer = ForestOnSecondary,
-    tertiary = ForestTertiary,
-    onTertiary = ForestOnTertiary,
-    background = ForestBackgroundDark,
-    onBackground = ForestOnBackgroundDark,
-    surface = ForestSurfaceDark,
-    onSurface = ForestOnSurfaceDark,
-    surfaceVariant = ForestSurfaceVariantDark,
-    onSurfaceVariant = ForestOnSurfaceVariantDark,
+private val T3ChatDarkColorScheme = darkColorScheme(
+    primary = T3ChatPrimary,
+    onPrimary = T3ChatOnPrimary,
+    primaryContainer = T3ChatPrimaryVariant,
+    onPrimaryContainer = T3ChatOnPrimary,
+    secondary = T3ChatSecondary,
+    onSecondary = T3ChatOnSecondary,
+    secondaryContainer = T3ChatSecondaryVariant,
+    onSecondaryContainer = T3ChatOnSecondary,
+    tertiary = T3ChatTertiary,
+    onTertiary = T3ChatOnTertiary,
+    background = T3ChatBackgroundDark,
+    onBackground = T3ChatOnBackgroundDark,
+    surface = T3ChatSurfaceDark,
+    onSurface = T3ChatOnSurfaceDark,
+    surfaceVariant = T3ChatSurfaceVariantDark,
+    onSurfaceVariant = T3ChatOnSurfaceVariantDark,
     error = Error,
     onError = OnError,
     errorContainer = ErrorContainer,
     onErrorContainer = OnErrorContainer,
-    outline = ForestOutlineDark
+    outline = T3ChatOutlineDark
 )
 
-private val ForestLightColorScheme = lightColorScheme(
-    primary = ForestPrimary,
-    onPrimary = ForestOnPrimary,
-    primaryContainer = ForestPrimaryVariant,
-    onPrimaryContainer = ForestOnPrimary,
-    secondary = ForestSecondary,
-    onSecondary = ForestOnSecondary,
-    secondaryContainer = ForestSecondaryVariant,
-    onSecondaryContainer = ForestOnSecondary,
-    tertiary = ForestTertiary,
-    onTertiary = ForestOnTertiary,
-    background = ForestBackgroundLight,
-    onBackground = ForestOnBackgroundLight,
-    surface = ForestSurfaceLight,
-    onSurface = ForestOnSurfaceLight,
-    surfaceVariant = ForestSurfaceVariantLight,
-    onSurfaceVariant = ForestOnSurfaceVariantLight,
+private val T3ChatLightColorScheme = lightColorScheme(
+    primary = T3ChatPrimary,
+    onPrimary = T3ChatOnPrimary,
+    primaryContainer = T3ChatPrimaryVariant,
+    onPrimaryContainer = T3ChatOnPrimary,
+    secondary = T3ChatSecondary,
+    onSecondary = T3ChatOnSecondary,
+    secondaryContainer = T3ChatSecondaryVariant,
+    onSecondaryContainer = T3ChatOnSecondary,
+    tertiary = T3ChatTertiary,
+    onTertiary = T3ChatOnTertiary,
+    background = T3ChatBackgroundLight,
+    onBackground = T3ChatOnBackgroundLight,
+    surface = T3ChatSurfaceLight,
+    onSurface = T3ChatOnSurfaceLight,
+    surfaceVariant = T3ChatSurfaceVariantLight,
+    onSurfaceVariant = T3ChatOnSurfaceVariantLight,
     error = Error,
     onError = OnError,
     errorContainer = ErrorContainer,
     onErrorContainer = OnErrorContainer,
-    outline = ForestOutlineLight
+    outline = T3ChatOutlineLight
+)
+
+// ==============================================================================
+// GEMINI THEME SCHEMES
+// ==============================================================================
+
+private val GeminiDarkColorScheme = darkColorScheme(
+    primary = GeminiPrimaryDark,
+    onPrimary = GeminiOnPrimary,
+    primaryContainer = GeminiPrimaryVariantDark,
+    onPrimaryContainer = GeminiOnPrimary,
+    secondary = GeminiSecondary,
+    onSecondary = GeminiOnSecondary,
+    secondaryContainer = GeminiSecondaryVariant,
+    onSecondaryContainer = GeminiOnSecondary,
+    tertiary = GeminiTertiary,
+    onTertiary = GeminiOnTertiary,
+    background = GeminiBackgroundDark,
+    onBackground = GeminiOnBackgroundDark,
+    surface = GeminiSurfaceDark,
+    onSurface = GeminiOnSurfaceDark,
+    surfaceVariant = GeminiSurfaceVariantDark,
+    onSurfaceVariant = GeminiOnSurfaceVariantDark,
+    error = Error,
+    onError = OnError,
+    errorContainer = ErrorContainer,
+    onErrorContainer = OnErrorContainer,
+    outline = GeminiOutlineDark
+)
+
+private val GeminiLightColorScheme = lightColorScheme(
+    primary = GeminiPrimary,
+    onPrimary = GeminiOnPrimary,
+    primaryContainer = GeminiPrimaryVariant,
+    onPrimaryContainer = GeminiOnPrimary,
+    secondary = GeminiSecondary,
+    onSecondary = GeminiOnSecondary,
+    secondaryContainer = GeminiSecondaryVariant,
+    onSecondaryContainer = GeminiOnSecondary,
+    tertiary = GeminiTertiary,
+    onTertiary = GeminiOnTertiary,
+    background = GeminiBackgroundLight,
+    onBackground = GeminiOnBackgroundLight,
+    surface = GeminiSurfaceLight,
+    onSurface = GeminiOnSurfaceLight,
+    surfaceVariant = GeminiSurfaceVariantLight,
+    onSurfaceVariant = GeminiOnSurfaceVariantLight,
+    error = Error,
+    onError = OnError,
+    errorContainer = ErrorContainer,
+    onErrorContainer = OnErrorContainer,
+    outline = GeminiOutlineLight
+)
+
+// ==============================================================================
+// GROQ THEME SCHEMES
+// ==============================================================================
+
+private val GroqDarkColorScheme = darkColorScheme(
+    primary = GroqPrimary,
+    onPrimary = GroqOnPrimary,
+    primaryContainer = GroqPrimaryVariant,
+    onPrimaryContainer = GroqOnPrimary,
+    secondary = GroqSecondary,
+    onSecondary = GroqOnSecondary,
+    secondaryContainer = GroqSecondaryVariant,
+    onSecondaryContainer = GroqOnSecondary,
+    tertiary = GroqTertiary,
+    onTertiary = GroqOnTertiary,
+    background = GroqBackgroundDark,
+    onBackground = GroqOnBackgroundDark,
+    surface = GroqSurfaceDark,
+    onSurface = GroqOnSurfaceDark,
+    surfaceVariant = GroqSurfaceVariantDark,
+    onSurfaceVariant = GroqOnSurfaceVariantDark,
+    error = Error,
+    onError = OnError,
+    errorContainer = ErrorContainer,
+    onErrorContainer = OnErrorContainer,
+    outline = GroqOutlineDark
+)
+
+private val GroqLightColorScheme = lightColorScheme(
+    primary = GroqPrimary,
+    onPrimary = GroqOnPrimary,
+    primaryContainer = GroqPrimaryVariant,
+    onPrimaryContainer = GroqOnPrimary,
+    secondary = GroqSecondary,
+    onSecondary = GroqOnSecondary,
+    secondaryContainer = GroqSecondaryVariant,
+    onSecondaryContainer = GroqOnSecondary,
+    tertiary = GroqTertiary,
+    onTertiary = GroqOnTertiary,
+    background = GroqBackgroundLight,
+    onBackground = GroqOnBackgroundLight,
+    surface = GroqSurfaceLight,
+    onSurface = GroqOnSurfaceLight,
+    surfaceVariant = GroqSurfaceVariantLight,
+    onSurfaceVariant = GroqOnSurfaceVariantLight,
+    error = Error,
+    onError = OnError,
+    errorContainer = ErrorContainer,
+    onErrorContainer = OnErrorContainer,
+    outline = GroqOutlineLight
 )
 
 // ==============================================================================
@@ -281,8 +385,10 @@ fun getColorSchemeForTheme(appTheme: AppTheme, isDark: Boolean): ColorScheme {
     return when (appTheme) {
         AppTheme.DEFAULT -> if (isDark) DefaultDarkColorScheme else DefaultLightColorScheme
         AppTheme.CLAUDE -> if (isDark) ClaudeDarkColorScheme else ClaudeLightColorScheme
-        AppTheme.OCEAN -> if (isDark) OceanDarkColorScheme else OceanLightColorScheme
-        AppTheme.FOREST -> if (isDark) ForestDarkColorScheme else ForestLightColorScheme
+        AppTheme.CHATGPT -> if (isDark) ChatGPTDarkColorScheme else ChatGPTLightColorScheme
+        AppTheme.T3CHAT -> if (isDark) T3ChatDarkColorScheme else T3ChatLightColorScheme
+        AppTheme.GEMINI -> if (isDark) GeminiDarkColorScheme else GeminiLightColorScheme
+        AppTheme.GROQ -> if (isDark) GroqDarkColorScheme else GroqLightColorScheme
     }
 }
 

@@ -9,6 +9,7 @@ data class Message(
     val isEncrypted: Boolean = true,
     val model: String? = null,
     val reasoningContent: String? = null,
+    val toolCalls: List<ToolCallData> = emptyList(),
     val edited: Boolean = false,
     val editedAt: Long? = null,
     // Branch navigation fields
@@ -18,6 +19,18 @@ data class Message(
     // Attachments
     val imageUris: List<String> = emptyList() // URIs of attached images (local only, not synced)
 )
+
+data class ToolCallData(
+    val id: String,
+    val name: String,
+    val arguments: String,
+    val result: String? = null,
+    val state: ToolCallState = ToolCallState.COMPLETED
+)
+
+enum class ToolCallState {
+    STREAMING, RUNNING, COMPLETED, FAILED
+}
 
 enum class MessageRole {
     USER,

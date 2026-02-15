@@ -5,6 +5,7 @@ import chat.onera.mobile.data.remote.api.ChatApiService
 import chat.onera.mobile.data.remote.dto.*
 import chat.onera.mobile.data.remote.llm.ChatMessage
 import chat.onera.mobile.data.remote.llm.ImageData
+import chat.onera.mobile.data.remote.llm.StreamChunkEvent
 import chat.onera.mobile.data.remote.llm.StreamEvent
 import chat.onera.mobile.data.remote.private_inference.PrivateInferenceEvent
 import chat.onera.mobile.data.remote.trpc.TRPCClient
@@ -464,6 +465,108 @@ class ChatRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "Failed to stream chat", e)
             emit("Error: ${e.message}")
+        }
+    }
+
+    override fun sendMessageStreamRich(chatId: String?, message: String, model: String, images: List<ImageData>): Flow<StreamChunkEvent> = flow {
+        Log.d(TAG, "sendMessageStreamRich: chatId=$chatId, model=$model, images=${images.size}")
+
+        val modelRoute = parseModelString(model)
+        if (modelRoute is ParsedModelRoute.Standard && modelRoute.credentialId == null) {
+            Log.e(TAG, "No credential ID found in model string: $model")
+            emit(StreamChunkEvent.Error("Please add an API key in Settings > API Connections"))
+            return@flow
+        }
+
+        // Get conversation history if we have a chatId
+        val conversationHistory = if (chatId != null) {
+            try {
+                getChatMessages(chatId).map { msg ->
+                    ChatMessage(
+                        role = when (msg.role) {
+                            MessageRole.USER -> ChatMessage.ROLE_USER
+                            MessageRole.ASSISTANT -> ChatMessage.ROLE_ASSISTANT
+                            MessageRole.SYSTEM -> ChatMessage.ROLE_SYSTEM
+                        },
+                        content = msg.content
+                    )
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to load chat history", e)
+                emptyList()
+            }
+        } else {
+            emptyList()
+        }
+
+        val messages = conversationHistory + ChatMessage.user(message)
+
+        Log.d(TAG, "Sending ${messages.size} messages to LLM (rich) with ${images.size} images")
+
+        try {
+            when (modelRoute) {
+                is ParsedModelRoute.Private -> {
+                    llmRepository.streamPrivateChat(
+                        modelId = modelRoute.modelId,
+                        messages = messages,
+                        systemPrompt = DEFAULT_SYSTEM_PROMPT
+                    ).collect { event ->
+                        when (event) {
+                            is PrivateInferenceEvent.TextDelta -> emit(StreamChunkEvent.TextDelta(event.text))
+                            is PrivateInferenceEvent.Finish -> {
+                                Log.d(TAG, "Private stream completed (rich): ${event.reason}")
+                                if (chatId != null) {
+                                    syncChatAfterMessage(chatId)
+                                }
+                                emit(StreamChunkEvent.Done)
+                            }
+                            is PrivateInferenceEvent.Error -> {
+                                Log.e(TAG, "Private stream error (rich): ${event.message}", event.cause)
+                                emit(StreamChunkEvent.Error(event.message))
+                            }
+                        }
+                    }
+                    // Ensure Done is emitted even if Finish wasn't received
+                }
+                is ParsedModelRoute.Standard -> {
+                    val credentialId = requireNotNull(modelRoute.credentialId) {
+                        "Missing credential for non-private model"
+                    }
+                    llmRepository.streamChat(
+                        credentialId = credentialId,
+                        messages = messages,
+                        model = modelRoute.modelName,
+                        systemPrompt = DEFAULT_SYSTEM_PROMPT,
+                        images = images
+                    ).collect { event ->
+                        when (event) {
+                            is StreamEvent.Text -> emit(StreamChunkEvent.TextDelta(event.content))
+                            is StreamEvent.Reasoning -> emit(StreamChunkEvent.ReasoningDelta(event.content))
+                            is StreamEvent.ToolCall -> emit(
+                                StreamChunkEvent.ToolCallDelta(
+                                    id = UUID.randomUUID().toString(),
+                                    name = event.name,
+                                    arguments = event.arguments
+                                )
+                            )
+                            is StreamEvent.Done -> {
+                                Log.d(TAG, "Stream completed (rich)")
+                                if (chatId != null) {
+                                    syncChatAfterMessage(chatId)
+                                }
+                                emit(StreamChunkEvent.Done)
+                            }
+                            is StreamEvent.Error -> {
+                                Log.e(TAG, "Stream error (rich): ${event.message}", event.cause)
+                                emit(StreamChunkEvent.Error(event.message))
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to stream chat (rich)", e)
+            emit(StreamChunkEvent.Error(e.message ?: "Unknown error"))
         }
     }
 

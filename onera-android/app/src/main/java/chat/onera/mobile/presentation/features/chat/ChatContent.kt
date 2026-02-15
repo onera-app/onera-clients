@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,6 +29,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import chat.onera.mobile.domain.model.Attachment
+import chat.onera.mobile.domain.model.PromptSummary
 import chat.onera.mobile.presentation.features.chat.components.AttachmentPickerSheet
 import chat.onera.mobile.presentation.features.chat.components.AttachmentPreviewRow
 import chat.onera.mobile.presentation.features.chat.components.MessageBubble
@@ -36,6 +38,9 @@ import chat.onera.mobile.presentation.features.chat.components.ModelSelector
 import chat.onera.mobile.presentation.features.chat.components.RecordingIndicator
 import chat.onera.mobile.presentation.features.chat.components.StreamingMessageBubble
 import chat.onera.mobile.presentation.features.chat.components.TTSPlayerOverlay
+import chat.onera.mobile.presentation.components.ArtifactExtractor
+import chat.onera.mobile.presentation.components.ArtifactsPanel
+import chat.onera.mobile.presentation.components.FollowUpChips
 import chat.onera.mobile.presentation.features.main.ChatState
 import chat.onera.mobile.presentation.features.main.model.ModelOption
 
@@ -59,12 +64,21 @@ fun ChatContent(
     onAddAttachment: (Attachment) -> Unit = {},
     onRemoveAttachment: (String) -> Unit = {},
     onNavigateToPreviousBranch: (String) -> Unit = {},
-    onNavigateToNextBranch: (String) -> Unit = {}
+    onNavigateToNextBranch: (String) -> Unit = {},
+    onSelectFollowUp: (String) -> Unit = {},
+    onToggleArtifactsPanel: () -> Unit = {},
+    promptSummaries: List<PromptSummary> = emptyList(),
+    onFetchPromptContent: (suspend (PromptSummary) -> String?)? = null
 ) {
     val context = LocalContext.current
     val listState = rememberLazyListState()
     var showModelSelector by remember { mutableStateOf(false) }
     var showAttachmentPicker by remember { mutableStateOf(false) }
+    
+    // Compute artifacts lazily from messages
+    val artifacts = remember(chatState.messages) {
+        ArtifactExtractor.extractArtifacts(chatState.messages)
+    }
     
     // Microphone permission handling
     var hasMicPermission by remember {
@@ -149,6 +163,28 @@ fun ChatContent(
                         }
                     },
                     actions = {
+                        // Artifacts button - only visible when code blocks exist
+                        if (artifacts.isNotEmpty()) {
+                            IconButton(onClick = onToggleArtifactsPanel) {
+                                BadgedBox(
+                                    badge = {
+                                        Badge(
+                                            containerColor = MaterialTheme.colorScheme.primary
+                                        ) {
+                                            Text(
+                                                text = "${artifacts.size}",
+                                                style = MaterialTheme.typography.labelSmall
+                                            )
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Code,
+                                        contentDescription = "Artifacts"
+                                    )
+                                }
+                            }
+                        }
                         IconButton(onClick = onNewConversation) {
                             Icon(
                                 imageVector = Icons.Outlined.Edit,
@@ -237,6 +273,15 @@ fun ChatContent(
                     }
                 }
                 
+                // Follow-up suggestion chips (shown after last assistant message)
+                if (chatState.followUps.isNotEmpty() && !chatState.isStreaming) {
+                    FollowUpChips(
+                        followUps = chatState.followUps,
+                        onSelectFollowUp = onSelectFollowUp,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+                }
+                
                 // Recording indicator (shown above input when recording)
                 if (chatState.isRecording) {
                     RecordingIndicator(
@@ -278,6 +323,8 @@ fun ChatContent(
                         showAttachmentPicker = true 
                     },
                     isSending = chatState.isSending,
+                    promptSummaries = promptSummaries,
+                    onFetchPromptContent = onFetchPromptContent,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }
@@ -314,6 +361,14 @@ fun ChatContent(
                 onAddAttachment(attachment)
             },
             onDismiss = { showAttachmentPicker = false }
+        )
+    }
+    
+    // Artifacts panel bottom sheet
+    if (chatState.showArtifactsPanel) {
+        ArtifactsPanel(
+            artifacts = artifacts,
+            onDismiss = onToggleArtifactsPanel
         )
     }
 }

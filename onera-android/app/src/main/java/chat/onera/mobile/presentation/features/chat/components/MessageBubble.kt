@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import chat.onera.mobile.domain.model.Message
 import chat.onera.mobile.domain.model.MessageRole
 import chat.onera.mobile.presentation.components.MarkdownText
+import chat.onera.mobile.presentation.components.ToolInvocationsView
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 
@@ -70,6 +71,7 @@ fun MessageBubble(
             AssistantMessageBubble(
                 content = message.content,
                 reasoningContent = message.reasoningContent,
+                toolCalls = message.toolCalls,
                 onCopy = onCopy,
                 onRegenerate = onRegenerate,
                 onSpeak = onSpeak,
@@ -312,6 +314,7 @@ private fun UserMessageBubble(
 private fun AssistantMessageBubble(
     content: String,
     reasoningContent: String?,
+    toolCalls: List<chat.onera.mobile.domain.model.ToolCallData> = emptyList(),
     onCopy: () -> Unit,
     onRegenerate: (() -> Unit)?,
     onSpeak: ((String) -> Unit)? = null,
@@ -360,6 +363,14 @@ private fun AssistantMessageBubble(
                     )
                 }
             }
+        }
+        
+        // Tool invocations (if present)
+        if (toolCalls.isNotEmpty()) {
+            ToolInvocationsView(
+                toolCalls = toolCalls,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
         
         // Message content with code block copy support

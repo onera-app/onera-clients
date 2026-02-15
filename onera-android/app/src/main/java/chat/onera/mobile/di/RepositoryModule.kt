@@ -7,6 +7,7 @@ import chat.onera.mobile.data.repository.E2EERepositoryImpl
 import chat.onera.mobile.data.repository.FoldersRepositoryImpl
 import chat.onera.mobile.data.repository.LLMRepositoryImpl
 import chat.onera.mobile.data.repository.NotesRepositoryImpl
+import chat.onera.mobile.data.repository.PromptRepositoryImpl
 import chat.onera.mobile.domain.repository.AuthRepository
 import chat.onera.mobile.domain.repository.ChatRepository
 import chat.onera.mobile.domain.repository.CredentialRepository
@@ -14,6 +15,7 @@ import chat.onera.mobile.domain.repository.E2EERepository
 import chat.onera.mobile.domain.repository.FoldersRepository
 import chat.onera.mobile.domain.repository.LLMRepository
 import chat.onera.mobile.domain.repository.NotesRepository
+import chat.onera.mobile.domain.repository.PromptRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -65,4 +67,10 @@ abstract class RepositoryModule {
     abstract fun bindCredentialRepository(
         credentialRepositoryImpl: CredentialRepositoryImpl
     ): CredentialRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindPromptRepository(
+        promptRepositoryImpl: PromptRepositoryImpl
+    ): PromptRepository
 }

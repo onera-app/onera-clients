@@ -30,8 +30,10 @@ enum class ThemeMode(val displayName: String) {
 enum class AppTheme(val displayName: String) {
     DEFAULT("Default"),
     CLAUDE("Claude"),
-    OCEAN("Ocean"),
-    FOREST("Forest")
+    CHATGPT("ChatGPT"),
+    T3CHAT("T3 Chat"),
+    GEMINI("Gemini"),
+    GROQ("Groq")
 }
 
 /**

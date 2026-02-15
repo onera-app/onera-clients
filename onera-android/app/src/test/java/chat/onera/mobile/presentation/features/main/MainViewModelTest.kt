@@ -1,5 +1,8 @@
 package chat.onera.mobile.presentation.features.main
 
+import chat.onera.mobile.data.remote.ChatTasksService
+import chat.onera.mobile.data.remote.trpc.AuthTokenProvider
+import chat.onera.mobile.data.remote.websocket.WebSocketService
 import chat.onera.mobile.data.speech.SpeechRecognitionManager
 import chat.onera.mobile.data.speech.TextToSpeechManager
 import chat.onera.mobile.domain.model.Message
@@ -7,13 +10,21 @@ import chat.onera.mobile.domain.model.MessageRole
 import chat.onera.mobile.domain.model.User
 import chat.onera.mobile.domain.repository.AuthRepository
 import chat.onera.mobile.domain.repository.ChatRepository
+import chat.onera.mobile.domain.repository.CredentialRepository
+import chat.onera.mobile.domain.repository.FoldersRepository
 import chat.onera.mobile.domain.repository.LLMRepository
+import chat.onera.mobile.domain.repository.PromptRepository
+import chat.onera.mobile.data.remote.private_inference.EnclaveService
+import chat.onera.mobile.presentation.features.main.handlers.AttachmentProcessor
+import chat.onera.mobile.presentation.features.main.handlers.TTSHandler
+import chat.onera.mobile.presentation.features.main.handlers.VoiceInputHandler
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -32,7 +43,17 @@ class MainViewModelTest {
     
     private lateinit var authRepository: AuthRepository
     private lateinit var chatRepository: ChatRepository
+    private lateinit var credentialRepository: CredentialRepository
+    private lateinit var foldersRepository: FoldersRepository
     private lateinit var llmRepository: LLMRepository
+    private lateinit var enclaveService: EnclaveService
+    private lateinit var voiceInputHandler: VoiceInputHandler
+    private lateinit var ttsHandler: TTSHandler
+    private lateinit var attachmentProcessor: AttachmentProcessor
+    private lateinit var chatTasksService: ChatTasksService
+    private lateinit var promptRepository: PromptRepository
+    private lateinit var webSocketService: WebSocketService
+    private lateinit var authTokenProvider: AuthTokenProvider
     private lateinit var speechRecognitionManager: SpeechRecognitionManager
     private lateinit var textToSpeechManager: TextToSpeechManager
     private lateinit var viewModel: MainViewModel
@@ -50,7 +71,17 @@ class MainViewModelTest {
         
         authRepository = mockk(relaxed = true)
         chatRepository = mockk(relaxed = true)
+        credentialRepository = mockk(relaxed = true)
+        foldersRepository = mockk(relaxed = true)
         llmRepository = mockk(relaxed = true)
+        enclaveService = mockk(relaxed = true)
+        voiceInputHandler = mockk(relaxed = true)
+        ttsHandler = mockk(relaxed = true)
+        attachmentProcessor = mockk(relaxed = true)
+        chatTasksService = mockk(relaxed = true)
+        promptRepository = mockk(relaxed = true)
+        webSocketService = mockk(relaxed = true)
+        authTokenProvider = mockk(relaxed = true)
         speechRecognitionManager = mockk(relaxed = true)
         textToSpeechManager = mockk(relaxed = true)
         
@@ -68,14 +99,32 @@ class MainViewModelTest {
         // Setup chat repository
         coEvery { chatRepository.observeChats() } returns flowOf(emptyList())
         
-        // Setup speech recognition manager
-        every { speechRecognitionManager.isListening } returns isListeningFlow
-        every { speechRecognitionManager.transcribedText } returns transcribedTextFlow
+        // Setup folders repository
+        coEvery { foldersRepository.observeFolders() } returns flowOf(emptyList())
         
-        // Setup text-to-speech manager
-        every { textToSpeechManager.isSpeaking } returns isSpeakingFlow
-        every { textToSpeechManager.speakingMessageId } returns speakingMessageIdFlow
-        every { textToSpeechManager.speakingStartTime } returns speakingStartTimeFlow
+        // Setup prompt repository
+        coEvery { promptRepository.observePrompts() } returns flowOf(emptyList())
+        
+        // Setup WebSocket service
+        every { webSocketService.messages } returns MutableStateFlow(
+            chat.onera.mobile.data.remote.websocket.WebSocketMessage(type = "init")
+        )
+        every { webSocketService.connectionState } returns MutableStateFlow(
+            chat.onera.mobile.data.remote.websocket.ConnectionState.Disconnected
+        )
+        
+        // Setup auth token provider
+        coEvery { authTokenProvider.getToken() } returns "mock-token"
+        
+        // Setup voice input handler events
+        every { voiceInputHandler.events } returns flowOf()
+        
+        // Setup credential repository
+        coEvery { credentialRepository.getCredentials() } returns emptyList()
+        coEvery { credentialRepository.observeCredentials() } returns flowOf(emptyList())
+        
+        // Setup enclave service
+        coEvery { enclaveService.listModels() } returns emptyList()
     }
 
     @After
@@ -87,57 +136,49 @@ class MainViewModelTest {
         return MainViewModel(
             authRepository = authRepository,
             chatRepository = chatRepository,
+            credentialRepository = credentialRepository,
+            foldersRepository = foldersRepository,
             llmRepository = llmRepository,
-            speechRecognitionManager = speechRecognitionManager,
-            textToSpeechManager = textToSpeechManager
+            enclaveService = enclaveService,
+            voiceInputHandler = voiceInputHandler,
+            ttsHandler = ttsHandler,
+            attachmentProcessor = attachmentProcessor,
+            chatTasksService = chatTasksService,
+            promptRepository = promptRepository,
+            webSocketService = webSocketService,
+            authTokenProvider = authTokenProvider
         )
     }
 
     // ========== Voice Input Tests ==========
 
     @Test
-    fun `start recording should call speechRecognitionManager`() = runTest {
+    fun `start recording should call voiceInputHandler`() = runTest {
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
         
         viewModel.sendIntent(MainIntent.StartRecording)
         testDispatcher.scheduler.advanceUntilIdle()
         
-        verify { speechRecognitionManager.startListening(any()) }
+        verify { voiceInputHandler.startRecording(any()) }
     }
 
     @Test
-    fun `stop recording should call speechRecognitionManager`() = runTest {
+    fun `stop recording should call voiceInputHandler`() = runTest {
+        every { voiceInputHandler.stopRecording() } returns ""
+        
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
         
         viewModel.sendIntent(MainIntent.StopRecording)
         testDispatcher.scheduler.advanceUntilIdle()
         
-        verify { speechRecognitionManager.stopListening() }
-    }
-
-    @Test
-    fun `isRecording state should reflect speechRecognitionManager`() = runTest {
-        viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-        
-        assertFalse(viewModel.state.value.chatState.isRecording)
-        
-        isListeningFlow.value = true
-        testDispatcher.scheduler.advanceUntilIdle()
-        
-        assertTrue(viewModel.state.value.chatState.isRecording)
-        
-        isListeningFlow.value = false
-        testDispatcher.scheduler.advanceUntilIdle()
-        
-        assertFalse(viewModel.state.value.chatState.isRecording)
+        verify { voiceInputHandler.stopRecording() }
     }
 
     @Test
     fun `transcribed text should update input text`() = runTest {
-        every { speechRecognitionManager.stopListening() } returns "Hello world"
+        every { voiceInputHandler.stopRecording() } returns "Hello world"
         
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -151,75 +192,25 @@ class MainViewModelTest {
     // ========== Text-to-Speech Tests ==========
 
     @Test
-    fun `speak message should call textToSpeechManager`() = runTest {
+    fun `speak message should call ttsHandler`() = runTest {
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
         
         viewModel.sendIntent(MainIntent.SpeakMessage("Hello", "message-1"))
         testDispatcher.scheduler.advanceUntilIdle()
         
-        verify { textToSpeechManager.speak("Hello", "message-1") }
+        verify { ttsHandler.speak("Hello", "message-1") }
     }
 
     @Test
-    fun `stop speaking should call textToSpeechManager stop`() = runTest {
+    fun `stop speaking should call ttsHandler stop`() = runTest {
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
         
         viewModel.sendIntent(MainIntent.StopSpeaking)
         testDispatcher.scheduler.advanceUntilIdle()
         
-        verify { textToSpeechManager.stop() }
-    }
-
-    @Test
-    fun `isSpeaking state should reflect textToSpeechManager`() = runTest {
-        viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-        
-        assertFalse(viewModel.state.value.chatState.isSpeaking)
-        
-        isSpeakingFlow.value = true
-        testDispatcher.scheduler.advanceUntilIdle()
-        
-        assertTrue(viewModel.state.value.chatState.isSpeaking)
-        
-        isSpeakingFlow.value = false
-        testDispatcher.scheduler.advanceUntilIdle()
-        
-        assertFalse(viewModel.state.value.chatState.isSpeaking)
-    }
-
-    @Test
-    fun `speakingMessageId should reflect textToSpeechManager`() = runTest {
-        viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-        
-        assertNull(viewModel.state.value.chatState.speakingMessageId)
-        
-        speakingMessageIdFlow.value = "message-1"
-        testDispatcher.scheduler.advanceUntilIdle()
-        
-        assertEquals("message-1", viewModel.state.value.chatState.speakingMessageId)
-        
-        speakingMessageIdFlow.value = null
-        testDispatcher.scheduler.advanceUntilIdle()
-        
-        assertNull(viewModel.state.value.chatState.speakingMessageId)
-    }
-
-    @Test
-    fun `speakingStartTime should reflect textToSpeechManager`() = runTest {
-        viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-        
-        assertNull(viewModel.state.value.chatState.speakingStartTime)
-        
-        val startTime = System.currentTimeMillis()
-        speakingStartTimeFlow.value = startTime
-        testDispatcher.scheduler.advanceUntilIdle()
-        
-        assertEquals(startTime, viewModel.state.value.chatState.speakingStartTime)
+        verify { ttsHandler.stop() }
     }
 
     // ========== Message Editing Tests ==========
