@@ -264,19 +264,33 @@ struct NewChatMessageAnimator: ViewModifier {
 
 // MARK: - Composable Chat ViewModifiers (v0-style hook pattern)
 
-/// Automatically scrolls to the bottom of a message list when new messages arrive.
-/// Equivalent to v0's `useScrollMessageListFromNewMessages()` hook.
+/// Scrolls like ChatGPT: when a new message is sent, the user message snaps to the
+/// top of the viewport so the response streams below it in view.
 struct ScrollToBottomOnNewMessage: ViewModifier {
     let messageCount: Int
+    let lastUserMessageId: String?
     let lastMessageId: String?
+    let isStreaming: Bool
     
     func body(content: Content) -> some View {
         ScrollViewReader { proxy in
             content
-                .onChange(of: messageCount) { _, _ in
-                    withAnimation(OneraAnimation.springSmooth) {
-                        if let lastId = lastMessageId {
-                            proxy.scrollTo(lastId, anchor: .bottom)
+                .onChange(of: messageCount) { oldCount, newCount in
+                    // When a new user message is added, snap it to the top of the viewport
+                    if newCount > oldCount, let userId = lastUserMessageId {
+                        withAnimation(OneraAnimation.springSmooth) {
+                            proxy.scrollTo(userId, anchor: .top)
+                        }
+                    }
+                }
+                .onChange(of: isStreaming) { wasStreaming, isNowStreaming in
+                    // When streaming starts, keep the user message at the top
+                    // so the response is visible below it
+                    if isNowStreaming && !wasStreaming, let userId = lastUserMessageId {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            withAnimation(OneraAnimation.springSmooth) {
+                                proxy.scrollTo(userId, anchor: .top)
+                            }
                         }
                     }
                 }

@@ -2,7 +2,7 @@
 //  MainView.swift
 //  Onera
 //
-//  Main app view with custom drawer navigation and native-style toolbar (iPhone)
+//  Main app view with drawer navigation and native toolbar (iPhone)
 //
 
 import SwiftUI
@@ -122,11 +122,56 @@ struct MainView: View {
                 
                 // Main chat content + toolbar (slides together)
                 ZStack {
-                    chatContent
-                        .safeAreaInset(edge: .top) {
-                            nativeStyleToolbar
-                        }
-                        .allowsHitTesting(!isDrawerOpen)
+                    NavigationStack {
+                        chatContent
+                            .toolbar {
+                                ToolbarItem(placement: .navigationBarLeading) {
+                                    Button {
+                                        dismissKeyboard()
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                            isDrawerOpen.toggle()
+                                        }
+                                    } label: {
+                                        Image(systemName: "sidebar.leading")
+                                            .fontWeight(.bold)
+                                            .symbolVariant(isDrawerOpen ? .fill : .none)
+                                    }
+                                    .accessibilityLabel("Toggle sidebar")
+                                    .accessibilityHint("Shows or hides chat history")
+                                }
+                                
+                                ToolbarItem(placement: .principal) {
+                                    if let viewModel = chatViewModel {
+                                        modelSelectorToolbarItem(viewModel: viewModel)
+                                    }
+                                }
+                                
+                                ToolbarItemGroup(placement: .navigationBarTrailing) {
+                                    Button {
+                                        createNewChat()
+                                    } label: {
+                                        Image(systemName: "square.and.pencil")
+                                    }
+                                    .accessibilityLabel("New chat")
+                                    
+                                    Button {
+                                        showSettings = true
+                                    } label: {
+                                        let initial = dependencies.authService.currentUser?.displayName.prefix(1).uppercased() ?? "?"
+                                        Text(initial)
+                                            .font(.subheadline.weight(.bold))
+                                            .foregroundStyle(.white)
+                                            .frame(width: 30, height: 30)
+                                            .background(theme.accent)
+                                            .clipShape(Circle())
+                                    }
+                                    .accessibilityLabel("Profile and settings")
+                                }
+                            }
+                            .toolbarBackground(.hidden, for: .navigationBar)
+                            .navigationBarTitleDisplayMode(.inline)
+                    }
+                    .allowsHitTesting(!isDrawerOpen)
                     
                     // Tap/swipe-to-dismiss overlay (no dimming)
                     Color.clear
@@ -174,73 +219,6 @@ struct MainView: View {
             await chatListViewModel?.loadChats()
             await promptsViewModel?.loadPrompts()
         }
-    }
-    
-    // MARK: - Native-Style Toolbar (Captions-inspired dark toolbar)
-    
-    private var nativeStyleToolbar: some View {
-        HStack(spacing: OneraSpacing.md) {
-            // Leading: sidebar toggle button
-            Button {
-                dismissKeyboard()
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                    isDrawerOpen.toggle()
-                }
-            } label: {
-                Image(systemName: "sidebar.leading")
-                    .font(.title3.weight(.bold))
-                    .symbolVariant(isDrawerOpen ? .fill : .none)
-                    .foregroundStyle(theme.textPrimary)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Toggle sidebar")
-            .accessibilityHint("Shows or hides chat history")
-            
-            Spacer()
-            
-            // Center: model selector (pill badge style)
-            if let viewModel = chatViewModel {
-                modelSelectorToolbarItem(viewModel: viewModel)
-            }
-            
-            Spacer()
-            
-            // Trailing: new chat + profile
-            HStack(spacing: OneraSpacing.xs) {
-                // New chat button
-                Button {
-                    createNewChat()
-                } label: {
-                    Image(systemName: "square.and.pencil")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(theme.textPrimary)
-                        .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("New chat")
-                
-                // Profile avatar
-                Button {
-                    showSettings = true
-                } label: {
-                    let initial = dependencies.authService.currentUser?.displayName.prefix(1).uppercased() ?? "?"
-                    Text(initial)
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 36, height: 36)
-                        .background(theme.accent)
-                        .clipShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Profile and settings")
-            }
-        }
-        .padding(.horizontal, OneraSpacing.lg)
-        .padding(.vertical, OneraSpacing.sm)
-        .background(theme.background)
     }
     
     // MARK: - Drawer Gesture

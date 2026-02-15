@@ -170,7 +170,9 @@ struct ChatView: View {
         .scrollDismissesKeyboard(.interactively)
         .modifier(ScrollToBottomOnNewMessage(
             messageCount: viewModel.messages.count,
-            lastMessageId: viewModel.messages.last?.id
+            lastUserMessageId: viewModel.messages.last(where: { $0.isUser })?.id,
+            lastMessageId: viewModel.messages.last?.id,
+            isStreaming: viewModel.isStreaming
         ))
     }
     
@@ -310,8 +312,7 @@ struct ChatView: View {
             )
             .focused($isInputFocused)
         }
-        .background(theme.background)
-        .ignoresSafeArea()
+        .background(.clear)
     }
     
     // MARK: - Message Bubble Builder
