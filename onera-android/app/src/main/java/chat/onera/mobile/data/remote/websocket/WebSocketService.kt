@@ -20,6 +20,7 @@ import okhttp3.Request
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
+import chat.onera.mobile.BuildConfig
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -39,7 +40,10 @@ class WebSocketService @Inject constructor() {
         .build()
     
     private var webSocket: WebSocket? = null
-    private var baseUrl = "wss://api.onera.chat/ws"
+    private var baseUrl = BuildConfig.API_BASE_URL
+        .trimEnd('/')
+        .replace("https://", "wss://")
+        .replace("http://", "ws://") + "/ws"
     private var authToken: String? = null
     
     private val _connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected)

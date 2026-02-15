@@ -11,6 +11,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.concurrent.TimeUnit
+import chat.onera.mobile.BuildConfig
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -30,7 +31,7 @@ class TRPCClient @Inject constructor(
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
     
-    var baseUrl = "https://api.onera.chat/trpc"
+    var baseUrl = "${BuildConfig.API_BASE_URL.trimEnd('/')}/trpc"
         private set
     
     fun setBaseUrl(url: String) {

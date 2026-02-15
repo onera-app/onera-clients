@@ -5,6 +5,7 @@ import chat.onera.mobile.data.remote.trpc.AuthTokenProvider
 import chat.onera.mobile.data.remote.trpc.ClerkAuthTokenProvider
 import chat.onera.mobile.data.remote.trpc.TRPCClient
 import chat.onera.mobile.data.remote.websocket.WebSocketService
+import chat.onera.mobile.BuildConfig
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -53,7 +54,7 @@ object NetworkModule {
         json: Json
     ): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://api.onera.chat/")
+            .baseUrl(BuildConfig.API_BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()

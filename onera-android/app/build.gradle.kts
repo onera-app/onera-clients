@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -6,6 +9,22 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
 }
+
+// Load local.properties for secrets (Clerk key, API URL, keystore)
+val localProperties = Properties().apply {
+    val localPropsFile = rootProject.file("local.properties")
+    if (localPropsFile.exists()) {
+        FileInputStream(localPropsFile).use { load(it) }
+    }
+}
+
+// Version management: read from environment (CI) or default
+val appVersionCode = System.getenv("VERSION_CODE")?.toIntOrNull()
+    ?: localProperties.getProperty("VERSION_CODE")?.toIntOrNull()
+    ?: 1
+val appVersionName = System.getenv("VERSION_NAME")
+    ?: localProperties.getProperty("VERSION_NAME")
+    ?: "1.0.0"
 
 android {
     namespace = "chat.onera.mobile"
@@ -16,22 +35,45 @@ android {
         applicationId = "chat.onera.mobile"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
 
-        // Build config for API URLs
-        buildConfigField("String", "API_BASE_URL", "\"https://api.onera.chat/\"")
-        buildConfigField("String", "CLERK_PUBLISHABLE_KEY", "\"${project.findProperty("CLERK_PUBLISHABLE_KEY") ?: System.getenv("CLERK_PUBLISHABLE_KEY") ?: "MISSING_KEY"}\"")
+        // Build config for API URLs and auth
+        buildConfigField("String", "API_BASE_URL", "\"${localProperties.getProperty("API_BASE_URL") ?: System.getenv("API_BASE_URL") ?: "https://api.onera.chat/"}\"")
+        buildConfigField("String", "CLERK_PUBLISHABLE_KEY", "\"${localProperties.getProperty("CLERK_PUBLISHABLE_KEY") ?: System.getenv("CLERK_PUBLISHABLE_KEY") ?: "MISSING_KEY"}\"")
+    }
+
+    signingConfigs {
+        // Release signing: reads from environment (CI) or local.properties (dev)
+        create("release") {
+            val keystorePath = System.getenv("KEYSTORE_FILE")
+                ?: localProperties.getProperty("KEYSTORE_FILE")
+            val keystorePass = System.getenv("KEYSTORE_PASSWORD")
+                ?: localProperties.getProperty("KEYSTORE_PASSWORD")
+            val keyAliasName = System.getenv("KEY_ALIAS")
+                ?: localProperties.getProperty("KEY_ALIAS")
+                ?: "onera-upload"
+            val keyPass = System.getenv("KEY_PASSWORD")
+                ?: localProperties.getProperty("KEY_PASSWORD")
+
+            if (keystorePath != null && keystorePass != null && keyPass != null) {
+                storeFile = file(keystorePath)
+                storePassword = keystorePass
+                keyAlias = keyAliasName
+                keyPassword = keyPass
+            }
+        }
     }
 
     buildTypes {
         debug {
-            buildConfigField("String", "API_BASE_URL", "\"https://api.onera.chat/\"")
+            // Debug uses staging API by default (override in local.properties)
+            buildConfigField("String", "API_BASE_URL", "\"${localProperties.getProperty("API_BASE_URL") ?: System.getenv("API_BASE_URL") ?: "https://api-stage.onera.chat/"}\"")
         }
         release {
             isMinifyEnabled = true
@@ -40,6 +82,17 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Production API for release builds
+            buildConfigField("String", "API_BASE_URL", "\"${System.getenv("API_BASE_URL") ?: "https://api.onera.chat/"}\"")
+            buildConfigField("String", "CLERK_PUBLISHABLE_KEY", "\"${System.getenv("CLERK_PUBLISHABLE_KEY_PROD") ?: localProperties.getProperty("CLERK_PUBLISHABLE_KEY_PROD") ?: localProperties.getProperty("CLERK_PUBLISHABLE_KEY") ?: "MISSING_KEY"}\"")
+
+            // Use release signing if available, otherwise fall back to debug
+            signingConfig = try {
+                val releaseSigning = signingConfigs.getByName("release")
+                if (releaseSigning.storeFile != null) releaseSigning else signingConfigs.getByName("debug")
+            } catch (_: Exception) {
+                signingConfigs.getByName("debug")
+            }
         }
     }
     

@@ -117,7 +117,8 @@ class AuthRepositoryImpl @Inject constructor(
             }
         }
         Log.d(TAG, "No Clerk session found after retries")
-        return _authState.value
+        _authState.value = false
+        return false
     }
 
     override suspend fun getCurrentUser(): User? {

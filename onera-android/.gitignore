@@ -13,3 +13,23 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Signing
+*.jks
+*.keystore
+signing.properties
+
+# Play Store service account
+fastlane/play-store-key.json
+service-account.json
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+vendor/
+
+# Ruby
+.bundle
+Gemfile.lock
