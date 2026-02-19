@@ -135,8 +135,17 @@ actor PrivateInferenceProvider {
     
     /// Ensures connection is established with attestation and Noise handshake
     func ensureConnection() async throws {
+        // Check if existing client is still usable
         if isConnected, let existingClient = client, await !existingClient.isClosed {
             return
+        }
+        
+        // Clean up stale client if it exists
+        if let oldClient = client {
+            logger.info("Previous connection is stale/closed, reconnecting...")
+            await oldClient.close()
+            client = nil
+            isConnected = false
         }
         
         logger.info("Establishing private inference connection to \(self.config.name)")

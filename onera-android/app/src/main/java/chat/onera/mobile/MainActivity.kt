@@ -1,5 +1,6 @@
 package chat.onera.mobile
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -14,10 +15,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import chat.onera.mobile.data.preferences.AppTheme
 import chat.onera.mobile.data.preferences.ThemeMode
 import chat.onera.mobile.data.preferences.ThemePreferences
-import chat.onera.mobile.data.repository.AuthRepositoryImpl
 import chat.onera.mobile.presentation.navigation.OneraNavHost
 import chat.onera.mobile.presentation.theme.OneraTheme
 import dagger.hilt.android.AndroidEntryPoint
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.handleDeeplinks
+import timber.log.Timber
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -27,14 +30,14 @@ class MainActivity : AppCompatActivity() {
     lateinit var themePreferences: ThemePreferences
     
     @Inject
-    lateinit var authRepository: AuthRepositoryImpl
+    lateinit var supabaseClient: SupabaseClient
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         
-        // Set activity reference for OAuth flows
-        authRepository.setActivity(this)
+        // Let Supabase SDK handle OAuth deep link callbacks
+        supabaseClient.handleDeeplinks(intent)
         
         setContent {
             // Collect theme preferences
@@ -63,9 +66,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    override fun onDestroy() {
-        super.onDestroy()
-        // Clear activity reference to prevent memory leak
-        authRepository.setActivity(null)
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // Handle deep link when activity is already running (singleTask launch mode)
+        supabaseClient.handleDeeplinks(intent)
     }
 }

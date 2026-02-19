@@ -6,10 +6,6 @@
 # Generates xcconfig files from Xcode Cloud environment variables.
 # The xcconfig files are gitignored (contain secrets), so CI must recreate them.
 #
-# NOTE: Clerk keys contain '$' which Xcode Cloud env vars don't support.
-# Store them as base64-encoded values in PROD_CLERK_KEY_B64 / STAGING_CLERK_KEY_B64.
-# To encode: echo -n 'pk_live_xxxxx' | base64
-#
 
 set -eo pipefail
 
@@ -24,20 +20,6 @@ XCCONFIG_DIR="${PROJECT_DIR}/Onera"
 echo "  Script dir: ${SCRIPT_DIR}"
 echo "  Project dir: ${PROJECT_DIR}"
 echo "  XCConfig dir: ${XCCONFIG_DIR}"
-
-# --- Decode base64-encoded secrets ---
-
-PROD_CLERK_KEY="pk_live_MISSING"
-if [ -n "${PROD_CLERK_KEY_B64:-}" ]; then
-    PROD_CLERK_KEY=$(echo "${PROD_CLERK_KEY_B64}" | base64 --decode)
-    echo "  Decoded PROD_CLERK_KEY_B64"
-fi
-
-STAGING_CLERK_KEY="pk_test_placeholder"
-if [ -n "${STAGING_CLERK_KEY_B64:-}" ]; then
-    STAGING_CLERK_KEY=$(echo "${STAGING_CLERK_KEY_B64}" | base64 --decode)
-    echo "  Decoded STAGING_CLERK_KEY_B64"
-fi
 
 # --- Production.xcconfig ---
 # Used by Release builds (App Store / TestFlight)
@@ -55,11 +37,9 @@ cat > "${PROD_CONFIG}" <<XCEOF
 API_BASE_URL = https:/\$()/api.onera.chat
 TRPC_PATH = /trpc
 
-// Clerk Configuration
-CLERK_PUBLISHABLE_KEY = ${PROD_CLERK_KEY}
-
-// Clerk OAuth Callback Scheme (registered as URL scheme for OAuth redirects)
-CLERK_CALLBACK_SCHEME = ${PROD_CLERK_CALLBACK_SCHEME:-clerk.onera.chat}
+// Supabase Configuration
+SUPABASE_URL = ${PROD_SUPABASE_URL:-https://your-production-project.supabase.co}
+SUPABASE_ANON_KEY = ${PROD_SUPABASE_ANON_KEY:-sb_publishable_MISSING}
 
 // WebAuthn Configuration
 WEBAUTHN_RP_ID = ${PROD_WEBAUTHN_RP_ID:-onera.chat}
@@ -96,11 +76,9 @@ cat > "${STAGING_CONFIG}" <<XCEOF
 API_BASE_URL = https:/\$()/api-stage.onera.chat
 TRPC_PATH = /trpc
 
-// Clerk Configuration
-CLERK_PUBLISHABLE_KEY = ${STAGING_CLERK_KEY}
-
-// Clerk OAuth Callback Scheme
-CLERK_CALLBACK_SCHEME = clerk.humorous-toucan-95
+// Supabase Configuration
+SUPABASE_URL = ${STAGING_SUPABASE_URL:-https://sencyalduvdmsnegrliy.supabase.co}
+SUPABASE_ANON_KEY = ${STAGING_SUPABASE_ANON_KEY:-sb_publishable_BFcnpmS77VNAkySvsaxTWQ_Afcl3usA}
 
 // WebAuthn Configuration
 WEBAUTHN_RP_ID = staging.onera.chat

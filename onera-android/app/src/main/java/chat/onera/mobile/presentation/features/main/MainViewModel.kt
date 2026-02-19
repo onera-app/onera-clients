@@ -237,7 +237,7 @@ class MainViewModel @Inject constructor(
                 
                 // Clear encryption key cache
                 chatRepository.clearKeyCache()
-                // Sign out from Clerk
+                // Sign out from Supabase
                 authRepository.signOut()
                 // Notify UI to navigate to auth screen
                 sendEffect(MainEffect.SignOutComplete)

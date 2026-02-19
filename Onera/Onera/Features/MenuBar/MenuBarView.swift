@@ -1725,10 +1725,12 @@ struct MacAppearanceSettingsView: View {
             }
             
             Section("Chat Density") {
-                Picker("Message Spacing", selection: $chatDensity) {
+                Picker(selection: $chatDensity) {
                     Text("Compact").tag("compact")
                     Text("Comfortable").tag("comfortable")
                     Text("Spacious").tag("spacious")
+                } label: {
+                    Label("Message Spacing", systemImage: "text.line.spacing")
                 }
                 .pickerStyle(.segmented)
                 

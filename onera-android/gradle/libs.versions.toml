@@ -16,7 +16,8 @@ securityCrypto = "1.1.0-alpha06"
 biometric = "1.2.0-alpha05"
 coroutines = "1.7.3"
 serialization = "1.6.2"
-clerk = "0.1.20"
+supabase = "3.3.0"
+ktor = "3.3.0"
 coil = "2.5.0"
 junit = "4.13.2"
 junitVersion = "1.1.5"
@@ -79,8 +80,10 @@ kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 # Serialization
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
 
-# Clerk Authentication
-clerk-android = { group = "com.clerk", name = "clerk-android", version.ref = "clerk" }
+# Supabase Authentication
+supabase-auth = { group = "io.github.jan-tennert.supabase", name = "auth-kt", version.ref = "supabase" }
+supabase-compose-auth = { group = "io.github.jan-tennert.supabase", name = "compose-auth", version.ref = "supabase" }
+ktor-client-android = { group = "io.ktor", name = "ktor-client-android", version.ref = "ktor" }
 
 # Image Loading
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }

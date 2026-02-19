@@ -539,11 +539,10 @@ actor LLMService: LLMServiceProtocol {
         currentTask?.cancel()
         
         let task = Task {
-            // Get or create private inference provider
-            let provider = await PrivateInferenceProviderCache.shared.getOrCreate(
-                config: enclaveConfig,
-                modelId: modelId
-            )
+            // Always create a fresh provider for each request to avoid stale WebSocket issues.
+            // Each enclave assignment may route to a different server, so reusing connections is unreliable.
+            await PrivateInferenceProviderCache.shared.clear()
+            let provider = PrivateInferenceProvider(config: enclaveConfig)
             
             // Convert messages to provider format
             var sdkMessages: [[String: Any]] = []

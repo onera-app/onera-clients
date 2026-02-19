@@ -224,41 +224,58 @@ struct NewChatMessageAnimator: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
     
-    func body(content: Content) -> some View {
-        if reduceMotion || !isNewChatSendAnimating {
-            // No animation: show content immediately
-            content
-                .onAppear {
-                    if isNewChatSendAnimating && index == 0 {
-                        firstMessageAnimationComplete = true
-                        onAnimationDone()
-                    }
-                }
-        } else if index == 0 && isUser {
-            // First user message: slide from center to top with spring
-            content
-                .opacity(appeared ? 1 : 0)
-                .offset(y: appeared ? 0 : 120)
-                .scaleEffect(appeared ? 1 : 0.95)
-                .onAppear {
-                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                        appeared = true
-                    }
-                    // Signal animation completion after spring settles
-                    Task {
-                        try? await Task.sleep(for: .milliseconds(500))
-                        firstMessageAnimationComplete = true
-                        onAnimationDone()
-                    }
-                }
-        } else if index == 1 && !isUser {
-            // First assistant message: fade in after user message animation
-            content
-                .opacity(firstMessageAnimationComplete ? 1 : 0)
-                .animation(.spring(response: 0.4, dampingFraction: 0.85), value: firstMessageAnimationComplete)
-        } else {
-            content
+    /// Whether this modifier should animate at all
+    private var shouldAnimate: Bool {
+        isNewChatSendAnimating && !reduceMotion
+    }
+    
+    /// Computed opacity — always 1 unless actively animating the new-chat entrance
+    private var resolvedOpacity: Double {
+        guard shouldAnimate else { return 1 }
+        if index == 0 && isUser {
+            return appeared ? 1 : 0
         }
+        if index == 1 && !isUser {
+            return firstMessageAnimationComplete ? 1 : 0
+        }
+        return 1
+    }
+    
+    /// Computed offset — only the first user message slides up
+    private var resolvedOffset: CGFloat {
+        guard shouldAnimate, index == 0, isUser else { return 0 }
+        return appeared ? 0 : 120
+    }
+    
+    /// Computed scale — only the first user message scales in
+    private var resolvedScale: CGFloat {
+        guard shouldAnimate, index == 0, isUser else { return 1 }
+        return appeared ? 1 : 0.95
+    }
+    
+    func body(content: Content) -> some View {
+        // Single view identity — no if/else branching to avoid SwiftUI view destruction
+        content
+            .opacity(resolvedOpacity)
+            .offset(y: resolvedOffset)
+            .scaleEffect(resolvedScale)
+            .onAppear {
+                guard shouldAnimate, index == 0, isUser else { return }
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                    appeared = true
+                }
+                Task {
+                    try? await Task.sleep(for: .milliseconds(500))
+                    firstMessageAnimationComplete = true
+                    onAnimationDone()
+                }
+            }
+            .animation(
+                shouldAnimate && index == 1 && !isUser
+                    ? .spring(response: 0.4, dampingFraction: 0.85)
+                    : nil,
+                value: firstMessageAnimationComplete
+            )
     }
 }
 

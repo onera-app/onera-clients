@@ -2,8 +2,8 @@
 //  OnboardingView.swift
 //  Onera
 //
-//  Captions-inspired onboarding: gradient background, centered branding,
-//  dark bottom card with sign-in buttons. All colours sourced from ThemeColors.
+//  Post-auth onboarding: security education and setup overview.
+//  Gradient background with dark bottom card. Colours from ThemeColors.
 //
 
 import SwiftUI
@@ -11,7 +11,6 @@ import SwiftUI
 // MARK: - Onboarding Step
 
 enum OnboardingStep: Int, CaseIterable, Identifiable {
-    case welcome
     case security
     case ready
     
@@ -22,7 +21,7 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
 
 struct OnboardingView: View {
     
-    @State private var currentStep: OnboardingStep = .welcome
+    @State private var currentStep: OnboardingStep = .security
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.theme) private var theme
     
@@ -60,8 +59,6 @@ struct OnboardingView: View {
                 
                 VStack(spacing: OneraSpacing.lg) {
                     switch currentStep {
-                    case .welcome:
-                        WelcomeBrandingContent()
                     case .security:
                         SecurityBrandingContent()
                     case .ready:
@@ -89,38 +86,6 @@ struct OnboardingView: View {
                     Text("Get Started")
                 }
                 .buttonStyle(CaptionsPrimaryButtonStyle())
-                
-            } else if currentStep == .welcome {
-                Button {
-                    advanceOrComplete()
-                } label: {
-                    HStack(spacing: OneraSpacing.md) {
-                        Image(systemName: "apple.logo")
-                            .font(.title3)
-                        Text("Continue with Apple")
-                    }
-                }
-                .buttonStyle(CaptionsPrimaryButtonStyle())
-                
-                Button {
-                    advanceOrComplete()
-                } label: {
-                    HStack(spacing: OneraSpacing.md) {
-                        Image(systemName: "globe")
-                            .font(.title3)
-                        Text("Continue with Google")
-                    }
-                }
-                .buttonStyle(CaptionsDarkButtonStyle())
-                
-                Button {
-                    advanceOrComplete()
-                } label: {
-                    Text("Continue another way")
-                        .font(.subheadline)
-                        .foregroundStyle(theme.textTertiary)
-                }
-                .padding(.top, OneraSpacing.sm)
                 
             } else {
                 Button {
@@ -160,25 +125,6 @@ struct OnboardingView: View {
             withAnimation(.easeInOut(duration: 0.3)) {
                 currentStep = OnboardingStep(rawValue: currentStep.rawValue + 1) ?? .ready
             }
-        }
-    }
-}
-
-// MARK: - Welcome Branding
-
-private struct WelcomeBrandingContent: View {
-    @Environment(\.theme) private var theme
-    
-    var body: some View {
-        VStack(spacing: OneraSpacing.md) {
-            Text("onera")
-                .font(.system(size: 52, weight: .bold, design: .default))
-                .foregroundStyle(theme.onboardingTextPrimary)
-            
-            Text("Private AI chat, built differently.")
-                .font(.title3)
-                .foregroundStyle(theme.onboardingTextSecondary)
-                .multilineTextAlignment(.center)
         }
     }
 }
@@ -248,16 +194,15 @@ private struct ReadyBrandingContent: View {
                     .font(.title.bold())
                     .foregroundStyle(theme.onboardingTextPrimary)
                 
-                Text("Sign in, set up encryption, and add your API keys to get started.")
+                Text("Set up encryption and add your API keys to get started.")
                     .font(.body)
                     .foregroundStyle(theme.onboardingTextSecondary)
                     .multilineTextAlignment(.center)
             }
             
             VStack(spacing: OneraSpacing.md) {
-                readyStep(number: 1, title: "Sign In", subtitle: "Use Apple or Google")
-                readyStep(number: 2, title: "Set Up Encryption", subtitle: "Create passkey or password")
-                readyStep(number: 3, title: "Add API Key", subtitle: "Connect to an AI provider")
+                readyStep(number: 1, title: "Set Up Encryption", subtitle: "Create passkey or password")
+                readyStep(number: 2, title: "Add API Key", subtitle: "Connect to an AI provider")
             }
         }
     }

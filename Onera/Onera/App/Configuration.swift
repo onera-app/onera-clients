@@ -70,11 +70,21 @@ enum Configuration {
         return url
     }
     
-    // MARK: - Clerk Configuration
+    // MARK: - Supabase Configuration
     
-    static var clerkPublishableKey: String {
-        guard let key = InfoPlist.string(forKey: "CLERK_PUBLISHABLE_KEY"), !key.isEmpty else {
-            fatalError("CLERK_PUBLISHABLE_KEY not configured. Copy Config/*.xcconfig.example to *.xcconfig and fill in your values.")
+    static var supabaseURL: URL {
+        guard let urlString = InfoPlist.string(forKey: "SUPABASE_URL"), !urlString.isEmpty else {
+            fatalError("SUPABASE_URL not configured. Copy Config/*.xcconfig.example to *.xcconfig and fill in your values.")
+        }
+        guard let url = URL(string: urlString) else {
+            fatalError("Invalid SUPABASE_URL in Info.plist: \(urlString)")
+        }
+        return url
+    }
+    
+    static var supabaseAnonKey: String {
+        guard let key = InfoPlist.string(forKey: "SUPABASE_ANON_KEY"), !key.isEmpty else {
+            fatalError("SUPABASE_ANON_KEY not configured. Copy Config/*.xcconfig.example to *.xcconfig and fill in your values.")
         }
         return key
     }

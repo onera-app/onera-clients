@@ -10,7 +10,7 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-// Load local.properties for secrets (Clerk key, API URL, keystore)
+// Load local.properties for secrets (Supabase keys, API URL, keystore)
 val localProperties = Properties().apply {
     val localPropsFile = rootProject.file("local.properties")
     if (localPropsFile.exists()) {
@@ -28,13 +28,13 @@ val appVersionName = System.getenv("VERSION_NAME")
 
 android {
     namespace = "chat.onera.mobile"
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = "28.0.13004108"
 
     defaultConfig {
         applicationId = "chat.onera.mobile"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 35
         versionCode = appVersionCode
         versionName = appVersionName
 
@@ -45,7 +45,8 @@ android {
 
         // Build config for API URLs and auth
         buildConfigField("String", "API_BASE_URL", "\"${localProperties.getProperty("API_BASE_URL") ?: System.getenv("API_BASE_URL") ?: "https://api.onera.chat/"}\"")
-        buildConfigField("String", "CLERK_PUBLISHABLE_KEY", "\"${localProperties.getProperty("CLERK_PUBLISHABLE_KEY") ?: System.getenv("CLERK_PUBLISHABLE_KEY") ?: "MISSING_KEY"}\"")
+        buildConfigField("String", "SUPABASE_URL", "\"${localProperties.getProperty("SUPABASE_URL") ?: System.getenv("SUPABASE_URL") ?: "MISSING_URL"}\"")
+        buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\"${localProperties.getProperty("SUPABASE_PUBLISHABLE_KEY") ?: System.getenv("SUPABASE_PUBLISHABLE_KEY") ?: "MISSING_KEY"}\"")
     }
 
     signingConfigs {
@@ -84,7 +85,8 @@ android {
             )
             // Production API for release builds
             buildConfigField("String", "API_BASE_URL", "\"${System.getenv("API_BASE_URL") ?: "https://api.onera.chat/"}\"")
-            buildConfigField("String", "CLERK_PUBLISHABLE_KEY", "\"${System.getenv("CLERK_PUBLISHABLE_KEY_PROD") ?: localProperties.getProperty("CLERK_PUBLISHABLE_KEY_PROD") ?: localProperties.getProperty("CLERK_PUBLISHABLE_KEY") ?: "MISSING_KEY"}\"")
+            buildConfigField("String", "SUPABASE_URL", "\"${System.getenv("SUPABASE_URL_PROD") ?: localProperties.getProperty("SUPABASE_URL_PROD") ?: localProperties.getProperty("SUPABASE_URL") ?: "MISSING_URL"}\"")
+            buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\"${System.getenv("SUPABASE_PUBLISHABLE_KEY_PROD") ?: localProperties.getProperty("SUPABASE_PUBLISHABLE_KEY_PROD") ?: localProperties.getProperty("SUPABASE_PUBLISHABLE_KEY") ?: "MISSING_KEY"}\"")
 
             // Use release signing if available, otherwise fall back to debug
             signingConfig = try {
@@ -180,8 +182,10 @@ dependencies {
     // Serialization
     implementation(libs.kotlinx.serialization.json)
     
-    // Clerk Authentication
-    implementation(libs.clerk.android)
+    // Supabase Authentication
+    implementation(libs.supabase.auth)
+    implementation(libs.supabase.compose.auth)
+    implementation(libs.ktor.client.android)
     
     // Image Loading
     implementation(libs.coil.compose)

@@ -3,7 +3,7 @@
 //  Onera
 //
 //  OAuth sign in view - Apple and Google only
-//  Animated welcome screen with bottom drawer
+//  Onera-branded login with gradient background and dark bottom card
 //
 
 import SwiftUI
@@ -14,38 +14,41 @@ struct AuthenticationView: View {
     @Bindable var viewModel: AuthViewModel
     @Environment(\.theme) private var theme
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    
-    // Animation states
-    @State private var titleText = ""
-    @State private var showCircle = false
-    @State private var showDrawer = false
-    @State private var circleScale: CGFloat = 0
-    
-    private let fullTitle = "Let's collaborate"
-    
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
-    /// iPad uses centered card layout
+    // Animation states
+    @State private var showBranding = false
+    @State private var showCard = false
+    
     private var isRegularWidth: Bool {
         horizontalSizeClass == .regular
     }
     
-    /// Max width for content on iPad
-    private let iPadMaxWidth: CGFloat = 440
+    private let iPadMaxWidth: CGFloat = 600
     
     var body: some View {
         ZStack {
-            // Background
-            theme.background
+            // Gradient background (matches Onera onboarding style)
+            theme.onboardingGradient
                 .ignoresSafeArea()
             
-            if isRegularWidth {
-                // iPad: Centered card layout
-                iPadLayout
-            } else {
-                // iPhone: Bottom drawer layout
-                iPhoneLayout
+            VStack(spacing: 0) {
+                Spacer()
+                
+                // Centered branding
+                if showBranding {
+                    brandingView
+                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                }
+                
+                Spacer()
+                
+                // Bottom dark card with sign-in buttons
+                if showCard {
+                    bottomCard
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
             }
         }
         .accessibilityIdentifier("authenticationView")
@@ -61,233 +64,147 @@ struct AuthenticationView: View {
         }
     }
     
-    // MARK: - iPad Layout (Centered Card)
+    // MARK: - Branding
     
-    private var iPadLayout: some View {
-        VStack(spacing: OneraSpacing.xxxl) {
-            Spacer()
+    private var brandingView: some View {
+        VStack(spacing: OneraSpacing.md) {
+            Text("onera")
+                .font(.system(size: 52, weight: .bold, design: .default))
+                .foregroundStyle(theme.onboardingTextPrimary)
             
-            // Header
-            headerView
-            
-            // Centered card with sign-in options
-            if showDrawer {
-                VStack(spacing: OneraSpacing.lg) {
-                    signInButtons
-                    termsAndPrivacyView
-                }
-                .padding(OneraSpacing.xxl)
-                .background(
-                    RoundedRectangle(cornerRadius: OneraRadius.large, style: .continuous)
-                        .fill(theme.secondaryBackground)
-                        .shadow(color: .black.opacity(0.1), radius: 20, x: 0, y: 10)
-                )
-                .frame(maxWidth: iPadMaxWidth)
-                .transition(.scale(scale: 0.95).combined(with: .opacity))
-            }
-            
-            Spacer()
+            Text("Private AI chat, built differently.")
+                .font(.title3)
+                .foregroundStyle(theme.onboardingTextSecondary)
+                .multilineTextAlignment(.center)
         }
-        .padding(OneraSpacing.xxl)
+        .frame(maxWidth: isRegularWidth ? iPadMaxWidth : .infinity)
+        .padding(.horizontal, OneraSpacing.xxxl)
+        // Demo mode activation: press and hold branding for 10 seconds
+        .demoModeActivation()
     }
     
-    // MARK: - iPhone Layout (Bottom Drawer)
+    // MARK: - Bottom Card
     
-    private var iPhoneLayout: some View {
-        ZStack {
-            VStack {
-                Spacer()
-                
-                // Animated header - positioned slightly above center
-                headerView
-                    .offset(y: showDrawer ? -60 : 0)
-                    .animation(reduceMotion ? nil : OneraAnimation.springSmooth, value: showDrawer)
-                
-                Spacer()
-                Spacer()
-            }
-            
-            // Bottom drawer
-            VStack {
-                Spacer()
-                
-                if showDrawer {
-                    bottomDrawer
-                        .transition(.move(edge: .bottom))
-                }
-            }
+    private var bottomCard: some View {
+        VStack(spacing: OneraSpacing.lg) {
+            signInButtons
+            termsAndPrivacyView
+        }
+        .frame(maxWidth: isRegularWidth ? iPadMaxWidth : .infinity)
+        .padding(.horizontal, OneraSpacing.xxl)
+        .padding(.top, OneraSpacing.xxxl)
+        .padding(.bottom, OneraSpacing.xxxl)
+        .background(
+            UnevenRoundedRectangle(
+                topLeadingRadius: OneraRadius.pill,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: OneraRadius.pill
+            )
+            .fill(theme.onboardingSheetBackground)
             .ignoresSafeArea(edges: .bottom)
-        }
+        )
     }
     
-    // MARK: - Animations
-    
-    private func startAnimations() {
-        Task {
-            await typewriterAnimation()
-        }
-    }
-    
-    @MainActor
-    private func typewriterAnimation() async {
-        // Respect Reduce Motion accessibility setting
-        if reduceMotion {
-            // Skip all animations - show final state immediately
-            titleText = fullTitle
-            showCircle = true
-            circleScale = 1.0
-            showDrawer = true
-            return
-        }
-        
-        // Small delay before starting
-        try? await Task.sleep(for: .milliseconds(300))
-        
-        // Typewriter effect for title
-        for character in fullTitle {
-            titleText.append(character)
-            try? await Task.sleep(for: .milliseconds(50))
-        }
-        
-        // Show circle with bounce
-        withAnimation(OneraAnimation.springBouncy) {
-            showCircle = true
-            circleScale = 1.0
-        }
-        
-        // Small delay then show drawer
-        try? await Task.sleep(for: .milliseconds(400))
-        
-        withAnimation(OneraAnimation.springSmooth) {
-            showDrawer = true
-        }
-    }
-    
-    // MARK: - Sign In Buttons (shared between layouts)
+    // MARK: - Sign In Buttons
     
     private var signInButtons: some View {
         VStack(spacing: OneraSpacing.md) {
-            // Continue with Apple - Native system button (Apple HIG compliant)
-            SignInWithAppleButton(.continue) { request in
-                viewModel.configureAppleRequest(request)
-            } onCompletion: { result in
-                Task {
-                    await viewModel.handleAppleSignIn(result: result)
+            // Continue with Apple - uses Captions primary style (white pill)
+            Button {
+                // Trigger native Apple Sign In via the hidden SignInWithAppleButton
+            } label: {
+                HStack(spacing: OneraSpacing.md) {
+                    Image(systemName: "apple.logo")
+                        .font(.title3)
+                    Text("Continue with Apple")
                 }
             }
-            .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-            .frame(height: buttonHeight)
-            .clipShape(RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous))
+            .buttonStyle(CaptionsPrimaryButtonStyle())
             .disabled(viewModel.isLoading)
             .accessibilityIdentifier("signInWithApple")
+            .overlay {
+                // Hidden native SignInWithAppleButton for actual auth
+                SignInWithAppleButton(.continue) { request in
+                    viewModel.configureAppleRequest(request)
+                } onCompletion: { result in
+                    Task {
+                        await viewModel.handleAppleSignIn(result: result)
+                    }
+                }
+                .blendMode(.overlay)
+                .opacity(0.02) // Nearly invisible but tappable
+                .allowsHitTesting(true)
+            }
             
-            // Continue with Google - Google brand style (white/light background)
+            // Continue with Google - dark pill style
             Button {
                 Task { await viewModel.signInWithGoogle() }
             } label: {
-                HStack(spacing: 8) {
+                HStack(spacing: OneraSpacing.md) {
                     Image("google")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 20, height: 20)
                     Text("Continue with Google")
-                        .font(.body.weight(.medium))
                 }
-                .frame(maxWidth: .infinity)
-                .frame(height: buttonHeight)
-                .foregroundStyle(theme.textPrimary)
-                .background(theme.secondaryBackground)
-                .clipShape(RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous)
-                        .stroke(theme.border, lineWidth: 1)
-                )
             }
+            .buttonStyle(CaptionsDarkButtonStyle())
             .disabled(viewModel.isLoading)
             .accessibilityIdentifier("signInWithGoogle")
         }
         .overlay {
             if viewModel.isLoading {
-                RoundedRectangle(cornerRadius: buttonCornerRadius)
-                    .fill(theme.textPrimary.opacity(0.3))
+                RoundedRectangle(cornerRadius: CaptionsRadius.medium)
+                    .fill(.black.opacity(0.3))
                 ProgressView()
-                    .tint(theme.textPrimary)
+                    .tint(.white)
             }
         }
     }
     
-    // MARK: - Subviews
+    // MARK: - Terms & Privacy
     
-    private var headerView: some View {
-        HStack(spacing: OneraSpacing.sm) {
-            Text(titleText)
-                .font(OneraTypography.displayLarge)
-                .foregroundStyle(theme.textPrimary)
-            
-            // Animated circular icon
-            if showCircle {
-                Circle()
-                    .fill(theme.textPrimary)
-                    .frame(width: 24, height: 24)
-                    .scaleEffect(circleScale)
-            }
-        }
-        .padding(.horizontal, OneraSpacing.xxl)
-        // Demo mode activation: press and hold header for 10 seconds
-        .demoModeActivation()
-    }
-    
-    /// Terms and Privacy links - HIG compliant with tappable links
     private var termsAndPrivacyView: some View {
         VStack(spacing: OneraSpacing.xxs) {
             Text("By continuing, you agree to our")
                 .font(OneraTypography.caption)
-                .foregroundStyle(theme.textSecondary)
+                .foregroundStyle(theme.onboardingTextSecondary)
             
             HStack(spacing: OneraSpacing.xxs) {
                 Link("Terms of Use", destination: URL(string: "https://onera.app/terms")!)
                     .font(OneraTypography.caption.weight(.medium))
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.onboardingTextPrimary)
                 
                 Text("and")
                     .font(OneraTypography.caption)
-                    .foregroundStyle(theme.textSecondary)
+                    .foregroundStyle(theme.onboardingTextSecondary)
                 
                 Link("Privacy Policy", destination: URL(string: "https://onera.app/privacy")!)
                     .font(OneraTypography.caption.weight(.medium))
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.onboardingTextPrimary)
             }
         }
         .multilineTextAlignment(.center)
-        .frame(minHeight: AccessibilitySize.minTouchTarget) // Ensure adequate touch target
+        .frame(minHeight: AccessibilitySize.minTouchTarget)
     }
     
-    // MARK: - Button Constants (Apple HIG compliant)
+    // MARK: - Animations
     
-    /// Button height - 50pt per Apple HIG (minimum 44pt recommended)
-    private let buttonHeight: CGFloat = 50
-    
-    /// Button corner radius - matches Apple's default rounded style
-    private let buttonCornerRadius: CGFloat = 12
-    
-    private var bottomDrawer: some View {
-        VStack(spacing: 0) {
-            // Drawer content - reuse signInButtons
-            signInButtons
-                .padding(.horizontal, OneraSpacing.xxl)
-                .padding(.top, OneraSpacing.xxl)
-                .padding(.bottom, OneraSpacing.lg)
-            
-            // Terms text with tappable links
-            termsAndPrivacyView
-                .padding(.horizontal, OneraSpacing.xxxl)
-                .padding(.bottom, 34)
+    private func startAnimations() {
+        if reduceMotion {
+            showBranding = true
+            showCard = true
+            return
         }
-        .background(
-            RoundedRectangle(cornerRadius: OneraRadius.sheet)
-                .fill(theme.secondaryBackground)
-                .ignoresSafeArea(edges: .bottom)
-        )
+        
+        withAnimation(.easeOut(duration: 0.5).delay(0.2)) {
+            showBranding = true
+        }
+        
+        withAnimation(.easeOut(duration: 0.4).delay(0.6)) {
+            showCard = true
+        }
     }
 }
 

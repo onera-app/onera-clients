@@ -8,6 +8,7 @@
 import Foundation
 import Observation
 import AuthenticationServices
+import CryptoKit
 
 @MainActor
 @Observable
@@ -22,7 +23,7 @@ final class AuthViewModel {
         set { if !newValue { error = nil } }
     }
     
-    /// Nonce for Apple Sign In (required by Clerk)
+    /// Nonce for Apple Sign In
     private(set) var appleNonce: String = UUID().uuidString
     
     // MARK: - Dependencies
@@ -45,8 +46,17 @@ final class AuthViewModel {
     /// Configure the Apple Sign In request
     func configureAppleRequest(_ request: ASAuthorizationAppleIDRequest) {
         request.requestedScopes = [.email, .fullName]
+        // Generate raw nonce and send SHA-256 hash to Apple
+        // The raw nonce is later sent to Supabase for verification
         appleNonce = UUID().uuidString
-        request.nonce = appleNonce
+        request.nonce = sha256(_ : appleNonce)
+    }
+    
+    /// SHA-256 hash a string and return hex-encoded result
+    private func sha256(_ input: String) -> String {
+        let data = Data(input.utf8)
+        let hash = SHA256.hash(data: data)
+        return hash.compactMap { String(format: "%02x", $0) }.joined()
     }
     
     /// Handle Apple Sign In completion
@@ -66,13 +76,18 @@ final class AuthViewModel {
                 throw AuthError.oauthFailed(provider: "Apple")
             }
             
-            // Authenticate with Clerk using the Apple ID token
-            if let service = authService as? AuthService {
-                try await service.authenticateWithApple(idToken: idToken)
-            } else {
-                // Mock service fallback for previews
-                try await authService.signInWithApple()
-            }
+            // Apple only provides fullName on first authorization — capture it now
+            let fullName = credential.fullName
+            let firstName = fullName?.givenName
+            let lastName = fullName?.familyName
+            
+            // Authenticate with Supabase using the Apple ID token and raw nonce
+            try await authService.authenticateWithApple(
+                idToken: idToken,
+                nonce: appleNonce,
+                firstName: firstName,
+                lastName: lastName
+            )
             
             await onSuccess()
         } catch let authError as AuthError {

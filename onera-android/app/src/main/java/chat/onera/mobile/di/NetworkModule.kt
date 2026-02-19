@@ -2,7 +2,7 @@ package chat.onera.mobile.di
 
 import chat.onera.mobile.data.remote.api.ChatApiService
 import chat.onera.mobile.data.remote.trpc.AuthTokenProvider
-import chat.onera.mobile.data.remote.trpc.ClerkAuthTokenProvider
+import chat.onera.mobile.data.remote.trpc.SupabaseAuthTokenProvider
 import chat.onera.mobile.data.remote.trpc.TRPCClient
 import chat.onera.mobile.data.remote.websocket.WebSocketService
 import chat.onera.mobile.BuildConfig
@@ -80,6 +80,6 @@ abstract class AuthTokenModule {
     @Binds
     @Singleton
     abstract fun bindAuthTokenProvider(
-        clerkAuthTokenProvider: ClerkAuthTokenProvider
+        supabaseAuthTokenProvider: SupabaseAuthTokenProvider
     ): AuthTokenProvider
 }

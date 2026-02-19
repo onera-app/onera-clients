@@ -2,7 +2,6 @@ package chat.onera.mobile.presentation.features.auth
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
@@ -10,15 +9,13 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -29,8 +26,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import chat.onera.mobile.R
 import chat.onera.mobile.demo.DemoModeActivationWrapper
-import chat.onera.mobile.demo.DemoModeActivationOverlay
 import kotlinx.coroutines.delay
+
+// Gradient colors matching iOS onboarding style
+private val authGradientColors = listOf(
+    Color(0xFF8CD9F5),  // Sky blue
+    Color(0xFFC2E8F8),  // Pale cyan
+    Color(0xFFF2E0D6),  // Blush / peach
+)
 
 @Composable
 fun AuthScreen(
@@ -43,22 +46,8 @@ fun AuthScreen(
     val isDarkTheme = isSystemInDarkTheme()
     
     // Animation states
-    var titleText by remember { mutableStateOf("") }
-    var showCircle by remember { mutableStateOf(false) }
-    var showDrawer by remember { mutableStateOf(false) }
-    var showDemoActivation by remember { mutableStateOf(false) }
-    
-    val fullTitle = "Let's collaborate"
-    
-    // Circle scale animation
-    val circleScale by animateFloatAsState(
-        targetValue = if (showCircle) 1f else 0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "circleScale"
-    )
+    var showBranding by remember { mutableStateOf(false) }
+    var showCard by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
@@ -70,78 +59,70 @@ fun AuthScreen(
                     // Error is displayed via state.error and Snackbar below
                 }
                 is AuthEffect.LaunchGoogleSignIn -> {
-                    // Google Sign In is handled by Clerk SDK internally
+                    // Google Sign In is handled by Supabase OAuth flow
                 }
             }
         }
     }
     
-    // Typewriter animation
+    // Simple fade-in animation
     LaunchedEffect(Unit) {
-        delay(300)
-        for (char in fullTitle) {
-            titleText += char
-            delay(50)
-        }
         delay(200)
-        showCircle = true
+        showBranding = true
         delay(400)
-        showDrawer = true
+        showCard = true
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(
+                Brush.verticalGradient(authGradientColors)
+            )
     ) {
-        // Centered header - positioned slightly above center
-        // Wrapped with DemoModeActivationWrapper for Play Store review
-        // Tap 10 times rapidly to activate demo mode
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.Center)
-                .offset(y = if (showDrawer) (-60).dp else 0.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        // Centered Onera branding
+        AnimatedVisibility(
+            visible = showBranding,
+            enter = fadeIn(),
+            modifier = Modifier.align(Alignment.Center)
         ) {
+            // Wrapped with DemoModeActivationWrapper for Play Store review
+            // Tap 10 times rapidly to activate demo mode
             DemoModeActivationWrapper(
                 onDemoModeActivated = {
-                    showDemoActivation = true
                     viewModel.sendIntent(AuthIntent.ActivateDemoMode)
                 }
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(horizontal = 48.dp)
                 ) {
                     Text(
-                        text = titleText,
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onBackground
+                        text = "onera",
+                        fontSize = 52.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1A1A1A)
                     )
                     
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     
-                    // Animated circle icon
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .scale(circleScale)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.onBackground)
+                    Text(
+                        text = "Private AI chat, built differently.",
+                        fontSize = 18.sp,
+                        color = Color(0xFF4A4A4A),
+                        textAlign = TextAlign.Center
                     )
                 }
             }
         }
         
-        // Bottom drawer
+        // Bottom dark card with sign-in buttons
         AnimatedVisibility(
-            visible = showDrawer,
+            visible = showCard,
             enter = slideInVertically(
                 initialOffsetY = { it },
                 animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    dampingRatio = Spring.DampingRatioNoBouncy,
                     stiffness = Spring.StiffnessMediumLow
                 )
             ) + fadeIn(),
@@ -161,7 +142,7 @@ fun AuthScreen(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(16.dp)
-                    .padding(bottom = if (showDrawer) 200.dp else 16.dp),
+                    .padding(bottom = if (showCard) 200.dp else 16.dp),
                 action = {
                     TextButton(onClick = { viewModel.sendIntent(AuthIntent.ClearError) }) {
                         Text("Dismiss")
@@ -183,15 +164,14 @@ private fun BottomAuthDrawer(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        tonalElevation = 2.dp
+        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+        color = Color(0xFF171717) // Dark card matching iOS onboardingSheetBackground
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
-                .padding(top = 24.dp, bottom = 34.dp),
+                .padding(top = 32.dp, bottom = 34.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Loading overlay
@@ -207,7 +187,7 @@ private fun BottomAuthDrawer(
                         onClick = onAppleSignIn,
                         enabled = !state.isLoading,
                         isLoading = state.isLoading && state.authMethod == AuthMethod.APPLE,
-                        isDarkTheme = isDarkTheme
+                        isDarkTheme = true // Always light-on-dark in the dark card
                     )
                     
                     // Google Sign In Button
@@ -222,7 +202,7 @@ private fun BottomAuthDrawer(
                 if (state.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center),
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = Color.White
                     )
                 }
             }
@@ -233,7 +213,7 @@ private fun BottomAuthDrawer(
             Text(
                 text = "By continuing, you agree to our Terms of Use and Privacy Policy",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = Color.White.copy(alpha = 0.5f),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
@@ -248,8 +228,9 @@ private fun AppleSignInButton(
     isLoading: Boolean,
     isDarkTheme: Boolean
 ) {
-    val backgroundColor = if (isDarkTheme) Color.White else Color.Black
-    val contentColor = if (isDarkTheme) Color.Black else Color.White
+    // Always white button on dark card (matching iOS CaptionsPrimaryButtonStyle)
+    val backgroundColor = Color.White
+    val contentColor = Color.Black
     
     Button(
         onClick = onClick,
@@ -257,7 +238,7 @@ private fun AppleSignInButton(
             .fillMaxWidth()
             .height(56.dp),
         enabled = enabled && !isLoading,
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = backgroundColor,
             contentColor = contentColor,
@@ -284,7 +265,7 @@ private fun AppleSignInButton(
         Text(
             text = "Continue with Apple",
             fontSize = 17.sp,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.SemiBold
         )
     }
 }
@@ -295,27 +276,25 @@ private fun GoogleSignInButton(
     enabled: Boolean,
     isLoading: Boolean
 ) {
-    OutlinedButton(
+    Button(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp),
         enabled = enabled && !isLoading,
-        shape = RoundedCornerShape(28.dp),
-        colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface
-        ),
-        border = BorderStroke(
-            width = 1.dp,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f)
+        shape = RoundedCornerShape(14.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFF2E2E2E), // Dark pill matching iOS CaptionsDarkButtonStyle
+            contentColor = Color.White,
+            disabledContainerColor = Color(0xFF2E2E2E).copy(alpha = 0.6f),
+            disabledContentColor = Color.White.copy(alpha = 0.6f)
         )
     ) {
         if (isLoading) {
             CircularProgressIndicator(
                 modifier = Modifier.size(20.dp),
                 strokeWidth = 2.dp,
-                color = MaterialTheme.colorScheme.onSurface
+                color = Color.White
             )
             Spacer(modifier = Modifier.width(12.dp))
         } else {
@@ -330,7 +309,7 @@ private fun GoogleSignInButton(
         Text(
             text = "Continue with Google",
             fontSize = 17.sp,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.SemiBold
         )
     }
 }

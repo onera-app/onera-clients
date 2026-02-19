@@ -1,7 +1,6 @@
 package chat.onera.mobile
 
 import android.app.Application
-import com.clerk.api.Clerk
 import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
 
@@ -19,9 +18,8 @@ class OneraApplication : Application() {
             Timber.plant(ReleaseTree())
         }
         
-        // Initialize Clerk SDK
-        Timber.d("Initializing Clerk with key: ${BuildConfig.CLERK_PUBLISHABLE_KEY.take(20)}...")
-        Clerk.initialize(this, BuildConfig.CLERK_PUBLISHABLE_KEY)
+        // Supabase client is initialized via Hilt (SupabaseModule)
+        Timber.d("Supabase URL: ${BuildConfig.SUPABASE_URL}")
     }
     
     /**

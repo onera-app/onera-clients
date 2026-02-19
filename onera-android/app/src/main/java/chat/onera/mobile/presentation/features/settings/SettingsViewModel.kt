@@ -52,7 +52,7 @@ class SettingsViewModel @Inject constructor(
             try {
                 // Clear encryption key cache
                 chatRepository.clearKeyCache()
-                // Sign out from Clerk
+                // Sign out from Supabase
                 authRepository.signOut()
                 // Notify UI to navigate
                 sendEffect(SettingsEffect.SignOutComplete)

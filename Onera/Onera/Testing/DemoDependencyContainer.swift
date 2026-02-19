@@ -81,13 +81,14 @@ final class DemoAuthService: AuthServiceProtocol {
     
     var isAuthenticated = false
     var currentUser: User?
+    var isReady = true
     
     func getToken() async throws -> String {
         guard isAuthenticated else { throw AuthError.notAuthenticated }
         return "demo-token-\(UUID().uuidString)"
     }
     
-    func signInWithApple() async throws {
+    func authenticateWithApple(idToken: String, nonce: String, firstName: String?, lastName: String?) async throws {
         try await Task.sleep(for: .milliseconds(800))
         currentUser = DemoData.demoUser
         isAuthenticated = true

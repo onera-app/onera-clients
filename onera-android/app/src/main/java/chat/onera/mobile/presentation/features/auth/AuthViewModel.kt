@@ -78,9 +78,6 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             updateState { copy(isLoading = true) }
             try {
-                // Give Clerk SDK time to load
-                delay(500)
-                
                 Timber.d("Checking authentication status...")
                 val isAuthenticated = authRepository.isAuthenticated()
                 Timber.d("isAuthenticated: $isAuthenticated")

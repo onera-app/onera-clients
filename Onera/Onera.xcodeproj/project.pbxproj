@@ -10,7 +10,9 @@
 		2D05D86F316F486541E5BBBD /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9047AE2C0994ED77368ECDA1 /* Foundation.framework */; };
 		44E3D33372FD357C5A0554E9 /* OneraUITestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6D60D4EF8FA928D52C3502B /* OneraUITestCase.swift */; };
 		A42C8C4DEFFF795280BAD25E /* ChatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5603D31EA87F24776FBACE6E /* ChatTests.swift */; };
-		B1AE86FA2F2B8AFB004FE3D7 /* Clerk in Frameworks */ = {isa = PBXBuildFile; productRef = CE986D06C5FECA4130B9FBB7 /* Clerk */; };
+		B1276AC12F42C9280072B5D3 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = B1276AC02F42C9280072B5D3 /* Auth */; };
+		B1276AC32F42C9280072B5D3 /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = B1276AC22F42C9280072B5D3 /* PostgREST */; };
+		B1276AC52F42C9280072B5D3 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = B1276AC42F42C9280072B5D3 /* Supabase */; };
 		B1AE86FB2F2B8AFB004FE3D7 /* Clibsodium in Frameworks */ = {isa = PBXBuildFile; productRef = 3F6F6E71946C0AABCFF039CC /* Clibsodium */; };
 		B1AE86FC2F2B8AFB004FE3D7 /* Sodium in Frameworks */ = {isa = PBXBuildFile; productRef = CD6C13C6D418524BF1805EE3 /* Sodium */; };
 		B1AE86FD2F2B8AFB004FE3D7 /* BIP39 in Frameworks */ = {isa = PBXBuildFile; productRef = 0216B4EA38EC6BE673DBCDCD /* BIP39 */; };
@@ -144,6 +146,7 @@
 				B1AE87092F2B8AFB004FE3D7 /* HuggingFaceProvider in Frameworks */,
 				B1AE87082F2B8AFB004FE3D7 /* GroqProvider in Frameworks */,
 				B1AE87072F2B8AFB004FE3D7 /* GoogleVertexProvider in Frameworks */,
+				B1276AC32F42C9280072B5D3 /* PostgREST in Frameworks */,
 				B1AE87062F2B8AFB004FE3D7 /* GoogleProvider in Frameworks */,
 				B1AE87052F2B8AFB004FE3D7 /* ElevenLabsProvider in Frameworks */,
 				B1AE87042F2B8AFB004FE3D7 /* DeepSeekProvider in Frameworks */,
@@ -152,11 +155,12 @@
 				B1AE87012F2B8AFB004FE3D7 /* AnthropicProvider in Frameworks */,
 				B1AE87002F2B8AFB004FE3D7 /* AISDKZodAdapter in Frameworks */,
 				B1AE86FF2F2B8AFB004FE3D7 /* AISDKProviderUtils in Frameworks */,
+				B1276AC12F42C9280072B5D3 /* Auth in Frameworks */,
+				B1276AC52F42C9280072B5D3 /* Supabase in Frameworks */,
 				B1AE86FE2F2B8AFB004FE3D7 /* AISDKProvider in Frameworks */,
 				B1AE86FD2F2B8AFB004FE3D7 /* BIP39 in Frameworks */,
 				B1AE86FC2F2B8AFB004FE3D7 /* Sodium in Frameworks */,
 				B1AE86FB2F2B8AFB004FE3D7 /* Clibsodium in Frameworks */,
-				B1AE86FA2F2B8AFB004FE3D7 /* Clerk in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -281,7 +285,7 @@
 			);
 			name = Onera;
 			packageProductDependencies = (
-				CE986D06C5FECA4130B9FBB7 /* Clerk */,
+				B1276AC42F42C9280072B5D3 /* Supabase */,
 				3F6F6E71946C0AABCFF039CC /* Clibsodium */,
 				CD6C13C6D418524BF1805EE3 /* Sodium */,
 				0216B4EA38EC6BE673DBCDCD /* BIP39 */,
@@ -306,6 +310,8 @@
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* SocketIO */,
 				B1F364262F3D97E0003592EA /* Markdown */,
 				C1A2B3C4D5E6F7A8B9C0D1E4 /* Textual */,
+				B1276AC02F42C9280072B5D3 /* Auth */,
+				B1276AC22F42C9280072B5D3 /* PostgREST */,
 			);
 			productName = Onera;
 			productReference = EAB5AAF92F2B7F0500C79D0F /* Onera.app */;
@@ -339,7 +345,6 @@
 			mainGroup = EAB5AAF02F2B7F0500C79D0F;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				DA70DFBD6E55E3A0168E744F /* XCRemoteSwiftPackageReference "clerk-ios" */,
 				FDDBC04EEFA201CB724E38A1 /* XCRemoteSwiftPackageReference "swift-sodium" */,
 				D5F4AB44F79B7E39A87510B9 /* XCRemoteSwiftPackageReference "BIP39" */,
 				470FDCAD8B5DFBCD5D93E1DA /* XCRemoteSwiftPackageReference "swift-ai-sdk" */,
@@ -347,6 +352,7 @@
 				F1A2B3C4D5E6F7A8B9C0D1E2 /* XCRemoteSwiftPackageReference "socket" */,
 				B1F364252F3D97E0003592EA /* XCRemoteSwiftPackageReference "swift-markdown" */,
 				C1A2B3C4D5E6F7A8B9C0D1E5 /* XCRemoteSwiftPackageReference "textual" */,
+				B1276ABF2F42C9280072B5D3 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = EAB5AAFA2F2B7F0500C79D0F /* Products */;
@@ -665,7 +671,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = Onera/Onera.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = FYS9RNAGTV;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -694,7 +700,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 1.0.8;
+				MARKETING_VERSION = 1.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(inherited)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -719,7 +725,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = Onera/Onera.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = FYS9RNAGTV;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -748,7 +754,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 1.0.8;
+				MARKETING_VERSION = 1.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(inherited)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -823,6 +829,14 @@
 				minimumVersion = 0.5.8;
 			};
 		};
+		B1276ABF2F42C9280072B5D3 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.1;
+			};
+		};
 		B1F364252F3D97E0003592EA /* XCRemoteSwiftPackageReference "swift-markdown" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/swiftlang/swift-markdown";
@@ -845,14 +859,6 @@
 			requirement = {
 				branch = master;
 				kind = branch;
-			};
-		};
-		DA70DFBD6E55E3A0168E744F /* XCRemoteSwiftPackageReference "clerk-ios" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/clerk/clerk-ios";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.71.4;
 			};
 		};
 		F1A2B3C4D5E6F7A8B9C0D1E2 /* XCRemoteSwiftPackageReference "socket" */ = {
@@ -944,6 +950,21 @@
 			package = F1A2B3C4D5E6F7A8B9C0D1E2 /* XCRemoteSwiftPackageReference "socket" */;
 			productName = SocketIO;
 		};
+		B1276AC02F42C9280072B5D3 /* Auth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B1276ABF2F42C9280072B5D3 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Auth;
+		};
+		B1276AC22F42C9280072B5D3 /* PostgREST */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B1276ABF2F42C9280072B5D3 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = PostgREST;
+		};
+		B1276AC42F42C9280072B5D3 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B1276ABF2F42C9280072B5D3 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
 		B1F364262F3D97E0003592EA /* Markdown */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = B1F364252F3D97E0003592EA /* XCRemoteSwiftPackageReference "swift-markdown" */;
@@ -963,11 +984,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = FDDBC04EEFA201CB724E38A1 /* XCRemoteSwiftPackageReference "swift-sodium" */;
 			productName = Sodium;
-		};
-		CE986D06C5FECA4130B9FBB7 /* Clerk */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = DA70DFBD6E55E3A0168E744F /* XCRemoteSwiftPackageReference "clerk-ios" */;
-			productName = Clerk;
 		};
 		DDABB9C25A1FFCFA2F307F80 /* GroqProvider */ = {
 			isa = XCSwiftPackageProductDependency;

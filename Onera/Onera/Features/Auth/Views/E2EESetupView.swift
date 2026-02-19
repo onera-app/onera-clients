@@ -334,6 +334,22 @@ struct E2EESetupView: View {
             }
             
             Section {
+                Button {
+                    viewModel.selectPasswordSetup()
+                } label: {
+                    HStack {
+                        Image(systemName: "key.fill")
+                            .foregroundStyle(theme.warning)
+                        Text("Use Password Instead")
+                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                }
+                .disabled(viewModel.isSettingUpPasskey)
+            } footer: {
+                Text("If you're unable to create a passkey, you can use a password to unlock your encrypted data.")
+            }
+            
+            Section {
                 Button("Skip for now") {
                     viewModel.skipPasswordSetup()
                 }
@@ -345,13 +361,11 @@ struct E2EESetupView: View {
             }
         }
         .toolbar {
-            if !viewModel.passkeySupported {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Back") {
-                        viewModel.backToOptions()
-                    }
-                    .disabled(viewModel.isSettingUpPasskey)
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Back") {
+                    viewModel.backToOptions()
                 }
+                .disabled(viewModel.isSettingUpPasskey)
             }
         }
     }

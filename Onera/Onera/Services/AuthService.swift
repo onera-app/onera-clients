@@ -2,12 +2,13 @@
 //  AuthService.swift
 //  Onera
 //
-//  Clerk authentication service implementation
+//  Supabase authentication service implementation
 //
 
 import Foundation
 import Observation
-import Clerk
+import Supabase
+import Auth
 import AuthenticationServices
 
 @MainActor
@@ -18,100 +19,132 @@ final class AuthService: AuthServiceProtocol {
     
     private(set) var isAuthenticated = false
     private(set) var currentUser: User?
+    private(set) var isReady = false
     
     // MARK: - Private
     
     private let networkService: NetworkServiceProtocol
+    private nonisolated(unsafe) var authStateTask: Task<Void, Never>?
     
     // MARK: - Initialization
     
     init(networkService: NetworkServiceProtocol) {
         self.networkService = networkService
         
-        // Check for existing session on init
-        Task {
-            await updateSessionState()
+        // Listen for auth state changes from Supabase
+        authStateTask = Task { [weak self] in
+            for await (event, session) in supabase.auth.authStateChanges {
+                guard let self else { return }
+                
+                let wasAuthenticated = self.isAuthenticated
+                
+                if let session {
+                    self.currentUser = Self.mapUser(from: session)
+                    self.isAuthenticated = true
+                } else {
+                    self.currentUser = nil
+                    self.isAuthenticated = false
+                }
+                
+                // Mark ready after the initial event
+                if !self.isReady {
+                    self.isReady = true
+                }
+                
+                print("[AuthService] Auth state change: \(event), authenticated: \(self.isAuthenticated)")
+                
+                // Sync auth state to Apple Watch when authentication changes
+                #if os(iOS)
+                if wasAuthenticated != self.isAuthenticated {
+                    await iOSWatchConnectivityManager.shared.syncToWatch()
+                }
+                #endif
+            }
         }
+    }
+    
+    deinit {
+        authStateTask?.cancel()
     }
     
     // MARK: - Token
     
     func getToken() async throws -> String {
-        guard let session = Clerk.shared.session else {
-            print("[AuthService] No Clerk session found")
+        guard let session = try? await supabase.auth.session else {
+            print("[AuthService] No Supabase session found")
             throw AuthError.notAuthenticated
         }
         
-        print("[AuthService] Session found, user ID: \(session.user?.id ?? "nil")")
+        let token = session.accessToken
+        let tokenPrefix = String(token.prefix(50))
+        print("[AuthService] Token obtained: \(tokenPrefix)...")
+        print("[AuthService] Token length: \(token.count)")
         
-        do {
-            let token = try await session.getToken()
-            guard let jwt = token?.jwt else {
-                print("[AuthService] Token object returned but JWT is nil")
-                throw AuthError.tokenRefreshFailed
-            }
-            
-            // Debug: Print token prefix (first 50 chars) to verify format
-            let tokenPrefix = String(jwt.prefix(50))
-            print("[AuthService] Token obtained: \(tokenPrefix)...")
-            print("[AuthService] Token length: \(jwt.count)")
-            
-            return jwt
-        } catch {
-            print("[AuthService] getToken error: \(error)")
-            throw AuthError.tokenRefreshFailed
-        }
+        return token
     }
     
     // MARK: - OAuth Sign In
     
-    func signInWithApple() async throws {
-        // Apple native sign-in is triggered from the view with SignInWithAppleButton
-        // The view calls authenticateWithApple(idToken:) after getting the credential
-        throw AuthError.oauthFailed(provider: "Apple")
-    }
-    
     /// Authenticate with Apple using the ID token from ASAuthorizationAppleIDCredential
-    func authenticateWithApple(idToken: String) async throws {
+    func authenticateWithApple(idToken: String, nonce: String, firstName: String?, lastName: String?) async throws {
         do {
-            let result = try await SignIn.authenticateWithIdToken(
-                provider: .apple,
-                idToken: idToken
+            try await supabase.auth.signInWithIdToken(
+                credentials: .init(
+                    provider: .apple,
+                    idToken: idToken,
+                    nonce: nonce
+                )
             )
             
-            try await handleTransferFlowResult(result, provider: "Apple")
+            // Session update will come through authStateChanges
+            // Wait for the state to propagate
+            try await waitForAuthentication()
+            
+            // Apple only provides the user's name on first sign-in.
+            // Persist it to Supabase user metadata so it's available on future sessions.
+            if let firstName, !firstName.isEmpty {
+                var metadata: [String: AnyJSON] = [
+                    "first_name": .string(firstName)
+                ]
+                if let lastName, !lastName.isEmpty {
+                    metadata["last_name"] = .string(lastName)
+                }
+                try? await supabase.auth.update(user: UserAttributes(data: metadata))
+            }
         } catch let authError as AuthError {
             throw authError
         } catch {
+            print("[AuthService] Apple sign-in error: \(error)")
             throw AuthError.oauthFailed(provider: "Apple")
         }
     }
     
     func signInWithGoogle() async throws {
-        // Check if user is already signed in with a valid session
-        if let session = Clerk.shared.session {
-            // Verify the session is actually valid by attempting to get a token
-            do {
-                _ = try await session.getToken()
+        // Check if user already has a valid session
+        if let session = try? await supabase.auth.session {
+            // Session exists and is valid (Supabase auto-refreshes)
+            if !session.isExpired {
                 await updateSessionState()
                 return
-            } catch {
-                // Session exists but token is invalid - sign out and proceed with fresh sign-in
-                try? await Clerk.shared.signOut()
             }
         }
         
         do {
-            print("[AuthService] Starting Google OAuth redirect flow...")
-            // This starts the OAuth redirect flow
-            // The actual authentication completes when the app receives the callback
-            let result = try await SignIn.authenticateWithRedirect(
-                strategy: .oauth(provider: .google)
+            print("[AuthService] Starting Google OAuth flow...")
+            
+            // Use the app's bundle identifier as the redirect URL scheme
+            let bundleId = Bundle.main.bundleIdentifier ?? "chat.onera.staging"
+            let redirectURL = URL(string: "\(bundleId)://auth/callback")!
+            
+            try await supabase.auth.signInWithOAuth(
+                provider: .google,
+                redirectTo: redirectURL
             )
             
-            print("[AuthService] OAuth redirect completed, handling result...")
-            // If we get here, the OAuth completed (user came back from browser)
-            try await handleTransferFlowResult(result, provider: "Google")
+            print("[AuthService] Google OAuth flow completed")
+            
+            // Wait for auth state change to propagate
+            try? await waitForAuthentication(timeout: .seconds(10))
         } catch let authError as AuthError {
             print("[AuthService] AuthError: \(authError)")
             throw authError
@@ -133,7 +166,7 @@ final class AuthService: AuthServiceProtocol {
     
     func signOut() async {
         do {
-            try await Clerk.shared.signOut()
+            try await supabase.auth.signOut()
         } catch {
             print("Sign out error: \(error)")
         }
@@ -150,55 +183,38 @@ final class AuthService: AuthServiceProtocol {
     // MARK: - OAuth Callback
     
     func handleOAuthCallback(url: URL) async throws {
-        // Clerk SDK handles OAuth callbacks automatically
-        // Wait a moment for session to be established
-        try await Task.sleep(for: .milliseconds(1000))
-        await updateSessionState()
+        // Supabase SDK processes the callback URL and exchanges the code for a session
+        try await supabase.auth.handle(url)
         
-        if !isAuthenticated {
-            throw AuthError.oauthFailed(provider: "OAuth")
-        }
+        // Wait for authStateChanges to propagate
+        try await waitForAuthentication(timeout: .seconds(10))
     }
     
     // MARK: - Private Methods
     
-    private func handleTransferFlowResult(_ result: TransferFlowResult, provider: String) async throws {
-        switch result {
-        case .signIn(let signIn):
-            if signIn.status == .complete {
-                await updateSessionState()
-                if !isAuthenticated {
-                    throw AuthError.oauthFailed(provider: provider)
-                }
-            } else {
-                throw AuthError.oauthFailed(provider: provider)
-            }
-        case .signUp(let signUp):
-            if signUp.status == .complete {
-                await updateSessionState()
-                if !isAuthenticated {
-                    throw AuthError.oauthFailed(provider: provider)
-                }
-            } else {
-                throw AuthError.oauthFailed(provider: provider)
-            }
+    /// Polls for authentication state with exponential backoff instead of a fixed sleep.
+    /// Returns once authenticated or throws after timeout.
+    private func waitForAuthentication(timeout: Duration = .seconds(5)) async throws {
+        let start = ContinuousClock.now
+        var delay: Duration = .milliseconds(100)
+        
+        while ContinuousClock.now - start < timeout {
+            if isAuthenticated { return }
+            try await Task.sleep(for: delay)
+            // Exponential backoff: 100ms, 200ms, 400ms, 800ms...
+            delay = min(delay * 2, .seconds(1))
+        }
+        
+        if !isAuthenticated {
+            throw AuthError.oauthFailed(provider: "Apple")
         }
     }
     
     private func updateSessionState() async {
         let wasAuthenticated = isAuthenticated
         
-        if let session = Clerk.shared.session,
-           let clerkUser = session.user {
-            // Map Clerk's User to our app's User model
-            currentUser = User(
-                id: clerkUser.id,
-                email: clerkUser.primaryEmailAddress?.emailAddress ?? "",
-                firstName: clerkUser.firstName,
-                lastName: clerkUser.lastName,
-                imageURL: URL(string: clerkUser.imageUrl),
-                createdAt: clerkUser.createdAt
-            )
+        if let session = try? await supabase.auth.session {
+            currentUser = Self.mapUser(from: session)
             isAuthenticated = true
         } else {
             currentUser = nil
@@ -212,6 +228,43 @@ final class AuthService: AuthServiceProtocol {
         }
         #endif
     }
+    
+    /// Map a Supabase session to our app's User model
+    private static func mapUser(from session: Session) -> User {
+        let supaUser = session.user
+        let metadata = supaUser.userMetadata
+        
+        let email = supaUser.email ?? ""
+        let firstName = metadata["first_name"]?.stringValue
+            ?? metadata["name"]?.stringValue?.components(separatedBy: " ").first
+        let lastName = metadata["last_name"]?.stringValue
+            ?? metadata["name"]?.stringValue?.components(separatedBy: " ").dropFirst().joined(separator: " ")
+        
+        let imageURLString = metadata["avatar_url"]?.stringValue
+            ?? metadata["picture"]?.stringValue
+        
+        return User(
+            id: supaUser.id.uuidString,
+            email: email,
+            firstName: firstName,
+            lastName: lastName?.isEmpty == true ? nil : lastName,
+            imageURL: imageURLString.flatMap { URL(string: $0) },
+            createdAt: supaUser.createdAt
+        )
+    }
+}
+
+// MARK: - AnyJSON String Helper
+
+private extension AnyJSON {
+    var stringValue: String? {
+        switch self {
+        case .string(let value):
+            return value
+        default:
+            return nil
+        }
+    }
 }
 
 // MARK: - Mock Implementation
@@ -222,6 +275,7 @@ final class MockAuthService: AuthServiceProtocol {
     
     var isAuthenticated = false
     var currentUser: User?
+    var isReady = true
     var shouldFail = false
     var mockToken = "mock_token"
     
@@ -230,9 +284,8 @@ final class MockAuthService: AuthServiceProtocol {
         return mockToken
     }
     
-    func signInWithApple() async throws {
+    func authenticateWithApple(idToken: String, nonce: String, firstName: String?, lastName: String?) async throws {
         if shouldFail { throw AuthError.oauthFailed(provider: "Apple") }
-        // Simulate delay
         try await Task.sleep(for: .milliseconds(500))
         currentUser = .mock()
         isAuthenticated = true
@@ -240,7 +293,6 @@ final class MockAuthService: AuthServiceProtocol {
     
     func signInWithGoogle() async throws {
         if shouldFail { throw AuthError.oauthFailed(provider: "Google") }
-        // Simulate delay
         try await Task.sleep(for: .milliseconds(500))
         currentUser = .mock()
         isAuthenticated = true

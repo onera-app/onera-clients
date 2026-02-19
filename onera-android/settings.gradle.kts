@@ -16,8 +16,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // Clerk SDK repository
-        maven { url = uri("https://maven.clerk.com") }
+
     }
 }
 

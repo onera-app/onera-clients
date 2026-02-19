@@ -323,6 +323,7 @@ actor PrivateInferenceClient: Sendable {
     private func handleConnectionClosed(code: URLSessionWebSocketTask.CloseCode, reason: Data?) {
         logger.debug("WebSocket closed with code: \(code.rawValue)")
         isConnected = false
+        _isClosed = true
         
         // If we're still waiting for connection, fail it
         connectionContinuation?.resume(throwing: PrivateInferenceError.connectionClosed)
@@ -406,6 +407,7 @@ actor PrivateInferenceClient: Sendable {
     private func handleConnectionError(_ error: Error) {
         logger.error("Connection error: \(error)")
         isConnected = false
+        _isClosed = true
         
         // If we're still waiting for connection, fail it
         connectionContinuation?.resume(throwing: error)

@@ -28,19 +28,11 @@
 				<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 			</array>
 		</dict>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>CFBundleURLName</key>
-			<string>clerk</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>$(CLERK_CALLBACK_SCHEME)</string>
-			</array>
-		</dict>
 	</array>
-	<key>CLERK_PUBLISHABLE_KEY</key>
-	<string>$(CLERK_PUBLISHABLE_KEY)</string>
+	<key>SUPABASE_URL</key>
+	<string>$(SUPABASE_URL)</string>
+	<key>SUPABASE_ANON_KEY</key>
+	<string>$(SUPABASE_ANON_KEY)</string>
 	<key>KEYCHAIN_SERVICE_NAME</key>
 	<string>$(KEYCHAIN_SERVICE_NAME)</string>
 	<key>TRPC_PATH</key>

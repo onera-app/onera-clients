@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import Clerk
 import Combine
 
 @main
@@ -18,7 +17,6 @@ struct OneraApp: App {
     @NSApplicationDelegateAdaptor(MacAppDelegate.self) private var appDelegate
     #endif
     
-    @State private var clerk = Clerk.shared
     @State private var coordinator: AppCoordinator
     @AppStorage("colorScheme") private var colorScheme = 0
     
@@ -56,7 +54,6 @@ struct OneraApp: App {
         #if os(iOS)
         WindowGroup {
             RootView(coordinator: coordinator)
-                .environment(\.clerk, clerk)
                 .withDependencies(activeDependencies)
                 .themed()
                 .preferredColorScheme(preferredScheme)
@@ -66,11 +63,6 @@ struct OneraApp: App {
                         transaction.animation = nil
                     }
                     #endif
-                }
-                .task {
-                    if Self.isUITesting { return }
-                    clerk.configure(publishableKey: Configuration.clerkPublishableKey)
-                    try? await clerk.load()
                 }
                 .onOpenURL { url in
                     handleDeepLink(url)
@@ -83,16 +75,10 @@ struct OneraApp: App {
         // Main Window
         WindowGroup {
             MacMainView(coordinator: coordinator)
-                .environment(\.clerk, clerk)
                 .withDependencies(activeDependencies)
                 .themed()
                 .preferredColorScheme(preferredScheme)
                 .frame(minWidth: 800, minHeight: 500) // HIG: Allow smaller for 13" displays
-                .task {
-                    if Self.isUITesting { return }
-                    clerk.configure(publishableKey: Configuration.clerkPublishableKey)
-                    try? await clerk.load()
-                }
                 .onReceive(NotificationCenter.default.publisher(for: .demoModeActivated)) { _ in
                     handleDemoModeActivation()
                 }

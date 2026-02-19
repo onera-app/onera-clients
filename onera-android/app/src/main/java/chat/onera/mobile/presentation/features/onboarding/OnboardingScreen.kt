@@ -52,32 +52,6 @@ fun OnboardingScreen(
     val steps = remember {
         listOf(
             OnboardingStep(
-                icon = Icons.Default.AutoAwesome,
-                iconTint = androidx.compose.ui.graphics.Color(0xFF007AFF),
-                title = "Welcome to Onera",
-                description = "Private AI chat, built differently",
-                features = listOf(
-                    FeatureItem(
-                        icon = Icons.Default.Key,
-                        iconTint = androidx.compose.ui.graphics.Color(0xFFFF9500),
-                        title = "Bring Your Own Keys",
-                        subtitle = "Use your own API keys from OpenAI, Anthropic, and more"
-                    ),
-                    FeatureItem(
-                        icon = Icons.Default.Shield,
-                        iconTint = androidx.compose.ui.graphics.Color(0xFF34C759),
-                        title = "End-to-End Encrypted",
-                        subtitle = "Your chats and API keys are encrypted—we can't read them"
-                    ),
-                    FeatureItem(
-                        icon = Icons.Default.Computer,
-                        iconTint = androidx.compose.ui.graphics.Color(0xFFAF52DE),
-                        title = "Local AI Support",
-                        subtitle = "Run models completely offline with Ollama"
-                    )
-                )
-            ),
-            OnboardingStep(
                 icon = Icons.Default.Shield,
                 iconTint = androidx.compose.ui.graphics.Color(0xFF34C759),
                 title = "Your Data, Your Control",
@@ -87,7 +61,7 @@ fun OnboardingScreen(
                 icon = Icons.Default.CheckCircle,
                 iconTint = androidx.compose.ui.graphics.Color(0xFF34C759),
                 title = "You're All Set",
-                description = "After signing in, you'll set up encryption and add your API keys"
+                description = "Set up encryption and add your API keys to get started"
             )
         )
     }
@@ -368,7 +342,6 @@ private fun SecurityVisualization() {
 @Composable
 private fun SetupStepsList() {
     val steps = listOf(
-        "Sign In" to "Use Apple or Google",
         "Set Up Encryption" to "Create passkey or password",
         "Add API Key" to "Connect to an AI provider"
     )
