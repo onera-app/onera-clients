@@ -95,6 +95,7 @@ final class WatchConnectivityManager: NSObject {
     
     private override init() {
         super.init()
+        restorePersistedState()
     }
     
     // MARK: - Activation
@@ -108,6 +109,50 @@ final class WatchConnectivityManager: NSObject {
         session = WCSession.default
         session?.delegate = self
         session?.activate()
+    }
+    
+    // MARK: - Persistence
+    
+    private static let chatsKey = "cachedRecentChats"
+    private static let authTokenKey = "cachedAuthToken"
+    private static let quickRepliesKey = "cachedQuickReplies"
+    private static let modelNameKey = "cachedModelName"
+    private static let lastSyncKey = "cachedLastSyncDate"
+    
+    /// Restore previously persisted state so Watch shows content immediately on launch
+    private func restorePersistedState() {
+        let defaults = UserDefaults.standard
+        
+        if let data = defaults.data(forKey: Self.chatsKey),
+           let chats = try? JSONDecoder().decode([WatchChatSummary].self, from: data) {
+            recentChats = chats
+        }
+        
+        authToken = defaults.string(forKey: Self.authTokenKey)
+        selectedModelName = defaults.string(forKey: Self.modelNameKey)
+        lastSyncDate = defaults.object(forKey: Self.lastSyncKey) as? Date
+        
+        if let replies = defaults.stringArray(forKey: Self.quickRepliesKey) {
+            quickReplies = replies
+        }
+        
+        // Restore auth state from cached token
+        WatchAppState.shared.isAuthenticated = authToken != nil
+        
+        print("[WatchConnectivity] Restored persisted state: \(recentChats.count) chats, authenticated: \(authToken != nil)")
+    }
+    
+    /// Persist current state to UserDefaults for next launch
+    private func persistState() {
+        let defaults = UserDefaults.standard
+        
+        if let data = try? JSONEncoder().encode(recentChats) {
+            defaults.set(data, forKey: Self.chatsKey)
+        }
+        defaults.set(authToken, forKey: Self.authTokenKey)
+        defaults.set(selectedModelName, forKey: Self.modelNameKey)
+        defaults.set(quickReplies, forKey: Self.quickRepliesKey)
+        defaults.set(lastSyncDate, forKey: Self.lastSyncKey)
     }
     
     // MARK: - Sync
@@ -233,8 +278,13 @@ final class WatchConnectivityManager: NSObject {
         // Notify state change
         WatchAppState.shared.isAuthenticated = authToken != nil
         
+        // Persist for next launch
+        persistState()
+        
         // Post notification for UI updates
         NotificationCenter.default.post(name: .watchDataSynced, object: nil)
+        
+        print("[WatchConnectivity] Processed sync payload: \(recentChats.count) chats, authenticated: \(authToken != nil)")
     }
     
     private func sendPendingMessages() {
@@ -320,6 +370,16 @@ extension WatchConnectivityManager: WCSessionDelegate {
             WatchAppState.shared.isConnected = activationState == .activated
             
             if activationState == .activated {
+                // Check for existing applicationContext (persisted by WCSession from last iPhone sync)
+                let context = session.receivedApplicationContext
+                if !context.isEmpty,
+                   let data = try? JSONSerialization.data(withJSONObject: context),
+                   let payload = try? JSONDecoder().decode(WatchSyncPayload.self, from: data) {
+                    self.processSyncPayload(payload)
+                    print("[WatchConnectivity] Loaded existing applicationContext on activation")
+                }
+                
+                // Also request a fresh sync from iPhone
                 self.requestSync()
             }
         }

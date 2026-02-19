@@ -97,7 +97,7 @@ struct OneraApp: App {
             )
             
             CommandGroup(replacing: .help) {
-                Link("Onera Help", destination: URL(string: "https://onera.app/help")!)
+                Link("Onera Help", destination: URL(string: "https://onera.chat/help")!)
                 Divider()
                 Button("Report a Problem...") {
                     windowManager.reportProblem()
@@ -331,7 +331,7 @@ final class WindowManager {
     }
     
     func reportProblem() {
-        if let url = URL(string: "https://onera.app/feedback") {
+        if let url = URL(string: "https://onera.chat/feedback") {
             NSWorkspace.shared.open(url)
         }
     }

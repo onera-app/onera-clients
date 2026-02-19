@@ -65,12 +65,22 @@ struct WatchRootView: View {
     @Environment(\.watchAppState) private var appState
     @State private var demoModeActive = false
     
+    /// Show main content if authenticated (either via live WCSession or persisted state)
+    private var shouldShowContent: Bool {
+        if demoModeActive { return true }
+        // Show content if authenticated -- don't require isConnected since
+        // we may have valid persisted state from a previous sync
+        return appState.isAuthenticated
+    }
+    
     var body: some View {
-        if demoModeActive {
-            // Demo mode: show chat list directly to avoid NavigationStack nesting crash
-            WatchChatListView()
-        } else if appState.isConnected && appState.isAuthenticated {
-            WatchMainView()
+        if shouldShowContent {
+            if demoModeActive {
+                // Demo mode: show chat list directly to avoid NavigationStack nesting crash
+                WatchChatListView()
+            } else {
+                WatchMainView()
+            }
         } else {
             WatchPlaceholderView(onDemoActivated: activateDemoMode)
         }
@@ -124,7 +134,7 @@ struct WatchPlaceholderView: View {
         }
         tapCount += 1
         lastTapTime = now
-        if tapCount >= 5 {
+        if tapCount >= 10 {
             tapCount = 0
             WKInterfaceDevice.current().play(.success)
             onDemoActivated?()

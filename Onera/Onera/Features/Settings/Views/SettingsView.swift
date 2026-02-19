@@ -42,6 +42,7 @@ struct SettingsView: View {
                 appSection
                 aboutSection
                 logOutSection
+                deleteAccountSection
             }
             #if os(iOS)
             .listStyle(.insetGrouped)
@@ -280,7 +281,7 @@ struct SettingsView: View {
                 Label("Message Spacing", systemImage: "text.line.spacing")
             }
             
-            Link(destination: URL(string: "https://onera.app/privacy")!) {
+            Link(destination: URL(string: "https://onera.chat/privacy")!) {
                 HStack {
                     Label("Privacy Policy", systemImage: "hand.raised")
                     Spacer()
@@ -290,7 +291,7 @@ struct SettingsView: View {
                 }
             }
             
-            Link(destination: URL(string: "https://onera.app/terms")!) {
+            Link(destination: URL(string: "https://onera.chat/terms")!) {
                 HStack {
                     Label("Terms of Service", systemImage: "doc.text")
                     Spacer()
@@ -314,7 +315,7 @@ struct SettingsView: View {
     
     private var aboutSection: some View {
         Section("About") {
-            Link(destination: URL(string: "https://onera.app/help")!) {
+            Link(destination: URL(string: "https://onera.chat/help")!) {
                 HStack {
                     Label("Help Center", systemImage: "questionmark.circle")
                     Spacer()
@@ -360,6 +361,45 @@ struct SettingsView: View {
             }
         } footer: {
             Text("You'll need your recovery phrase to access your encrypted data on this device again.")
+                .font(OneraTypography.caption)
+        }
+    }
+    
+    // MARK: - Delete Account Section
+    
+    @State private var showDeleteAccountConfirmation = false
+    
+    private var deleteAccountSection: some View {
+        Section {
+            Button(role: .destructive) {
+                showDeleteAccountConfirmation = true
+            } label: {
+                HStack {
+                    Label("Delete Account", systemImage: "trash")
+                    Spacer()
+                }
+            }
+            .accessibilityIdentifier("deleteAccountButton")
+            .confirmationDialog(
+                "Delete Account",
+                isPresented: $showDeleteAccountConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Delete My Account", role: .destructive) {
+                    if let url = URL(string: "https://onera.chat/settings/account/delete") {
+                        #if os(iOS)
+                        UIApplication.shared.open(url)
+                        #elseif os(macOS)
+                        NSWorkspace.shared.open(url)
+                        #endif
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This will permanently delete your account and all associated data including chats, notes, API connections, and encryption keys. This action cannot be undone.\n\nYou will be redirected to the Onera website to complete the deletion process.")
+            }
+        } footer: {
+            Text("Account deletion is completed on the Onera website to verify your identity.")
                 .font(OneraTypography.caption)
         }
     }

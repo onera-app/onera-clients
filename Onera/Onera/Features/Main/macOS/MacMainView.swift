@@ -1355,10 +1355,10 @@ struct MacAuthView: View {
             
             // Terms and privacy
             HStack(spacing: 4) {
-                Link("Terms", destination: URL(string: "https://onera.app/terms")!)
+                Link("Terms", destination: URL(string: "https://onera.chat/terms")!)
                 Text("·")
                     .foregroundStyle(theme.textTertiary)
-                Link("Privacy", destination: URL(string: "https://onera.app/privacy")!)
+                Link("Privacy", destination: URL(string: "https://onera.chat/privacy")!)
             }
             .font(.caption)
             .foregroundStyle(theme.textSecondary)

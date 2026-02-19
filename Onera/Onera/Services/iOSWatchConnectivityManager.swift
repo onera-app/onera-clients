@@ -102,18 +102,23 @@ final class iOSWatchConnectivityManager: NSObject {
             authToken = try? await authService.getToken()
         }
         
-        // Get recent chats (pre-decrypted)
+        // Get recent chats (titles are pre-decrypted by the repository)
         var recentChats: [WatchChatSummary] = []
         if let token = authToken {
-            let chats = try await chatRepository.fetchChats(token: token)
-            recentChats = chats.prefix(10).map { chat in
-                WatchChatSummary(
-                    id: chat.id,
-                    title: chat.title,
-                    lastMessage: "", // Would need to decrypt last message
-                    lastMessageDate: chat.updatedAt,
-                    unreadCount: 0
-                )
+            do {
+                let chats = try await chatRepository.fetchChats(token: token)
+                recentChats = chats.prefix(10).map { chat in
+                    WatchChatSummary(
+                        id: chat.id,
+                        title: chat.title,
+                        lastMessage: "", // Message content requires per-chat decryption; title is sufficient for Watch
+                        lastMessageDate: chat.updatedAt,
+                        unreadCount: 0
+                    )
+                }
+            } catch {
+                print("[iOSWatchConnectivity] Failed to fetch chats for Watch sync: \(error)")
+                // Still send the payload with empty chats so auth state syncs
             }
         }
         

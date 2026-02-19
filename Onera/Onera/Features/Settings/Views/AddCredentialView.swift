@@ -23,6 +23,10 @@ struct AddCredentialView: View {
     /// Optional: Callback when cancelled
     var onCancel: (() -> Void)?
     
+    /// Tracks whether the user has acknowledged the third-party data sharing disclosure
+    @AppStorage("hasAcknowledgedAIDataSharing") private var hasAcknowledgedAIDataSharing = false
+    @State private var showDataSharingDisclosure = false
+    
     private enum Field: Hashable {
         case name, apiKey, baseUrl, orgId
     }
@@ -163,6 +167,30 @@ struct AddCredentialView: View {
                     }
                 }
                 
+                // Data sharing disclosure
+                if !isLocalProvider {
+                    Section {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label {
+                                Text("Third-Party Data Sharing")
+                                    .font(.subheadline.bold())
+                            } icon: {
+                                Image(systemName: "exclamationmark.shield.fill")
+                                    .foregroundStyle(.orange)
+                            }
+                            
+                            Text("When you use this connection, your chat messages and prompts are sent directly from your device to **\(viewModel.selectedProvider.displayName)**. Onera does not process or store your conversations on our servers.")
+                                .font(.caption)
+                                .foregroundStyle(theme.textSecondary)
+                            
+                            Text("Data sent to the provider is subject to their privacy policy and terms of service.")
+                                .font(.caption)
+                                .foregroundStyle(theme.textSecondary)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+                
                 // Security note
                 Section {
                     Label {
@@ -193,14 +221,10 @@ struct AddCredentialView: View {
                 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        Task {
-                            if await viewModel.saveCredential() {
-                                if let onSave = onSave {
-                                    onSave()
-                                } else {
-                                    dismiss()
-                                }
-                            }
+                        if !isLocalProvider && !hasAcknowledgedAIDataSharing {
+                            showDataSharingDisclosure = true
+                        } else {
+                            performSave()
                         }
                     }
                     .disabled(!canSave || viewModel.isSaving)
@@ -227,6 +251,18 @@ struct AddCredentialView: View {
                     Text(error.localizedDescription)
                 }
             }
+            .alert("Third-Party Data Sharing", isPresented: $showDataSharingDisclosure) {
+                Button("I Agree") {
+                    hasAcknowledgedAIDataSharing = true
+                    performSave()
+                }
+                Button("View Privacy Policy") {
+                    openURL(URL(string: "https://onera.chat/privacy")!)
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("By connecting to \(viewModel.selectedProvider.displayName), your chat messages and prompts will be sent directly from your device to their servers using your API key. Onera does not intercept, store, or process this data.\n\nYour use of third-party AI services is subject to their respective privacy policies and terms.")
+            }
             .onAppear {
                 // Set provider if passed in
                 if let provider = selectedProvider {
@@ -235,6 +271,20 @@ struct AddCredentialView: View {
                 // Set default base URL for local providers
                 if viewModel.showBaseUrlField && viewModel.baseUrl.isEmpty {
                     viewModel.baseUrl = viewModel.selectedProvider.baseURL
+                }
+            }
+        }
+    }
+    
+    // MARK: - Actions
+    
+    private func performSave() {
+        Task {
+            if await viewModel.saveCredential() {
+                if let onSave = onSave {
+                    onSave()
+                } else {
+                    dismiss()
                 }
             }
         }

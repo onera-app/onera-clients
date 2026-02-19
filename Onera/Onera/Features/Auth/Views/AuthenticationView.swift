@@ -172,7 +172,7 @@ struct AuthenticationView: View {
                 .foregroundStyle(theme.onboardingTextSecondary)
             
             HStack(spacing: OneraSpacing.xxs) {
-                Link("Terms of Use", destination: URL(string: "https://onera.app/terms")!)
+                Link("Terms of Use", destination: URL(string: "https://onera.chat/terms")!)
                     .font(OneraTypography.caption.weight(.medium))
                     .foregroundStyle(theme.onboardingTextPrimary)
                 
@@ -180,7 +180,7 @@ struct AuthenticationView: View {
                     .font(OneraTypography.caption)
                     .foregroundStyle(theme.onboardingTextSecondary)
                 
-                Link("Privacy Policy", destination: URL(string: "https://onera.app/privacy")!)
+                Link("Privacy Policy", destination: URL(string: "https://onera.chat/privacy")!)
                     .font(OneraTypography.caption.weight(.medium))
                     .foregroundStyle(theme.onboardingTextPrimary)
             }
