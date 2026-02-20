@@ -96,10 +96,10 @@ struct AuthenticationView: View {
         .padding(.bottom, OneraSpacing.xxxl)
         .background(
             UnevenRoundedRectangle(
-                topLeadingRadius: OneraRadius.pill,
+                topLeadingRadius: OneraRadius.xxl,
                 bottomLeadingRadius: 0,
                 bottomTrailingRadius: 0,
-                topTrailingRadius: OneraRadius.pill
+                topTrailingRadius: OneraRadius.xxl
             )
             .fill(theme.onboardingSheetBackground)
             .ignoresSafeArea(edges: .bottom)
@@ -145,7 +145,7 @@ struct AuthenticationView: View {
                     Image("google")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 20, height: 20)
+                        .frame(width: OneraIconSize.md, height: OneraIconSize.md)
                     Text("Continue with Google")
                 }
             }
@@ -155,10 +155,10 @@ struct AuthenticationView: View {
         }
         .overlay {
             if viewModel.isLoading {
-                RoundedRectangle(cornerRadius: CaptionsRadius.medium)
+                RoundedRectangle(cornerRadius: OneraRadius.lg)
                     .fill(.black.opacity(0.3))
                 ProgressView()
-                    .tint(.white)
+                    .tint(theme.onboardingTextPrimary)
             }
         }
     }

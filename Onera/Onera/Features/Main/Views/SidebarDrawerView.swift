@@ -86,9 +86,9 @@ struct SidebarDrawerView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Search bar
             searchBar
-                .padding(.horizontal, OneraSpacing.lg)
-                .padding(.top, OneraSpacing.lg)
-                .padding(.bottom, OneraSpacing.md)
+                .padding(.horizontal, OneraSpacing.md)
+                .padding(.top, OneraSpacing.xs)
+                .padding(.bottom, OneraSpacing.sm)
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
@@ -110,8 +110,8 @@ struct SidebarDrawerView: View {
     
     private var searchBar: some View {
         // Search field pill with liquid glass effect
-        HStack(spacing: OneraSpacing.compact) {
-            Image(systemName: "magnifyingglass")
+        HStack(spacing: OneraSpacing.sm) {
+            OneraIcon.search.image
                 .font(OneraTypography.iconLabel)
                 .foregroundStyle(theme.textSecondary)
                 .accessibilityHidden(true)
@@ -127,17 +127,17 @@ struct SidebarDrawerView: View {
                 Button {
                     searchText = ""
                 } label: {
-                    Image(systemName: "xmark.circle.fill")
+                    OneraIcon.closeFilled.image
                         .foregroundStyle(theme.textSecondary)
                 }
                 .accessibilityLabel("Clear search")
                 .accessibilityHint("Clears the search text")
             }
         }
-        .padding(.vertical, OneraSpacing.compact)
-        .padding(.horizontal, OneraSpacing.comfortable)
+        .padding(.vertical, OneraSpacing.sm)
+        .padding(.horizontal, OneraSpacing.sm)
         .background(theme.secondaryBackground)
-        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
+        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.lg))
     }
     
     // MARK: - Navigation Items
@@ -164,7 +164,7 @@ struct SidebarDrawerView: View {
                     }
                 } label: {
                     HStack(spacing: OneraSpacing.iconTextGap) {
-                        Image(systemName: "folder")
+                        OneraIcon.folder.image
                             .font(.body)
                             .foregroundStyle(theme.textSecondary)
                             .accessibilityHidden(true)
@@ -174,17 +174,17 @@ struct SidebarDrawerView: View {
                         
                         Spacer()
                         
-                        Image(systemName: "chevron.right")
+                        OneraIcon.chevronRight.image
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(theme.textSecondary)
                             .rotationEffect(.degrees(showingFolders ? 90 : 0))
                             .accessibilityHidden(true)
                     }
                     .padding(.horizontal, OneraSpacing.md)
-                    .padding(.vertical, OneraSpacing.compact)
+                    .padding(.vertical, OneraSpacing.sm)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(
-                        RoundedRectangle(cornerRadius: OneraRadius.medium)
+                        RoundedRectangle(cornerRadius: OneraRadius.lg)
                             .fill(showingFolders ? theme.secondaryBackground.opacity(0.5) : Color.clear)
                     )
                     .contentShape(Rectangle())
@@ -286,8 +286,8 @@ struct SidebarDrawerView: View {
             .fontWeight(.semibold)
             .foregroundStyle(theme.textSecondary)
             .textCase(.uppercase)
-            .padding(.horizontal, OneraSpacing.xl)
-            .padding(.top, OneraSpacing.xl)
+            .padding(.horizontal, OneraSpacing.lg)
+            .padding(.top, OneraSpacing.lg)
             .padding(.bottom, OneraSpacing.sm)
     }
     
@@ -300,7 +300,7 @@ struct SidebarDrawerView: View {
                 .foregroundStyle(theme.textSecondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, OneraSpacing.max)
+        .padding(.vertical, OneraSpacing.xxl)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Loading chat history")
     }
@@ -321,7 +321,7 @@ struct SidebarDrawerView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, OneraSpacing.lg)
-        .padding(.vertical, OneraSpacing.max)
+        .padding(.vertical, OneraSpacing.xxl)
     }
     
     private var emptyStateView: some View {
@@ -331,7 +331,7 @@ struct SidebarDrawerView: View {
             description: Text("Start a new conversation")
         )
         .frame(maxWidth: .infinity)
-        .padding(.vertical, OneraSpacing.max)
+        .padding(.vertical, OneraSpacing.xxl)
     }
     
     // MARK: - Footer
@@ -341,12 +341,12 @@ struct SidebarDrawerView: View {
             settingsTrigger.toggle()
             onOpenSettings()
         } label: {
-            HStack(spacing: OneraSpacing.compact) {
+            HStack(spacing: OneraSpacing.sm) {
                 if let user = user {
                     userAvatar(user)
                         .accessibilityHidden(true)
                 } else {
-                    Image(systemName: "person.circle.fill")
+                    OneraIcon.userCircle.solidImage
                         .font(.title2)
                         .foregroundStyle(theme.textSecondary)
                         .accessibilityHidden(true)
@@ -359,13 +359,13 @@ struct SidebarDrawerView: View {
                     .foregroundStyle(theme.textPrimary)
                 
                 // Settings indicator
-                Image(systemName: "chevron.right")
+                OneraIcon.chevronRight.image
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(theme.textTertiary)
                     .accessibilityHidden(true)
             }
-            .padding(.horizontal, OneraSpacing.comfortable)
-            .padding(.vertical, OneraSpacing.compact)
+            .padding(.horizontal, OneraSpacing.sm)
+            .padding(.vertical, OneraSpacing.sm)
             .oneraGlass()
         }
         .buttonStyle(.plain)
@@ -424,10 +424,10 @@ private struct NavigationItemRow: View {
                 Spacer()
             }
             .padding(.horizontal, OneraSpacing.md)
-            .padding(.vertical, OneraSpacing.compact)
+            .padding(.vertical, OneraSpacing.sm)
             .frame(maxWidth: .infinity, minHeight: AccessibilitySize.minTouchTarget, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: OneraRadius.medium)
+                RoundedRectangle(cornerRadius: OneraRadius.lg)
                     .fill(isSelected ? theme.secondaryBackground : Color.clear)
             )
             .contentShape(Rectangle())
@@ -470,10 +470,10 @@ private struct ChatHistoryRow: View {
                 Spacer()
             }
             .padding(.horizontal, OneraSpacing.md)
-            .padding(.vertical, OneraSpacing.compact)
+            .padding(.vertical, OneraSpacing.sm)
             .frame(maxWidth: .infinity, minHeight: AccessibilitySize.minTouchTarget, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: OneraRadius.medium)
+                RoundedRectangle(cornerRadius: OneraRadius.lg)
                     .fill(isSelected ? theme.secondaryBackground : Color.clear)
             )
             .contentShape(Rectangle())

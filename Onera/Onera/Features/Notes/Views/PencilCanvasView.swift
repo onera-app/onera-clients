@@ -51,7 +51,7 @@ struct PencilCanvasView: View {
             Button {
                 undoManager?.undo()
             } label: {
-                Image(systemName: "arrow.uturn.backward")
+                OneraIcon.undo.image
                     .font(.body.weight(.medium))
                     .frame(width: 36, height: 36)
             }
@@ -62,7 +62,7 @@ struct PencilCanvasView: View {
             Button {
                 undoManager?.redo()
             } label: {
-                Image(systemName: "arrow.uturn.forward")
+                OneraIcon.redo.image
                     .font(.body.weight(.medium))
                     .frame(width: 36, height: 36)
             }
@@ -85,7 +85,7 @@ struct PencilCanvasView: View {
                     canvasView.resignFirstResponder()
                 }
             } label: {
-                Image(systemName: isDrawingMode ? "pencil.tip.crop.circle.fill" : "pencil.tip.crop.circle")
+                (isDrawingMode ? OneraIcon.draw.solidImage : OneraIcon.draw.image)
                     .font(.title3.weight(.medium))
                     .frame(width: 36, height: 36)
             }
@@ -93,7 +93,7 @@ struct PencilCanvasView: View {
             .tint(isDrawingMode ? .accentColor : .secondary)
         }
         .padding(OneraSpacing.sm)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: OneraRadius.medium))
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: OneraRadius.lg))
     }
     
     // MARK: - Private Methods

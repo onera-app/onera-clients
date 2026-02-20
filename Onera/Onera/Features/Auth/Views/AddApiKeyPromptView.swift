@@ -21,7 +21,7 @@ struct AddApiKeyPromptView: View {
             List {
                 Section {
                     VStack(spacing: 16) {
-                        Image(systemName: "key.fill")
+                        OneraIcon.key.solidImage
                             .font(.largeTitle)
                             .foregroundStyle(theme.warning)
                         
@@ -209,7 +209,7 @@ private struct ProviderButton: View {
                             Text(badge)
                                 .font(.caption2.weight(.medium))
                                 .padding(.horizontal, OneraSpacing.xs)
-                                .padding(.vertical, OneraSpacing.micro)
+                                .padding(.vertical, OneraSpacing.xxxs)
                                 .background(theme.success.opacity(0.15))
                                 .foregroundStyle(theme.success)
                                 .clipShape(Capsule())
@@ -223,7 +223,7 @@ private struct ProviderButton: View {
                 
                 Spacer()
                 
-                Image(systemName: "chevron.right")
+                OneraIcon.chevronRight.image
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(theme.textTertiary)
             }

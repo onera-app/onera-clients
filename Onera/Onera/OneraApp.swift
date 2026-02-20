@@ -79,6 +79,9 @@ struct OneraApp: App {
                 .themed()
                 .preferredColorScheme(preferredScheme)
                 .frame(minWidth: 800, minHeight: 500) // HIG: Allow smaller for 13" displays
+                .onOpenURL { url in
+                    handleDeepLink(url)
+                }
                 .onReceive(NotificationCenter.default.publisher(for: .demoModeActivated)) { _ in
                     handleDemoModeActivation()
                 }
@@ -172,14 +175,12 @@ struct OneraApp: App {
         }
     }
     
-    #if os(iOS)
     private func handleDeepLink(_ url: URL) {
         Task {
             let authService = DependencyContainer.shared.authService
             try? await authService.handleOAuthCallback(url: url)
         }
     }
-    #endif
     
     private func handleDemoModeActivation() {
         let newCoordinator = AppCoordinator(dependencies: DemoDependencyContainer.shared)

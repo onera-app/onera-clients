@@ -52,14 +52,14 @@ struct SidebarView: View {
                     Button {
                         onNewChat()
                     } label: {
-                        Image(systemName: "square.and.pencil")
+                        OneraIcon.chatAdd.image
                     }
                     .accessibilityLabel("New Chat")
                 } else {
                     Button {
                         onNewNote()
                     } label: {
-                        Image(systemName: "square.and.pencil")
+                        OneraIcon.chatAdd.image
                     }
                     .accessibilityLabel("New Note")
                 }
@@ -79,7 +79,7 @@ struct SidebarView: View {
                 Button {
                     onNewChat()
                 } label: {
-                    Image(systemName: "square.and.pencil")
+                    OneraIcon.chatAdd.image
                 }
                 .help("New Chat (⌘N)")
             }
@@ -118,13 +118,13 @@ struct SidebarView: View {
                         }
                     }
                 } else {
-                    Image(systemName: "person.circle")
+                    OneraIcon.userCircle.image
                         .font(.title2)
                 }
                 
                 Spacer()
                 
-                Image(systemName: "gearshape")
+                OneraIcon.settings.image
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -152,14 +152,14 @@ struct SidebarView: View {
                         Label(section.rawValue, systemImage: section.icon)
                         Spacer()
                         if selectedSection == section {
-                            Image(systemName: "checkmark")
+                            OneraIcon.checkSimple.image
                                 .foregroundStyle(theme.accent)
                         }
                     }
                 }
                 .buttonStyle(.plain)
                 .listRowBackground(
-                    RoundedRectangle(cornerRadius: OneraRadius.standard, style: .continuous)
+                    RoundedRectangle(cornerRadius: OneraRadius.md, style: .continuous)
                         .fill(selectedSection == section ? theme.accent.opacity(0.15) : Color.clear)
                         .padding(.horizontal, OneraSpacing.xxs)
                 )
@@ -230,7 +230,7 @@ private struct AllChatsDropTarget: View {
             isHovered = hovering
         }
         .listRowBackground(
-            RoundedRectangle(cornerRadius: OneraRadius.standard, style: .continuous)
+            RoundedRectangle(cornerRadius: OneraRadius.md, style: .continuous)
                 .fill(isTargeted ? theme.accent.opacity(0.2) : (isHovered ? theme.secondaryBackground.opacity(0.5) : Color.clear))
                 .padding(.horizontal, OneraSpacing.xxs)
         )
@@ -270,7 +270,7 @@ private struct FolderRowView: View {
             isHovered = hovering
         }
         .listRowBackground(
-            RoundedRectangle(cornerRadius: OneraRadius.standard, style: .continuous)
+            RoundedRectangle(cornerRadius: OneraRadius.md, style: .continuous)
                 .fill(isTargeted ? theme.accent.opacity(0.2) : (isHovered ? theme.secondaryBackground.opacity(0.5) : Color.clear))
                 .padding(.horizontal, OneraSpacing.xxs)
         )

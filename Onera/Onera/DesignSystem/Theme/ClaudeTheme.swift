@@ -281,32 +281,12 @@ struct ClaudeThemeColors: ThemeColors {
     var onboardingTextPrimary: Color { colors.onboardingTextPrimary }
     var onboardingTextSecondary: Color { colors.onboardingTextSecondary }
     var onboardingTextTertiary: Color { colors.onboardingTextTertiary }
+    var surfaceElevated: Color { colors.surfaceElevated }
+    var surfaceSunken: Color { colors.surfaceSunken }
+    var textOnAccent: Color { colors.textOnAccent }
+    var iconPrimary: Color { colors.iconPrimary }
+    var iconSecondary: Color { colors.iconSecondary }
+    var iconTertiary: Color { colors.iconTertiary }
 }
 
-// MARK: - Claude Design Constants
 
-/// Claude-specific design values beyond colors
-enum ClaudeDesign {
-    /// Border radius values matching Claude's design
-    enum Radius {
-        static let small: CGFloat = 8
-        static let medium: CGFloat = 12
-        static let large: CGFloat = 16
-        static let pill: CGFloat = 999 // Fully rounded for buttons/inputs
-    }
-    
-    /// Shadow for floating elements (FAB, cards)
-    static let floatingShadow = Shadow(
-        color: .black.opacity(0.3),
-        radius: 12,
-        x: 0,
-        y: 4
-    )
-    
-    struct Shadow {
-        let color: Color
-        let radius: CGFloat
-        let x: CGFloat
-        let y: CGFloat
-    }
-}

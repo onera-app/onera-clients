@@ -185,7 +185,7 @@ struct AdaptiveMainView: View {
                             notesViewModel?.createNote()
                         }
                     } label: {
-                        Image(systemName: "square.and.pencil")
+                        OneraIcon.chatAdd.image
                     }
                     .help(selectedSection == .chats ? "New Chat" : "New Note")
                     .accessibilityLabel(selectedSection == .chats ? "New chat" : "New note")
@@ -308,7 +308,7 @@ struct AdaptiveMainView: View {
                             }
                         }
                     } label: {
-                        Image(systemName: columnVisibility == .detailOnly ? "sidebar.leading" : "sidebar.squares.leading")
+                        (columnVisibility == .detailOnly ? OneraIcon.sidebar.image : OneraIcon.sidebarExpanded.image)
                             .font(.body)
                     }
                     .accessibilityLabel(columnVisibility == .detailOnly ? "Show sidebars" : "Hide sidebars")
@@ -324,13 +324,13 @@ struct AdaptiveMainView: View {
                     Button {
                         createNewChat()
                     } label: {
-                        Image(systemName: "square.and.pencil")
+                        OneraIcon.chatAdd.image
                             .font(.body)
                     }
                     .accessibilityLabel("New chat")
                 }
                 .padding(.horizontal, OneraSpacing.lg)
-                .padding(.vertical, OneraSpacing.compact)
+                .padding(.vertical, OneraSpacing.sm)
                 .background(.bar)
             }
             #endif
@@ -351,8 +351,8 @@ struct AdaptiveMainView: View {
     // MARK: - Empty Detail View
     
     private var emptyDetailView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "bubble.left.and.bubble.right")
+        VStack(spacing: OneraSpacing.md) {
+            OneraIcon.chat.image
                 .font(.largeTitle.weight(.light))
                 .foregroundStyle(.secondary.opacity(0.5))
             
@@ -392,7 +392,7 @@ struct AdaptiveMainView: View {
                                     HStack {
                                         Text(model.displayName)
                                         if chatVM.modelSelector.selectedModel?.id == model.id {
-                                            Image(systemName: "checkmark")
+                                            OneraIcon.checkSimple.image
                                         }
                                     }
                                 }
@@ -401,7 +401,7 @@ struct AdaptiveMainView: View {
                     }
                 }
             } label: {
-                HStack(spacing: 4) {
+                    HStack(spacing: OneraSpacing.xxs) {
                     if chatVM.modelSelector.isLoading {
                         ProgressView()
                             .scaleEffect(0.7)
@@ -446,8 +446,8 @@ struct AdaptiveMainView: View {
             NoteEditorView(viewModel: notesVM, folderViewModel: folderViewModel)
         } else {
             // Empty state for notes
-            VStack(spacing: 16) {
-                Image(systemName: "note.text")
+            VStack(spacing: OneraSpacing.md) {
+                OneraIcon.note.image
                     .font(.largeTitle.weight(.light))
                     .foregroundStyle(.secondary.opacity(0.5))
                 
@@ -607,7 +607,7 @@ struct ChatRowView: View {
     @State private var isHovered = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: OneraSpacing.xxs) {
             Text(chat.title)
                 .font(.headline)
                 .lineLimit(1)
@@ -626,14 +626,14 @@ struct ChatRowView: View {
             isHovered = hovering
         }
         .background(
-            RoundedRectangle(cornerRadius: OneraRadius.standard)
+            RoundedRectangle(cornerRadius: OneraRadius.md)
                 .fill(isHovered && !isSelected ? theme.secondaryBackground.opacity(0.5) : Color.clear)
         )
         // iPad/macOS: Drag and drop support
         .draggable(chat.id) {
             // Drag preview
             HStack {
-                Image(systemName: "bubble.left.fill")
+                OneraIcon.chatFilled.image
                     .foregroundStyle(.secondary)
                 Text(chat.title)
                     .font(.headline)
@@ -642,7 +642,7 @@ struct ChatRowView: View {
             .padding(.horizontal, OneraSpacing.md)
             .padding(.vertical, OneraSpacing.sm)
             .background(.regularMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
+            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
         }
     }
 }
@@ -656,10 +656,10 @@ struct ChatPreviewView: View {
     @Environment(\.theme) private var theme
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: OneraSpacing.sm) {
             // Header
             HStack {
-                Image(systemName: "bubble.left.fill")
+                OneraIcon.chatFilled.image
                     .foregroundStyle(theme.accent)
                 Text(chat.title)
                     .font(.headline)
@@ -670,9 +670,9 @@ struct ChatPreviewView: View {
             Divider()
             
             // Metadata
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: OneraSpacing.xs) {
                 HStack {
-                    Image(systemName: "clock")
+                    OneraIcon.clock.image
                         .foregroundStyle(.secondary)
                     Text("Updated \(chat.updatedAt, style: .relative)")
                         .font(.subheadline)
@@ -680,7 +680,7 @@ struct ChatPreviewView: View {
                 }
                 
                 HStack {
-                    Image(systemName: "calendar")
+                    OneraIcon.calendar.image
                         .foregroundStyle(.secondary)
                     Text("Created \(chat.createdAt, style: .date)")
                         .font(.subheadline)

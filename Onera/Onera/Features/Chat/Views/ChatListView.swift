@@ -40,7 +40,7 @@ struct ChatListView: View {
                 Button {
                     onNewChat()
                 } label: {
-                    Image(systemName: "square.and.pencil")
+                    OneraIcon.chatAdd.image
                 }
             }
         }

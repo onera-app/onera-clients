@@ -119,11 +119,11 @@ struct ArtifactsPanelView: View {
                 Spacer()
                 
                 if artifacts.count > 1 {
-                    HStack(spacing: 4) {
+                    HStack(spacing: OneraSpacing.xxs) {
                         Button {
                             navigateToPrevious()
                         } label: {
-                            Image(systemName: "chevron.left")
+                            OneraIcon.back.image
                                 .font(.caption)
                         }
                         .buttonStyle(.plain)
@@ -137,7 +137,7 @@ struct ArtifactsPanelView: View {
                         Button {
                             navigateToNext()
                         } label: {
-                            Image(systemName: "chevron.right")
+                            OneraIcon.chevronRight.image
                                 .font(.caption)
                         }
                         .buttonStyle(.plain)
@@ -150,7 +150,7 @@ struct ArtifactsPanelView: View {
                 Button {
                     onClose()
                 } label: {
-                    Image(systemName: "xmark")
+                    OneraIcon.close.image
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -159,13 +159,13 @@ struct ArtifactsPanelView: View {
                 .accessibilityLabel("Close artifacts panel")
             }
             .padding(.horizontal, OneraSpacing.md)
-            .padding(.vertical, OneraSpacing.compact)
+            .padding(.vertical, OneraSpacing.sm)
             .background(Color(nsColor: .controlBackgroundColor))
             
             Divider()
             
             // Action bar
-            HStack(spacing: 8) {
+            HStack(spacing: OneraSpacing.xs) {
                 Button {
                     copyToClipboard()
                 } label: {
@@ -279,13 +279,13 @@ struct ArtifactListView: View {
     
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
+            HStack(spacing: OneraSpacing.xs) {
                 ForEach(artifacts) { artifact in
                     Button {
                         activeArtifactId = artifact.id
                     } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "chevron.left.forwardslash.chevron.right")
+                        HStack(spacing: OneraSpacing.xxs) {
+                            OneraIcon.code.image
                                 .font(.caption2)
                             Text(artifact.title)
                                 .font(.caption)
@@ -294,7 +294,7 @@ struct ArtifactListView: View {
                         .padding(.horizontal, OneraSpacing.sm)
                         .padding(.vertical, OneraSpacing.xxs)
                         .background(activeArtifactId == artifact.id ? Color.accentColor.opacity(0.15) : Color(nsColor: .controlBackgroundColor))
-                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.small))
+                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
                     }
                     .buttonStyle(.plain)
                 }
@@ -335,22 +335,22 @@ struct iOSArtifactsSheet: View {
                 // Artifact tabs if multiple
                 if artifacts.count > 1 {
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: OneraSpacing.xs) {
                             ForEach(artifacts) { artifact in
                                 Button {
                                     activeArtifactId = artifact.id
                                 } label: {
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "chevron.left.forwardslash.chevron.right")
+                                    HStack(spacing: OneraSpacing.xxs) {
+                                        OneraIcon.code.image
                                             .font(.caption2)
                                         Text(artifact.title)
                                             .font(.caption)
                                             .lineLimit(1)
                                     }
-                                    .padding(.horizontal, OneraSpacing.compact)
+                                    .padding(.horizontal, OneraSpacing.sm)
                                     .padding(.vertical, OneraSpacing.xs)
                                     .background(activeArtifactId == artifact.id ? Color.accentColor.opacity(0.15) : theme.secondaryBackground)
-                                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
+                                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -363,7 +363,7 @@ struct iOSArtifactsSheet: View {
                 }
                 
                 // Action bar
-                HStack(spacing: 12) {
+                HStack(spacing: OneraSpacing.sm) {
                     Button {
                         copyToClipboard()
                     } label: {

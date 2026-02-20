@@ -140,6 +140,46 @@ protocol ThemeColors {
     
     /// Tertiary text on onboarding gradient background
     var onboardingTextTertiary: Color { get }
+    
+    // MARK: - Extended Surface Colors
+    
+    /// Elevated surface (floating panels, popovers)
+    var surfaceElevated: Color { get }
+    
+    /// Sunken/recessed surface (code blocks, inset areas)
+    var surfaceSunken: Color { get }
+    
+    /// Text rendered on accent-colored backgrounds
+    var textOnAccent: Color { get }
+    
+    // MARK: - Icon Colors
+    
+    /// Primary icon color (matches textPrimary)
+    var iconPrimary: Color { get }
+    
+    /// Secondary icon color (matches textSecondary)
+    var iconSecondary: Color { get }
+    
+    /// Tertiary icon color (matches textTertiary)
+    var iconTertiary: Color { get }
+}
+
+// MARK: - Default Implementations
+
+extension ThemeColors {
+    /// Default: elevated surface is slightly lighter than secondary background
+    var surfaceElevated: Color { secondaryBackground }
+    
+    /// Default: sunken surface is tertiary background
+    var surfaceSunken: Color { tertiaryBackground }
+    
+    /// Default: white text on accent backgrounds
+    var textOnAccent: Color { .white }
+    
+    /// Default: icons follow text colors
+    var iconPrimary: Color { textPrimary }
+    var iconSecondary: Color { textSecondary }
+    var iconTertiary: Color { textTertiary }
 }
 
 // MARK: - Default Theme (System Colors)
@@ -263,4 +303,12 @@ struct OLEDDarkThemeColors: ThemeColors {
     var onboardingTextPrimary: Color { base.onboardingTextPrimary }
     var onboardingTextSecondary: Color { base.onboardingTextSecondary }
     var onboardingTextTertiary: Color { base.onboardingTextTertiary }
+    
+    // Extended surfaces — OLED-specific overrides
+    var surfaceElevated: Color { Color(white: 0.08) }
+    var surfaceSunken: Color { Color(white: 0.03) }
+    var textOnAccent: Color { base.textOnAccent }
+    var iconPrimary: Color { base.iconPrimary }
+    var iconSecondary: Color { base.iconSecondary }
+    var iconTertiary: Color { base.iconTertiary }
 }

@@ -190,7 +190,7 @@ struct MessageBubbleView: View {
                 branchNavTrigger.toggle()
                 onPreviousBranch?()
             } label: {
-                Image(systemName: "chevron.left")
+                OneraIcon.back.image
                     .font(.caption.weight(.medium))
                     .frame(minWidth: AccessibilitySize.minTouchTarget, minHeight: AccessibilitySize.minTouchTarget)
                     .contentShape(Rectangle())
@@ -214,7 +214,7 @@ struct MessageBubbleView: View {
                 branchNavTrigger.toggle()
                 onNextBranch?()
             } label: {
-                Image(systemName: "chevron.right")
+                OneraIcon.chevronRight.image
                     .font(.caption.weight(.medium))
                     .frame(minWidth: AccessibilitySize.minTouchTarget, minHeight: AccessibilitySize.minTouchTarget)
                     .contentShape(Rectangle())
@@ -364,7 +364,7 @@ struct MessageBubbleView: View {
     
     private var copyButton: some View {
         Button(action: doCopy) {
-            Image(systemName: showCopiedFeedback ? "checkmark" : "doc.on.doc")
+            (showCopiedFeedback ? OneraIcon.checkSimple.image : OneraIcon.copy.image)
                 .font(OneraTypography.iconLabel)
                 .foregroundStyle(showCopiedFeedback ? theme.success : theme.textTertiary)
                 .contentTransition(.symbolEffect(.replace))
@@ -430,7 +430,7 @@ struct MessageBubbleView: View {
                 Label("Be Creative", systemImage: "sparkles")
             }
         } label: {
-            Image(systemName: "arrow.clockwise")
+            OneraIcon.regenerate.image
                 .font(OneraTypography.iconLabel)
                 .foregroundStyle(isRegenerating ? theme.info : theme.textTertiary)
                 .contentTransition(.symbolEffect(.replace))
@@ -470,7 +470,7 @@ struct MessageBubbleView: View {
     
     private var speakButton: some View {
         Button(action: doSpeak) {
-            Image(systemName: isSpeaking ? "stop.fill" : "speaker.wave.2")
+            (isSpeaking ? OneraIcon.stop.solidImage : OneraIcon.speaker.image)
                 .font(OneraTypography.iconLabel)
                 .foregroundStyle(isSpeaking ? theme.error : theme.textTertiary)
                 .contentTransition(.symbolEffect(.replace))
@@ -708,7 +708,7 @@ struct MarkdownBlockView: View {
                 Rectangle()
                     .fill(theme.textSecondary.opacity(0.5))
                     .frame(width: 3)
-                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.small))
+                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
                 VStack(alignment: .leading, spacing: OneraSpacing.xs) {
                     ForEach(Array(quote.children.enumerated()), id: \.offset) { _, child in
                         MarkdownBlockView(block: child)
@@ -910,7 +910,7 @@ struct MarkdownTableView: View {
                                 alignment: gridAlignment(for: col)
                             )
                             .padding(.horizontal, OneraSpacing.md)
-                            .padding(.vertical, OneraSpacing.compact)
+                            .padding(.vertical, OneraSpacing.sm)
                     }
                 }
                 .background(theme.secondaryBackground.opacity(0.8))
@@ -950,9 +950,9 @@ struct MarkdownTableView: View {
                 }
             }
             .frame(minWidth: CGFloat(columnCount) * 100)
-            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
+            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.lg))
             .overlay(
-                RoundedRectangle(cornerRadius: OneraRadius.medium)
+                RoundedRectangle(cornerRadius: OneraRadius.lg)
                     .stroke(theme.border.opacity(0.6), lineWidth: 0.5)
             )
         }
@@ -993,7 +993,7 @@ struct CodeBlockView: View {
                     copyToClipboard()
                 } label: {
                     HStack(spacing: 3) {
-                        Image(systemName: copied ? "checkmark" : "doc.on.doc")
+                        (copied ? OneraIcon.checkSimple.image : OneraIcon.copy.image)
                             .font(OneraTypography.buttonSmall)
                             .contentTransition(.symbolEffect(.replace))
                         Text(copied ? "Copied!" : "Copy")
@@ -1010,7 +1010,7 @@ struct CodeBlockView: View {
                 .accessibilityLabel(copied ? "Code copied to clipboard" : "Copy code")
                 .accessibilityHint("Copies the code block to clipboard")
             }
-            .padding(.horizontal, OneraSpacing.compact)
+            .padding(.horizontal, OneraSpacing.sm)
             .padding(.vertical, OneraSpacing.xs)
             .background(theme.tertiaryBackground)
             
@@ -1021,19 +1021,19 @@ struct CodeBlockView: View {
                         .font(.system(.caption, design: .monospaced))
                         .textSelection(.enabled)
                         .padding(.vertical, OneraSpacing.sm)
-                        .padding(.horizontal, OneraSpacing.compact)
+                        .padding(.horizontal, OneraSpacing.sm)
                 } else {
                     Text(code)
                         .font(.system(.caption, design: .monospaced))
                         .foregroundStyle(theme.textPrimary)
                         .textSelection(.enabled)
                         .padding(.vertical, OneraSpacing.sm)
-                        .padding(.horizontal, OneraSpacing.compact)
+                        .padding(.horizontal, OneraSpacing.sm)
                 }
             }
             .background(theme.secondaryBackground)
         }
-        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.mediumSmall, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.lg, style: .continuous))
         .task {
             await highlightCode()
         }
@@ -1195,7 +1195,7 @@ struct AttachmentThumbnailView: View {
                         .resizable()
                         .scaledToFill()
                         .frame(width: 120, height: 120)
-                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
+                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.lg))
                 }
                 #elseif os(macOS)
                 if let nsImage = NSImage(data: attachment.data) {
@@ -1203,19 +1203,19 @@ struct AttachmentThumbnailView: View {
                         .resizable()
                         .scaledToFill()
                         .frame(width: 120, height: 120)
-                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
+                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.lg))
                 }
                 #endif
                 
             case .file:
                 HStack {
-                    Image(systemName: "doc.fill")
+                    OneraIcon.document.solidImage
                     Text(attachment.fileName ?? "File")
                         .lineLimit(1)
                 }
                 .padding()
                 .background(.regularMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.lg))
             }
         }
     }
@@ -1242,7 +1242,7 @@ struct ReasoningView: View {
         } label: {
             HStack(spacing: OneraSpacing.xs) {
                 // Brain icon with pulse animation when streaming
-                Image(systemName: "brain")
+                OneraIcon.brain.image
                     .font(OneraTypography.buttonSmall)
                     .foregroundStyle(isStreaming ? theme.reasoning : theme.textSecondary)
                     .symbolEffect(.pulse, options: .repeating, isActive: isStreaming)
@@ -1275,15 +1275,15 @@ struct ReasoningView: View {
                 
                 // Chevron (pointing right to indicate tap to expand)
                 if !isStreaming {
-                    Image(systemName: "chevron.right")
+                    OneraIcon.chevronRight.image
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(theme.textSecondary)
                 }
             }
-            .padding(.horizontal, OneraSpacing.compact)
+            .padding(.horizontal, OneraSpacing.sm)
             .padding(.vertical, OneraSpacing.xs)
             .background(
-                RoundedRectangle(cornerRadius: OneraRadius.small)
+                RoundedRectangle(cornerRadius: OneraRadius.md)
                     .fill(theme.secondaryBackground)
             )
         }
@@ -1383,7 +1383,7 @@ struct ThinkingDrawerView: View {
                         }
                     }
                 }
-                .padding(.horizontal, OneraSpacing.xl)
+                .padding(.horizontal, OneraSpacing.lg)
                 .padding(.vertical, OneraSpacing.lg)
             }
             .navigationTitle(formatDurationTitle(duration))
@@ -1395,7 +1395,7 @@ struct ThinkingDrawerView: View {
                     Button {
                         dismiss()
                     } label: {
-                        Image(systemName: "xmark.circle.fill")
+                        OneraIcon.closeFilled.image
                             .font(.title2)
                             .foregroundStyle(theme.textSecondary)
                             .frame(minWidth: AccessibilitySize.minTouchTarget, minHeight: AccessibilitySize.minTouchTarget)

@@ -107,7 +107,7 @@ struct ChatView: View {
                     Button {
                         showArtifacts = true
                     } label: {
-                        Image(systemName: "chevron.left.forwardslash.chevron.right")
+                        OneraIcon.code.image
                     }
                     .accessibilityLabel("View code artifacts")
                 }
@@ -192,12 +192,12 @@ struct ChatView: View {
             Spacer()
             
             // Centered icon/illustration area (like Captions' tilted photo stack)
-            Image(systemName: "sparkles")
-                .font(.system(size: 48))
+            OneraIcon.sparkle.image
+                .font(.system(size: OneraIconSize.xxl))
                 .foregroundStyle(theme.textTertiary)
                 .frame(width: 100, height: 100)
                 .background(theme.secondaryBackground)
-                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.xlarge, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.xxl, style: .continuous))
                 .rotationEffect(.degrees(-5))
                 .shadow(color: .black.opacity(0.3), radius: 12, x: 0, y: 4)
             
@@ -208,7 +208,7 @@ struct ChatView: View {
                         createNewChatAction()
                     } label: {
                         HStack(spacing: OneraSpacing.sm) {
-                            Image(systemName: "plus")
+                            OneraIcon.plus.image
                             Text("New Chat")
                         }
                     }
@@ -224,7 +224,7 @@ struct ChatView: View {
             }
             
             HStack(spacing: OneraSpacing.xxs) {
-                Image(systemName: "lock.fill")
+                OneraIcon.lock.solidImage
                     .font(.caption2)
                 Text("End-to-end encrypted")
             }
@@ -252,7 +252,7 @@ struct ChatView: View {
             // Show error if any
             if let error = viewModel.error {
                 HStack {
-                    Image(systemName: "exclamationmark.triangle.fill")
+                    OneraIcon.warning.solidImage
                         .foregroundStyle(.orange)
                     Text(error.localizedDescription)
                         .font(.caption)
@@ -261,7 +261,7 @@ struct ChatView: View {
                     Button {
                         viewModel.clearError()
                     } label: {
-                        Image(systemName: "xmark.circle.fill")
+                        OneraIcon.closeFilled.image
                             .foregroundStyle(theme.textTertiary)
                     }
                     .accessibilityLabel("Dismiss error")
@@ -274,7 +274,7 @@ struct ChatView: View {
             // Show hint if no model selected
             if viewModel.modelSelector.selectedModel == nil && !viewModel.modelSelector.isLoading {
                 HStack {
-                    Image(systemName: "info.circle.fill")
+                    OneraIcon.info.solidImage
                         .foregroundStyle(theme.info)
                     Text("Tap the model name above to select a model")
                         .font(.caption)

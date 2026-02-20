@@ -138,7 +138,7 @@ extension View {
     /// Apply Onera glass effect with a rounded rectangle shape
     /// On iOS 26+, automatically uses native .glassEffect() with rounded rect
     @ViewBuilder
-    func oneraGlassRounded(_ cornerRadius: CGFloat = OneraRadius.medium, showBorder: Bool = true, showShadow: Bool = true) -> some View {
+    func oneraGlassRounded(_ cornerRadius: CGFloat = OneraRadius.lg, showBorder: Bool = true, showShadow: Bool = true) -> some View {
         if #available(iOS 26.0, macOS 26.0, *) {
             self.glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         } else {
@@ -283,7 +283,7 @@ struct AdaptiveGlassProminentButtonStyle: ButtonStyle {
     VStack(spacing: 20) {
         // Capsule glass effect
         HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
+            OneraIcon.search.image
             Text("Search")
         }
         .padding(.horizontal, 16)
@@ -291,7 +291,7 @@ struct AdaptiveGlassProminentButtonStyle: ButtonStyle {
         .oneraGlass()
         
         // Circle glass effect
-        Image(systemName: "plus")
+        OneraIcon.plus.image
             .font(.title3.weight(.medium))
             .frame(width: 44, height: 44)
             .oneraGlassCircle()
@@ -310,7 +310,7 @@ struct AdaptiveGlassProminentButtonStyle: ButtonStyle {
     VStack(spacing: 20) {
         // Capsule glass effect
         HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
+            OneraIcon.search.image
             Text("Search")
         }
         .padding(.horizontal, 16)
@@ -318,7 +318,7 @@ struct AdaptiveGlassProminentButtonStyle: ButtonStyle {
         .oneraGlass()
         
         // Circle glass effect
-        Image(systemName: "plus")
+        OneraIcon.plus.image
             .font(.title3.weight(.medium))
             .frame(width: 44, height: 44)
             .oneraGlassCircle()

@@ -42,7 +42,7 @@ struct AddCredentialView: View {
                             .foregroundStyle(colorForProvider(viewModel.selectedProvider))
                             .frame(width: 44, height: 44)
                             .background(colorForProvider(viewModel.selectedProvider).opacity(0.1))
-                            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.mediumSmall, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.lg, style: .continuous))
                         
                         VStack(alignment: .leading, spacing: 4) {
                             Text(viewModel.selectedProvider.displayName)
@@ -58,7 +58,7 @@ struct AddCredentialView: View {
                             Button {
                                 openURL(url)
                             } label: {
-                                Image(systemName: "arrow.up.right.square")
+                                OneraIcon.openExternal.image
                                     .foregroundStyle(theme.accent)
                             }
                             .buttonStyle(.plain)
@@ -175,7 +175,7 @@ struct AddCredentialView: View {
                                 Text("Third-Party Data Sharing")
                                     .font(.subheadline.bold())
                             } icon: {
-                                Image(systemName: "exclamationmark.shield.fill")
+                                OneraIcon.shieldAlert.image
                                     .foregroundStyle(.orange)
                             }
                             
@@ -198,7 +198,7 @@ struct AddCredentialView: View {
                             .font(.caption)
                             .foregroundStyle(theme.textSecondary)
                     } icon: {
-                        Image(systemName: "lock.shield.fill")
+                        OneraIcon.shield.solidImage
                             .foregroundStyle(theme.success)
                     }
                 }
@@ -238,7 +238,7 @@ struct AddCredentialView: View {
                     ProgressView("Saving...")
                         .padding()
                         .background(.regularMaterial)
-                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.lg, style: .continuous))
                 }
             }
             .alert("Error", isPresented: .init(

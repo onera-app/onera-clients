@@ -156,4 +156,10 @@ struct T3ChatThemeColors: ThemeColors {
     var onboardingTextPrimary: Color { colors.onboardingTextPrimary }
     var onboardingTextSecondary: Color { colors.onboardingTextSecondary }
     var onboardingTextTertiary: Color { colors.onboardingTextTertiary }
+    var surfaceElevated: Color { colors.surfaceElevated }
+    var surfaceSunken: Color { colors.surfaceSunken }
+    var textOnAccent: Color { colors.textOnAccent }
+    var iconPrimary: Color { colors.iconPrimary }
+    var iconSecondary: Color { colors.iconSecondary }
+    var iconTertiary: Color { colors.iconTertiary }
 }

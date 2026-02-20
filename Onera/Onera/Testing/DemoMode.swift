@@ -105,7 +105,7 @@ struct DemoModeActivationModifier: ViewModifier {
                 // Activation feedback
                 if showActivationFeedback {
                     VStack {
-                        Image(systemName: "checkmark.circle.fill")
+                        OneraIcon.check.solidImage
                             .font(.largeTitle)
                             .foregroundStyle(.green)
                         
@@ -118,7 +118,7 @@ struct DemoModeActivationModifier: ViewModifier {
                             .foregroundStyle(.secondary)
                     }
                     .padding(OneraSpacing.xxl)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: OneraRadius.large))
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: OneraRadius.xl))
                     .transition(.scale.combined(with: .opacity))
                 }
             }

@@ -131,12 +131,12 @@ struct ToolInvocationView: View {
                     isExpanded.toggle()
                 }
             } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                HStack(spacing: OneraSpacing.xs) {
+                    (isExpanded ? OneraIcon.chevronDown.image : OneraIcon.chevronRight.image)
                         .font(.caption)
                         .foregroundStyle(theme.textSecondary)
                     
-                    Image(systemName: "wrench")
+                    OneraIcon.tool.image
                         .font(.subheadline)
                         .foregroundStyle(theme.textSecondary)
                     
@@ -147,7 +147,7 @@ struct ToolInvocationView: View {
                     Spacer()
                     
                     // State indicator
-                    HStack(spacing: 4) {
+                    HStack(spacing: OneraSpacing.xxs) {
                         if tool.state.isLoading {
                             ProgressView()
                                 .controlSize(.small)
@@ -162,7 +162,7 @@ struct ToolInvocationView: View {
                     }
                 }
                 .padding(.horizontal, OneraSpacing.md)
-                .padding(.vertical, OneraSpacing.compact)
+                .padding(.vertical, OneraSpacing.sm)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -172,10 +172,10 @@ struct ToolInvocationView: View {
                 Divider()
                     .padding(.horizontal, OneraSpacing.md)
                 
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: OneraSpacing.sm) {
                     // Arguments
                     if let args = tool.arguments, !args.isEmpty {
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: OneraSpacing.xxs) {
                             Text("Input")
                                 .font(.caption)
                                 .fontWeight(.medium)
@@ -188,13 +188,13 @@ struct ToolInvocationView: View {
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             }
                             .background(theme.secondaryBackground)
-                            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.small))
+                            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
                         }
                     }
                     
                     // Result
                     if tool.state == .outputAvailable, let result = tool.result, !result.isEmpty {
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: OneraSpacing.xxs) {
                             Text("Output")
                                 .font(.caption)
                                 .fontWeight(.medium)
@@ -208,13 +208,13 @@ struct ToolInvocationView: View {
                             }
                             .frame(maxHeight: 150)
                             .background(theme.secondaryBackground)
-                            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.small))
+                            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
                         }
                     }
                     
                     // Error
                     if tool.state == .outputError, let errorText = tool.errorText {
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: OneraSpacing.xxs) {
                             Text("Error")
                                 .font(.caption)
                                 .fontWeight(.medium)
@@ -226,13 +226,13 @@ struct ToolInvocationView: View {
                                 .padding(OneraSpacing.sm)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .background(theme.error.opacity(0.1))
-                                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.small))
+                                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
                         }
                     }
                     
                     // Loading state
                     if tool.state.isLoading {
-                        HStack(spacing: 8) {
+                        HStack(spacing: OneraSpacing.xs) {
                             ProgressView()
                                 .controlSize(.small)
                             Text("Executing tool...")
@@ -270,9 +270,9 @@ struct ToolInvocationView: View {
             }
         }
         .background(backgroundColor)
-        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
+        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
         .overlay(
-            RoundedRectangle(cornerRadius: OneraRadius.standard)
+            RoundedRectangle(cornerRadius: OneraRadius.md)
                 .stroke(borderColor, lineWidth: 1)
         )
         .onAppear {
@@ -329,7 +329,7 @@ struct ToolInvocationsView: View {
     
     var body: some View {
         if !tools.isEmpty {
-            VStack(spacing: 8) {
+            VStack(spacing: OneraSpacing.xs) {
                 ForEach(tools) { tool in
                     ToolInvocationView(
                         tool: tool,

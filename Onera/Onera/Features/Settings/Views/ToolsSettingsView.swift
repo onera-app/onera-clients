@@ -184,7 +184,7 @@ struct ToolsSettingsView: View {
                     Text(feature)
                         .font(.caption2)
                         .padding(.horizontal, OneraSpacing.xs)
-                        .padding(.vertical, OneraSpacing.micro)
+                        .padding(.vertical, OneraSpacing.xxxs)
                         .background(Color.secondary.opacity(0.1))
                         .clipShape(Capsule())
                 }
@@ -245,7 +245,7 @@ struct ToolsSettingsView: View {
                             Text("Connected")
                                 .font(.caption2)
                                 .padding(.horizontal, OneraSpacing.xs)
-                                .padding(.vertical, OneraSpacing.micro)
+                                .padding(.vertical, OneraSpacing.xxxs)
                                 .background(theme.success.opacity(0.15))
                                 .foregroundStyle(theme.success)
                                 .clipShape(Capsule())
@@ -279,7 +279,7 @@ struct ToolsSettingsView: View {
                             providerToRemove = provider
                             showRemoveConfirmation = true
                         } label: {
-                            Image(systemName: "trash")
+                            OneraIcon.trash.image
                                 .foregroundStyle(theme.error)
                         }
                         .buttonStyle(.borderless)
@@ -304,7 +304,7 @@ struct ToolsSettingsView: View {
             } label: {
                 HStack(spacing: 4) {
                     Text("Get API key")
-                    Image(systemName: "arrow.up.right.square")
+                    OneraIcon.openExternal.image
                         .font(.caption)
                 }
                 .font(.caption)
@@ -326,7 +326,7 @@ struct ToolsSettingsView: View {
                     Button {
                         showApiKey.toggle()
                     } label: {
-                        Image(systemName: showApiKey ? "eye.slash" : "eye")
+                        (showApiKey ? OneraIcon.eyeOff.image : OneraIcon.eye.image)
                     }
                     .buttonStyle(.borderless)
                 }

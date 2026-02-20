@@ -142,7 +142,7 @@ struct LaunchView: View {
     @Environment(\.theme) private var theme
     
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: OneraSpacing.lg) {
             Spacer()
             Spacer()
             
@@ -164,12 +164,12 @@ struct LaunchView: View {
                 
                 // Icon container
                 ZStack {
-                    RoundedRectangle(cornerRadius: OneraRadius.sheet)
+                    RoundedRectangle(cornerRadius: OneraRadius.xxl)
                         .fill(theme.background)
                         .shadow(color: .black.opacity(0.1), radius: 20, y: 10)
                     
                     // Lock + chat bubble icon representing secure chat
-                    Image(systemName: "lock.shield.fill")
+                    OneraIcon.shield.solidImage
                         .font(.title.weight(.medium))
                         .foregroundStyle(
                             LinearGradient(
@@ -182,7 +182,7 @@ struct LaunchView: View {
                 .frame(width: 80, height: 80)
             }
             
-            VStack(spacing: 8) {
+            VStack(spacing: OneraSpacing.xs) {
                 Text("Onera")
                     .font(.title2)
                     .fontWeight(.semibold)
@@ -198,7 +198,7 @@ struct LaunchView: View {
             // Subtle loading indicator at bottom
             ProgressView()
                 .tint(.secondary)
-                .padding(.bottom, 60)
+                .padding(.bottom, OneraSpacing.xxxl)
         }
         .accessibilityIdentifier("launchView")
         .onAppear {

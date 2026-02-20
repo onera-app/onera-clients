@@ -35,7 +35,7 @@ struct CredentialsListView: View {
                 Button {
                     viewModel.showAddCredential = true
                 } label: {
-                    Image(systemName: "plus")
+                    OneraIcon.plus.image
                 }
             }
         }
@@ -75,7 +75,7 @@ struct CredentialsListView: View {
     private var emptyState: some View {
         Section {
             VStack(spacing: 16) {
-                Image(systemName: "key.horizontal")
+                OneraIcon.key.image
                     .font(.largeTitle)
                     .foregroundStyle(theme.textSecondary)
                 

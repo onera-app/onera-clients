@@ -7,84 +7,80 @@
 
 import SwiftUI
 
-/// Onera Design System - Corner Radius Tokens
-/// Consistent corner radius values used throughout the app
+/// Onera Design System — Corner Radius Tokens
+///
+/// Scale: 4 → 6 → 8 → 12 → 16 → 20 → pill
+/// Uses `.continuous` style throughout for the native Apple look.
 enum OneraRadius {
     
     // MARK: - Base Scale
     
-    /// 4pt - Minimal rounding (inline badges)
+    /// 4pt — Minimal rounding: inline badges, code inline
     static let xs: CGFloat = 4
     
-    /// 6pt - Small rounding (code blocks, small buttons)
-    static let small: CGFloat = 6
+    /// 6pt — Small rounding: small buttons, chips, code blocks
+    static let sm: CGFloat = 6
     
-    /// 8pt - Standard rounding (thumbnails, small cards)
-    static let standard: CGFloat = 8
+    /// 8pt — Standard rounding: thumbnails, small cards
+    static let md: CGFloat = 8
     
-    /// 10pt - Medium-small rounding (option buttons)
-    static let mediumSmall: CGFloat = 10
+    /// 12pt — Medium rounding: cards, inputs, list items, buttons
+    static let lg: CGFloat = 12
     
-    /// 12pt - Medium rounding (cards, inputs, list items)
-    static let medium: CGFloat = 12
+    /// 16pt — Large rounding: modals, sheets, containers
+    static let xl: CGFloat = 16
     
-    /// 16pt - Large rounding (modals, sheets)
-    static let large: CGFloat = 16
+    /// 20pt — Extra large: message bubbles, large containers
+    static let xxl: CGFloat = 20
     
-    /// 20pt - Extra large rounding (user bubbles, containers)
-    static let xlarge: CGFloat = 20
+    /// Full pill / capsule
+    static let pill: CGFloat = 9999
     
-    /// 24pt - Drawer/sheet rounding
-    static let sheet: CGFloat = 24
+    // MARK: - Semantic Aliases
     
-    /// 28pt - Pill buttons (login buttons, capsules)
-    static let pill: CGFloat = 28
+    /// Input field corner radius (12pt)
+    static let input: CGFloat = lg
     
-    // MARK: - Semantic Radius
+    /// Button corner radius (12pt)
+    static let button: CGFloat = lg
     
-    /// Input field corner radius
-    static let input: CGFloat = 12
+    /// Card corner radius (12pt)
+    static let card: CGFloat = lg
     
-    /// Button corner radius
-    static let button: CGFloat = 12
+    /// Modal / sheet corner radius (16pt)
+    static let modal: CGFloat = xl
     
-    /// Card corner radius
-    static let card: CGFloat = 12
+    /// Message bubble corner radius (20pt)
+    static let bubble: CGFloat = xxl
     
-    /// Modal/sheet corner radius
-    static let modal: CGFloat = 24
-    
-    /// Message bubble corner radius
-    static let bubble: CGFloat = 20
-    
-    /// Thumbnail corner radius
-    static let thumbnail: CGFloat = 8
+    /// Thumbnail corner radius (8pt)
+    static let thumbnail: CGFloat = md
 }
 
 // MARK: - Shape Helpers
 
 extension RoundedRectangle {
-    /// Standard card shape
+    /// Standard card shape (12pt continuous)
     static var card: RoundedRectangle {
         RoundedRectangle(cornerRadius: OneraRadius.card, style: .continuous)
     }
     
-    /// Input field shape
+    /// Input field shape (12pt continuous)
     static var input: RoundedRectangle {
         RoundedRectangle(cornerRadius: OneraRadius.input, style: .continuous)
     }
     
-    /// Button shape
+    /// Button shape (12pt continuous)
     static var button: RoundedRectangle {
         RoundedRectangle(cornerRadius: OneraRadius.button, style: .continuous)
     }
     
-    /// Modal/sheet shape
+    /// Modal / sheet shape (16pt continuous)
     static var modal: RoundedRectangle {
         RoundedRectangle(cornerRadius: OneraRadius.modal, style: .continuous)
     }
     
-    /// Message bubble shape
+    /// Message bubble shape (20pt continuous)
     static var bubble: RoundedRectangle {
         RoundedRectangle(cornerRadius: OneraRadius.bubble, style: .continuous)
     }

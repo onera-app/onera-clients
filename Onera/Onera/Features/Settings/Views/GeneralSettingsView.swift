@@ -45,7 +45,7 @@ struct GeneralSettingsView: View {
     
     private var systemPromptSection: some View {
         Section {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: OneraSpacing.xs) {
                 Text("System Prompt")
                     .font(.headline)
                 
@@ -55,7 +55,7 @@ struct GeneralSettingsView: View {
                     .scrollContentBackground(.hidden)
                     .padding(OneraSpacing.sm)
                     .background(theme.secondaryBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
+                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
                 
                 Text("This prompt is sent at the beginning of every conversation")
                     .font(.caption)
@@ -86,7 +86,7 @@ struct GeneralSettingsView: View {
         Section {
             DisclosureGroup("Provider Settings", isExpanded: $showProviderSettings) {
                 // OpenAI Settings
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: OneraSpacing.sm) {
                     Text("OpenAI")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -116,7 +116,7 @@ struct GeneralSettingsView: View {
                 Divider()
                 
                 // Anthropic Settings
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: OneraSpacing.sm) {
                     Text("Anthropic")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -141,7 +141,7 @@ struct GeneralSettingsView: View {
         Section {
             DisclosureGroup("Advanced Parameters", isExpanded: $showAdvanced) {
                 // Temperature
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: OneraSpacing.xs) {
                     HStack {
                         Text("Temperature")
                         Spacer()
@@ -156,7 +156,7 @@ struct GeneralSettingsView: View {
                 .padding(.vertical, OneraSpacing.xxs)
                 
                 // Top P
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: OneraSpacing.xs) {
                     HStack {
                         Text("Top P (Nucleus Sampling)")
                         Spacer()
@@ -171,7 +171,7 @@ struct GeneralSettingsView: View {
                 .padding(.vertical, OneraSpacing.xxs)
                 
                 // Top K
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: OneraSpacing.xs) {
                     HStack {
                         Text("Top K")
                         Spacer()
@@ -189,7 +189,7 @@ struct GeneralSettingsView: View {
                 .padding(.vertical, OneraSpacing.xxs)
                 
                 // Max Tokens
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: OneraSpacing.xs) {
                     HStack {
                         Text("Max Tokens")
                         Spacer()
@@ -205,7 +205,7 @@ struct GeneralSettingsView: View {
                 .padding(.vertical, OneraSpacing.xxs)
                 
                 // Frequency Penalty
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: OneraSpacing.xs) {
                     HStack {
                         Text("Frequency Penalty")
                         Spacer()
@@ -220,7 +220,7 @@ struct GeneralSettingsView: View {
                 .padding(.vertical, OneraSpacing.xxs)
                 
                 // Presence Penalty
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: OneraSpacing.xs) {
                     HStack {
                         Text("Presence Penalty")
                         Spacer()
@@ -235,7 +235,7 @@ struct GeneralSettingsView: View {
                 .padding(.vertical, OneraSpacing.xxs)
                 
                 // Seed
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: OneraSpacing.xs) {
                     HStack {
                         Text("Seed")
                         Spacer()

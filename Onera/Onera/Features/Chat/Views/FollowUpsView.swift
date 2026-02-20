@@ -66,11 +66,11 @@ private struct FollowUpPill: View {
                 .padding(.horizontal, OneraSpacing.md)
                 .padding(.vertical, OneraSpacing.sm)
                 .background(
-                    RoundedRectangle(cornerRadius: OneraRadius.large)
+                    RoundedRectangle(cornerRadius: OneraRadius.xl)
                         .fill(isHovered ? theme.accent.opacity(0.15) : theme.secondaryBackground)
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: OneraRadius.large)
+                    RoundedRectangle(cornerRadius: OneraRadius.xl)
                         .stroke(isHovered ? theme.accent.opacity(0.3) : theme.border, lineWidth: 1)
                 )
         }

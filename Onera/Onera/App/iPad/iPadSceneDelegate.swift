@@ -228,7 +228,7 @@ struct DetachedChatWindowView: View {
                                     await viewModel.createNewChat()
                                 }
                             } label: {
-                                Image(systemName: "square.and.pencil")
+                                OneraIcon.chatAdd.image
                             }
                         }
                     }

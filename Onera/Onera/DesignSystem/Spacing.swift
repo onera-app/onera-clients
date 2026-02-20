@@ -2,90 +2,88 @@
 //  Spacing.swift
 //  Onera
 //
-//  Centralized spacing scale
+//  Centralized spacing scale — strict 8pt grid
 //
 
 import SwiftUI
 
-/// Onera Design System - Spacing Tokens
-/// Consistent spacing values used throughout the app
+/// Onera Design System — Spacing Tokens
+///
+/// Built on a strict 8-point grid with 2pt and 4pt micro values.
+/// All spacing in the app should reference these tokens.
+///
+/// Scale: 2 → 4 → 8 → 12 → 16 → 24 → 32 → 48 → 64
 enum OneraSpacing {
     
-    // MARK: - Base Scale
+    // MARK: - Base Scale (8pt grid)
     
-    /// 2pt - Micro spacing, badge vertical padding
-    static let micro: CGFloat = 2
+    /// 2pt — Micro spacing: badge vertical padding, hairline gaps
+    static let xxxs: CGFloat = 2
     
-    /// 4pt - Minimal spacing, tight layouts
+    /// 4pt — Minimal spacing: tight inline elements, icon badge offsets
     static let xxs: CGFloat = 4
     
-    /// 6pt - Very small gaps
-    static let xs: CGFloat = 6
+    /// 8pt — Small spacing: inline elements, small gaps, icon-to-text tight
+    static let xs: CGFloat = 8
     
-    /// 8pt - Small spacing, inline elements
-    static let sm: CGFloat = 8
+    /// 12pt — Standard inner padding: list item gaps, compact card padding
+    static let sm: CGFloat = 12
     
-    /// 10pt - Compact padding
-    static let compact: CGFloat = 10
+    /// 16pt — Standard section padding: page margins, card padding, button H padding
+    static let md: CGFloat = 16
     
-    /// 12pt - Medium spacing, standard gaps
-    static let md: CGFloat = 12
+    /// 24pt — Section gaps: generous padding, section separators
+    static let lg: CGFloat = 24
     
-    /// 14pt - Comfortable padding
-    static let comfortable: CGFloat = 14
+    /// 32pt — Large section gaps: major content separators
+    static let xl: CGFloat = 32
     
-    /// 16pt - Large spacing, section padding
-    static let lg: CGFloat = 16
+    /// 48pt — Hero spacing: major section dividers, empty state spacing
+    static let xxl: CGFloat = 48
     
-    /// 20pt - Extra large spacing
-    static let xl: CGFloat = 20
-    
-    /// 24pt - Section separators
-    static let xxl: CGFloat = 24
-    
-    /// 32pt - Large section gaps
-    static let xxxl: CGFloat = 32
-    
-    /// 40pt - Maximum spacing
-    static let max: CGFloat = 40
+    /// 64pt — Maximum breathing room: splash/onboarding hero areas
+    static let xxxl: CGFloat = 64
     
     // MARK: - Semantic Spacing
     
-    /// Standard horizontal page padding
-    static let pagePadding: CGFloat = 16
+    /// Standard horizontal page padding (16pt)
+    static let pagePadding: CGFloat = md
     
-    /// Standard vertical content padding
-    static let contentPadding: CGFloat = 12
+    /// Standard vertical content padding (12pt)
+    static let contentPadding: CGFloat = sm
     
-    /// Padding inside cards/containers
-    static let cardPadding: CGFloat = 16
+    /// Padding inside cards/containers (16pt)
+    static let cardPadding: CGFloat = md
     
-    /// Gap between list items
-    static let listItemGap: CGFloat = 4
+    /// Gap between list items (4pt)
+    static let listItemGap: CGFloat = xxs
     
-    /// Gap between sections
-    static let sectionGap: CGFloat = 24
+    /// Gap between sections (24pt)
+    static let sectionGap: CGFloat = lg
     
-    /// Inset for grouped list rows
-    static let listRowInset: CGFloat = 12
+    /// Inset for grouped list rows (12pt)
+    static let listRowInset: CGFloat = sm
     
-    /// Icon to text spacing
-    static let iconTextGap: CGFloat = 12
+    /// Icon to text spacing (8pt)
+    static let iconTextGap: CGFloat = xs
     
-    /// Button internal padding (horizontal)
-    static let buttonPaddingH: CGFloat = 16
+    /// Button internal padding — horizontal (16pt)
+    static let buttonPaddingH: CGFloat = md
     
-    /// Button internal padding (vertical)
-    static let buttonPaddingV: CGFloat = 12
+    /// Button internal padding — vertical (12pt)
+    static let buttonPaddingV: CGFloat = sm
+    
+    /// Gap between buttons in a group (12pt)
+    static let buttonGap: CGFloat = sm
     
     // MARK: - Dynamic Spacing
     
     /// Message spacing based on chat density preference
     static func messageSpacing(for density: String) -> CGFloat {
         switch density {
-        case "compact": return sm     // 8pt
-        case "spacious": return xxl   // 24pt
-        default: return lg            // 16pt (comfortable)
+        case "compact": return xs     // 8pt
+        case "spacious": return lg    // 24pt
+        default: return md            // 16pt (comfortable)
         }
     }
 }
@@ -93,17 +91,17 @@ enum OneraSpacing {
 // MARK: - View Extension for Semantic Padding
 
 extension View {
-    /// Apply standard page padding
+    /// Apply standard page padding (16pt horizontal)
     func pagePadding() -> some View {
         self.padding(.horizontal, OneraSpacing.pagePadding)
     }
     
-    /// Apply standard card padding
+    /// Apply standard card padding (16pt all sides)
     func cardPadding() -> some View {
         self.padding(OneraSpacing.cardPadding)
     }
     
-    /// Apply standard content padding
+    /// Apply standard content padding (12pt all sides)
     func contentPadding() -> some View {
         self.padding(OneraSpacing.contentPadding)
     }

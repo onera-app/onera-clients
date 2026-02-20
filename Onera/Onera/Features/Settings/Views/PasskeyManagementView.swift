@@ -222,7 +222,7 @@ struct PasskeyManagementView: View {
                         editingPasskeyId = nil
                     }
                 } label: {
-                    Image(systemName: "checkmark.circle.fill")
+                    OneraIcon.check.solidImage
                         .foregroundStyle(.green)
                 }
                 .buttonStyle(.plain)
@@ -230,14 +230,14 @@ struct PasskeyManagementView: View {
                 Button {
                     editingPasskeyId = nil
                 } label: {
-                    Image(systemName: "xmark.circle.fill")
+                    OneraIcon.closeFilled.image
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
             }
         } else {
             HStack {
-                Image(systemName: passkey.credentialDeviceType == "multiDevice" ? "icloud" : "iphone")
+                (passkey.credentialDeviceType == "multiDevice" ? OneraIcon.icloud.image : OneraIcon.devicePhone.image)
                     .foregroundStyle(.secondary)
                     .frame(width: 24)
                 
@@ -296,7 +296,7 @@ struct PasskeyManagementView: View {
     
     private var registerSheet: some View {
         VStack(spacing: 20) {
-            Image(systemName: "person.badge.key.fill")
+            OneraIcon.passkeySolid.image
                 .font(.largeTitle)
                 .foregroundStyle(.blue)
             

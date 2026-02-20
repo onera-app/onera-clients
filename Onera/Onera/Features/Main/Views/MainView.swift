@@ -123,7 +123,8 @@ struct MainView: View {
                 // Main chat content + toolbar (slides together)
                 ZStack {
                     NavigationStack {
-                        chatContent
+                         chatContent
+                            #if os(iOS)
                             .toolbar {
                                 ToolbarItem(placement: .navigationBarLeading) {
                                     Button {
@@ -132,7 +133,7 @@ struct MainView: View {
                                             isDrawerOpen.toggle()
                                         }
                                     } label: {
-                                        Image(systemName: "sidebar.leading")
+                                        OneraIcon.sidebar.image
                                             .fontWeight(.bold)
                                             .symbolVariant(isDrawerOpen ? .fill : .none)
                                     }
@@ -150,7 +151,7 @@ struct MainView: View {
                                     Button {
                                         createNewChat()
                                     } label: {
-                                        Image(systemName: "square.and.pencil")
+                                        OneraIcon.chatAdd.image
                                     }
                                     .accessibilityLabel("New chat")
                                     
@@ -170,6 +171,7 @@ struct MainView: View {
                             }
                             .toolbarBackground(.hidden, for: .navigationBar)
                             .navigationBarTitleDisplayMode(.inline)
+                            #endif
                     }
                     .allowsHitTesting(!isDrawerOpen)
                     
@@ -325,7 +327,7 @@ struct MainView: View {
                                 HStack {
                                     Text(model.displayName)
                                     if viewModel.modelSelector.selectedModel?.id == model.id {
-                                        Image(systemName: "checkmark")
+                                        OneraIcon.checkSimple.image
                                     }
                                 }
                             }
@@ -342,7 +344,7 @@ struct MainView: View {
                         .accessibilityLabel("Loading models")
                 } else {
                     // Gold sparkle icon like Captions "Get MAX" badge
-                    Image(systemName: "sparkles")
+                    OneraIcon.sparkle.image
                         .font(.caption)
                         .foregroundStyle(theme.goldAccent)
                     

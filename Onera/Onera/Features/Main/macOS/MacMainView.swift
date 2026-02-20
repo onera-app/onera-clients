@@ -82,6 +82,7 @@ struct MacMainView: View {
         } detail: {
             // Detail: Chat or Note content
             detailColumn
+                .background(theme.secondaryBackground)
         }
         .navigationSplitViewStyle(.balanced)
         .toolbarBackground(.hidden, for: .windowToolbar)
@@ -186,12 +187,12 @@ struct MacMainView: View {
         }
     }
     
-    // MARK: - Sidebar (Native macOS sidebar)
+    // MARK: - Sidebar (Codex-style navigation)
     
     @ViewBuilder
     private var sidebarColumn: some View {
         List(selection: currentListSelection) {
-            // Navigation section
+            // Navigation items
             Section {
                 Label("Chats", systemImage: "bubble.left.and.bubble.right")
                     .tag(SidebarItem.chats)
@@ -203,27 +204,48 @@ struct MacMainView: View {
                     .tag(SidebarItem.prompts)
             }
             
-            // Folder tree section (visible when viewing chats or notes)
-            if !showingPrompts, let folderVM = folderViewModel {
-                Section("Folders") {
-                    FolderTreeView(
-                        viewModel: folderVM,
-                        selectedFolderId: selectedFolder == "all" ? nil : selectedFolder,
-                        onSelectFolder: { folderId in
-                            selectedFolder = folderId ?? "all"
-                        },
-                        showAllOption: true
-                    )
-                }
-            }
-            
-            // Items section based on current view
+            // Content: Notes, Prompts, or Chats
             if showingNotes {
                 notesListSection
             } else if showingPrompts {
                 promptsListSection
             } else {
-                chatsListSection
+                // Chats section with project grouping
+                Section {
+                    projectThreadsSections
+                } header: {
+                    HStack {
+                        Text("Chats")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(theme.textTertiary)
+                        
+                        Spacer()
+                        
+                        Button {
+                            folderViewModel?.startCreatingFolder()
+                        } label: {
+                            OneraIcon.folderAdd.image
+                                .font(.caption)
+                                .foregroundStyle(theme.textTertiary)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Add project")
+                        
+                        Menu {
+                            Button { } label: { Label("All Chats", systemImage: "list.bullet") }
+                            Button { } label: { Label("Pinned Only", systemImage: "pin") }
+                            Divider()
+                            Button { } label: { Label("Sort by Date", systemImage: "calendar") }
+                            Button { } label: { Label("Sort by Name", systemImage: "textformat.abc") }
+                        } label: {
+                            OneraIcon.filter.image
+                                .font(.caption)
+                                .foregroundStyle(theme.textTertiary)
+                        }
+                        .menuIndicator(.hidden)
+                        .fixedSize()
+                    }
+                }
             }
         }
         .listStyle(.sidebar)
@@ -235,6 +257,218 @@ struct MacMainView: View {
                 userProfileButton
             }
             .background(.bar)
+        }
+        .background(theme.background)
+        .sheet(isPresented: Binding(
+            get: { folderViewModel?.isCreatingFolder ?? false },
+            set: { if !$0 { folderViewModel?.cancelCreatingFolder() } }
+        )) {
+            newProjectSheet
+        }
+    }
+    
+    // MARK: - User Profile Button (ChatGPT style)
+    
+    @ViewBuilder
+    private var userProfileButton: some View {
+        Menu {
+            Button {
+                openSettings()
+            } label: {
+                Label("Settings...", systemImage: "gearshape")
+            }
+            .keyboardShortcut(",", modifiers: .command)
+            
+            Divider()
+            
+            Button(role: .destructive) {
+                showSignOutConfirmation = true
+            } label: {
+                Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+            }
+        } label: {
+            HStack(spacing: OneraSpacing.sm) {
+                // Avatar circle with initials
+                Circle()
+                    .fill(theme.accent.opacity(0.2))
+                    .frame(width: avatarSize, height: avatarSize)
+                    .overlay {
+                        Text(currentUserInitials)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(theme.accent)
+                    }
+                
+                // User name
+                Text(currentUserName)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(theme.textPrimary)
+                    .lineLimit(1)
+                
+                Spacer()
+            }
+            .padding(.horizontal, OneraSpacing.md)
+            .frame(height: 48)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+    }
+    
+    // MARK: - Project/Threads Sections (T3 Code style)
+    
+    @ViewBuilder
+    private var projectThreadsSections: some View {
+        if let listViewModel = chatListViewModel, let folderVM = folderViewModel {
+            // Group chats by folder (project)
+            let projectGroups = projectGroupedChats(
+                chats: filteredChats(from: listViewModel),
+                folders: folderVM.folders
+            )
+            
+            // Each folder = a project section with disclosure
+            ForEach(Array(projectGroups.enumerated()), id: \.offset) { _, group in
+                Section(isExpanded: projectExpandedBinding(for: group.folder?.id)) {
+                    ForEach(group.chats, id: \.id) { chat in
+                        MacThreadListRow(
+                            chat: chat,
+                            isSelected: selectedChatId == chat.id
+                        )
+                        .tag(SidebarItem.chat(chat.id))
+                        .contextMenu {
+                            chatContextMenu(chat: chat, listViewModel: listViewModel)
+                        }
+                    }
+                    
+                    // "+ New Chat" button inside each project
+                    Button {
+                        createNewChatInFolder(group.folder?.id)
+                    } label: {
+                        HStack(spacing: OneraSpacing.xxs) {
+                            OneraIcon.plus.image
+                                .font(.caption2)
+                            Text("New Chat")
+                                .font(.caption)
+                        }
+                        .foregroundStyle(theme.textTertiary)
+                    }
+                    .buttonStyle(.plain)
+                } header: {
+                    HStack {
+                        if let folder = group.folder {
+                            Text(folder.name)
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(theme.textPrimary)
+                        } else {
+                            Text("Threads")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(theme.textPrimary)
+                        }
+                        
+                        Spacer()
+                        
+                        Text("\(group.chats.count)")
+                            .font(.caption)
+                            .foregroundStyle(theme.textTertiary)
+                    }
+                }
+            }
+        }
+    }
+    
+    // MARK: - New Project Sheet
+    
+    private var newProjectSheet: some View {
+        VStack(spacing: OneraSpacing.lg) {
+            Text("New Project")
+                .font(.headline)
+            
+            TextField("Project name", text: Binding(
+                get: { folderViewModel?.newFolderName ?? "" },
+                set: { folderViewModel?.newFolderName = $0 }
+            ))
+            .textFieldStyle(.roundedBorder)
+            
+            HStack {
+                Button("Cancel") {
+                    folderViewModel?.cancelCreatingFolder()
+                }
+                .keyboardShortcut(.escape)
+                
+                Button("Create") {
+                    Task { await folderViewModel?.createFolder() }
+                }
+                .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.return)
+                .disabled(folderViewModel?.newFolderName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+            }
+        }
+        .padding(OneraSpacing.lg)
+        .frame(width: 300)
+    }
+    
+    // MARK: - Project Grouping
+    
+    struct ProjectGroup {
+        let folder: Folder?
+        let chats: [ChatSummary]
+    }
+    
+    private func projectGroupedChats(chats: [ChatSummary], folders: [Folder]) -> [ProjectGroup] {
+        var groups: [ProjectGroup] = []
+        
+        // Group chats by folderId
+        let chatsByFolder = Dictionary(grouping: chats) { $0.folderId }
+        
+        // Create a group for each folder that has chats or exists
+        for folder in folders.sorted(by: { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }) {
+            let folderChats = (chatsByFolder[folder.id] ?? [])
+                .sorted { $0.updatedAt > $1.updatedAt }
+            // Show folder even if empty (user created it as a project)
+            groups.append(ProjectGroup(folder: folder, chats: folderChats))
+        }
+        
+        // Unfiled chats (no folder)
+        let unfiledChats = (chatsByFolder[nil] ?? [])
+            .sorted { $0.updatedAt > $1.updatedAt }
+        if !unfiledChats.isEmpty {
+            groups.append(ProjectGroup(folder: nil, chats: unfiledChats))
+        }
+        
+        return groups
+    }
+    
+    @State private var expandedProjects: Set<String> = []
+    
+    private func projectExpandedBinding(for folderId: String?) -> Binding<Bool> {
+        let key = folderId ?? "__unfiled__"
+        return Binding(
+            get: { expandedProjects.contains(key) || expandedProjects.isEmpty },
+            set: { isExpanded in
+                // Initialize all as expanded on first interaction
+                if expandedProjects.isEmpty {
+                    let allKeys = (folderViewModel?.folders.map(\.id) ?? []) + ["__unfiled__"]
+                    expandedProjects = Set(allKeys)
+                }
+                if isExpanded {
+                    expandedProjects.insert(key)
+                } else {
+                    expandedProjects.remove(key)
+                }
+            }
+        )
+    }
+    
+    private func createNewChatInFolder(_ folderId: String?) {
+        selectedChatId = nil
+        Task {
+            await chatViewModel?.createNewChat()
+            if let folderId, let chatId = chatViewModel?.chat?.id {
+                await chatListViewModel?.moveChatToFolder(
+                    ChatSummary(id: chatId, title: "New Chat", createdAt: Date(), updatedAt: Date(), folderId: folderId),
+                    folderId: folderId
+                )
+            }
         }
     }
     
@@ -454,54 +688,6 @@ struct MacMainView: View {
         }
     }
     
-    // MARK: - User Profile Button (ChatGPT style - just name with chevron)
-    
-    @ViewBuilder
-    private var userProfileButton: some View {
-        Menu {
-            Button {
-                openSettings()
-            } label: {
-                Label("Settings...", systemImage: "gearshape")
-            }
-            .keyboardShortcut(",", modifiers: .command)
-            
-            Divider()
-            
-            Button(role: .destructive) {
-                showSignOutConfirmation = true
-            } label: {
-                Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
-            }
-        } label: {
-            HStack(spacing: 10) {
-                // Avatar circle with initials
-                Circle()
-                    .fill(theme.accent.opacity(0.2))
-                    .frame(width: avatarSize, height: avatarSize)
-                    .overlay {
-                        Text(currentUserInitials)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(theme.accent)
-                    }
-                
-                // User name
-                Text(currentUserName)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(theme.textPrimary)
-                    .lineLimit(1)
-                
-                Spacer()
-            }
-            .padding(.horizontal, OneraSpacing.md)
-            .frame(height: 48)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .menuIndicator(.hidden)
-    }
-    
     private var currentUserName: String {
         dependencies.authService.currentUser?.displayName ?? "User"
     }
@@ -533,10 +719,10 @@ struct MacMainView: View {
     }
     
     private var promptsEmptyDetailView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: OneraSpacing.md) {
             Spacer()
             
-            Image(systemName: "text.quote")
+            OneraIcon.quote.image
                 .font(.largeTitle.weight(.light))
                 .foregroundStyle(theme.textTertiary)
             
@@ -603,10 +789,10 @@ struct MacMainView: View {
     }
     
     private var notesEmptyDetailView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: OneraSpacing.md) {
             Spacer()
             
-            Image(systemName: "note.text")
+            OneraIcon.note.image
                 .font(.largeTitle.weight(.light))
                 .foregroundStyle(theme.textTertiary)
             
@@ -631,95 +817,166 @@ struct MacMainView: View {
     }
     
     private var emptyDetailView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: OneraSpacing.md) {
             Spacer()
             
-            Image(systemName: "bubble.left.and.bubble.right")
-                .font(.largeTitle.weight(.light))
+            OneraIcon.chatWithText.image
+                .font(.system(size: 36, weight: .light))
                 .foregroundStyle(theme.textTertiary)
             
-            Text("Start a conversation")
-                .font(.title3)
-                .foregroundStyle(theme.textSecondary)
+            VStack(spacing: OneraSpacing.xxs) {
+                Text("Select a thread")
+                    .font(.title3.weight(.medium))
+                    .foregroundStyle(theme.textSecondary)
+                
+                Text("or create a new one to get started")
+                    .font(.callout)
+                    .foregroundStyle(theme.textTertiary)
+            }
             
-            HStack(spacing: 4) {
-                Image(systemName: "lock.fill")
+            Button {
+                createNewChat()
+            } label: {
+                HStack(spacing: OneraSpacing.xxs) {
+                    OneraIcon.plus.image
+                        .font(.caption)
+                    Text("New Thread")
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.regular)
+            
+            HStack(spacing: OneraSpacing.xxs) {
+                OneraIcon.lock.solidImage
                     .font(.caption2)
                 Text("End-to-end encrypted")
             }
             .font(.caption)
             .foregroundStyle(theme.textTertiary)
+            .padding(.top, OneraSpacing.sm)
             
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
-    // MARK: - Toolbar
+    // MARK: - Toolbar (Codex style: "New Chat" left, title center, actions right)
     
     @ToolbarContentBuilder
     private var macToolbar: some ToolbarContent {
-        // New chat/note/prompt button
+        // Left: "New Chat" button in toolbar
         ToolbarItem(placement: .navigation) {
             Button {
-                if showingNotes {
-                    notesViewModel?.createNote()
-                } else if showingPrompts {
-                    promptsViewModel?.createPrompt()
-                } else {
-                    createNewChat()
-                }
+                createNewChat()
             } label: {
-                Image(systemName: "square.and.pencil")
+                Text("New Chat")
+                    .font(.subheadline)
             }
-            .help(showingNotes ? "New Note (⌘N)" : showingPrompts ? "New Prompt (⌘N)" : "New Chat (⌘N)")
-            .accessibilityLabel(showingNotes ? "New note" : showingPrompts ? "New prompt" : "New chat")
         }
         
-        // Model selector (only for chats)
+        // Center: Thread title + project badge
         ToolbarItem(placement: .principal) {
             if !showingNotes && !showingPrompts, let chatVM = chatViewModel {
-                MacModelSelectorButton(viewModel: chatVM.modelSelector)
-            }
-        }
-        
-        // Artifacts toggle (only for chats with code)
-        ToolbarItem(placement: .primaryAction) {
-            if !showingNotes && !showingPrompts, let chatVM = chatViewModel,
-               !ArtifactExtractor.extractArtifacts(from: chatVM.messages).isEmpty {
-                Button {
-                    withAnimation {
-                        chatVM.showArtifactsPanel.toggle()
+                HStack(spacing: OneraSpacing.xs) {
+                    Text(chatVM.chat?.title ?? "New Thread")
+                        .font(.subheadline.weight(.medium))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                    
+                    // Project badge (folder name)
+                    if let folderId = chatVM.chat?.folderId,
+                       let folder = folderViewModel?.getFolder(id: folderId) {
+                        Text(folder.name)
+                            .font(.caption2.weight(.medium))
+                            .padding(.horizontal, OneraSpacing.xs)
+                            .padding(.vertical, 2)
+                            .background(theme.accent.opacity(0.15))
+                            .foregroundStyle(theme.accent)
+                            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.xs, style: .continuous))
+                            .layoutPriority(-1)
                     }
-                } label: {
-                    Image(systemName: chatVM.showArtifactsPanel ? "sidebar.trailing" : "sidebar.trailing")
-                        .foregroundStyle(chatVM.showArtifactsPanel ? theme.accent : theme.textSecondary)
                 }
-                .help(chatVM.showArtifactsPanel ? "Hide Artifacts" : "Show Artifacts")
-                .accessibilityLabel("Toggle artifacts panel")
+                .frame(maxWidth: 400)
+            } else if showingNotes {
+                Text("Notes")
+                    .font(.subheadline.weight(.medium))
+            } else if showingPrompts {
+                Text("Prompts")
+                    .font(.subheadline.weight(.medium))
             }
         }
         
-        // Share menu (only when chat content is available)
+        // Right: Open dropdown + more actions
         ToolbarItem(placement: .primaryAction) {
-            if !showingNotes, chatViewModel?.chat != nil {
-                Menu {
-                    Button {
-                        exportCurrentChatAsText()
-                    } label: {
-                        Label("Copy as Text", systemImage: "doc.text")
+            HStack(spacing: OneraSpacing.sm) {
+                if !showingNotes && !showingPrompts {
+                    // "Open" dropdown (Codex style)
+                    if let chatVM = chatViewModel, chatVM.chat != nil {
+                        Menu {
+                            Button {
+                                if let chatId = chatVM.chat?.id {
+                                    openWindow(value: chatId)
+                                }
+                            } label: {
+                                Label("Open in New Window", systemImage: "uiwindow.split.2x1")
+                            }
+                            
+                            if !ArtifactExtractor.extractArtifacts(from: chatVM.messages).isEmpty {
+                                Button {
+                                    withAnimation { chatVM.showArtifactsPanel.toggle() }
+                                } label: {
+                                    Label(
+                                        chatVM.showArtifactsPanel ? "Hide Artifacts" : "Show Artifacts",
+                                        systemImage: "sidebar.trailing"
+                                    )
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: OneraSpacing.xxs) {
+                                OneraIcon.openInApp.image
+                                    .font(.caption)
+                                Text("Open")
+                                    .font(.caption)
+                            }
+                            .padding(.horizontal, OneraSpacing.xs)
+                            .padding(.vertical, OneraSpacing.xxs)
+                            .background(theme.tertiaryBackground)
+                            .clipShape(Capsule())
+                        }
+                        .menuIndicator(.hidden)
                     }
                     
-                    Button {
-                        exportCurrentChatAsMarkdown()
-                    } label: {
-                        Label("Copy as Markdown", systemImage: "doc.richtext")
+                    // Export/share
+                    if let chatVM = chatViewModel, chatVM.chat != nil {
+                        Menu {
+                            Button {
+                                exportCurrentChatAsText()
+                            } label: {
+                                Label("Copy as Text", systemImage: "doc.text")
+                            }
+                            Button {
+                                exportCurrentChatAsMarkdown()
+                            } label: {
+                                Label("Copy as Markdown", systemImage: "doc.richtext")
+                            }
+                        } label: {
+                            OneraIcon.share.image
+                                .font(.subheadline)
+                                .foregroundStyle(theme.textSecondary)
+                        }
+                        .menuIndicator(.hidden)
                     }
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
                 }
-                .help("Share")
-                .accessibilityLabel("Share conversation")
+                
+                // Global search
+                Button {
+                    showGlobalSearch = true
+                } label: {
+                    OneraIcon.search.image
+                        .font(.subheadline)
+                        .foregroundStyle(theme.textSecondary)
+                }
+                .help("Search (⌘F)")
             }
         }
     }
@@ -979,7 +1236,7 @@ struct MacMainView: View {
     
 }
 
-// MARK: - Mac Chat List Row
+// MARK: - Mac Chat List Row (legacy)
 
 struct MacChatListRow: View {
     let chat: ChatSummary
@@ -999,17 +1256,41 @@ struct MacChatListRow: View {
             Spacer()
             
             if chat.pinned {
-                Image(systemName: "pin.fill")
+                OneraIcon.pin.solidImage
                     .font(.caption2)
                     .foregroundStyle(theme.warning)
             }
             
             if chat.archived {
-                Image(systemName: "archivebox.fill")
+                OneraIcon.archive.solidImage
                     .font(.caption2)
                     .foregroundStyle(theme.textSecondary)
             }
         }
+    }
+}
+
+// MARK: - Mac Thread List Row (T3 Code style)
+
+struct MacThreadListRow: View {
+    let chat: ChatSummary
+    let isSelected: Bool
+    @Environment(\.theme) private var theme
+    
+    var body: some View {
+        HStack(spacing: OneraSpacing.xs) {
+            Text(chat.title)
+                .font(.subheadline)
+                .lineLimit(1)
+                .foregroundStyle(isSelected ? theme.textPrimary : theme.textSecondary)
+            
+            Spacer()
+            
+            Text(chat.updatedAt, style: .relative)
+                .font(.caption2)
+                .foregroundStyle(theme.textTertiary)
+        }
+        .padding(.vertical, OneraSpacing.xxxs)
     }
 }
 
@@ -1033,7 +1314,7 @@ struct MacNoteListRow: View {
             Spacer()
             
             if note.pinned {
-                Image(systemName: "pin.fill")
+                OneraIcon.pin.solidImage
                     .font(.caption2)
                     .foregroundStyle(theme.warning)
             }
@@ -1108,13 +1389,13 @@ struct MacModelSelectorButton: View {
     // MARK: - Trigger Label
     
     private var triggerLabel: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: OneraSpacing.xxs) {
             if viewModel.isLoading {
                 ProgressView()
                     .controlSize(.small)
-                    .frame(width: 12, height: 12)
+                    .frame(width: OneraIconSize.xs, height: OneraIconSize.xs)
             } else if isPrivateSelected {
-                Image(systemName: "lock.shield.fill")
+                OneraIcon.shield.solidImage
                     .font(.caption2)
                     .foregroundStyle(theme.success)
             }
@@ -1164,9 +1445,9 @@ struct MacModelSelectorButton: View {
         Button {
             viewModel.selectModel(model)
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: OneraSpacing.xs) {
                 if model.provider == .private {
-                    Image(systemName: "lock.shield.fill")
+                    OneraIcon.shield.solidImage
                         .font(.caption)
                         .foregroundStyle(theme.success)
                 }
@@ -1176,13 +1457,13 @@ struct MacModelSelectorButton: View {
                 Spacer()
                 
                 if viewModel.isPinned(model.id) {
-                    Image(systemName: "pin.fill")
+                    OneraIcon.pin.solidImage
                         .font(.caption2)
                         .foregroundStyle(theme.warning)
                 }
                 
                 if viewModel.selectedModel?.id == model.id {
-                    Image(systemName: "checkmark")
+                    OneraIcon.checkSimple.image
                         .font(.caption)
                 }
             }
@@ -1202,7 +1483,7 @@ struct MacModelSelectorButton: View {
                     HStack {
                         Text("All Providers")
                         if viewModel.connectionFilter == nil {
-                            Image(systemName: "checkmark")
+                            OneraIcon.checkSimple.image
                         }
                     }
                 }
@@ -1215,12 +1496,12 @@ struct MacModelSelectorButton: View {
                     } label: {
                         HStack {
                             if provider == .private {
-                                Image(systemName: "lock.shield.fill")
+                                OneraIcon.shield.solidImage
                                     .foregroundStyle(theme.success)
                             }
                             Text(provider.displayName)
                             if viewModel.connectionFilter == provider {
-                                Image(systemName: "checkmark")
+                                OneraIcon.checkSimple.image
                             }
                         }
                     }
@@ -1241,12 +1522,12 @@ struct MacModelSelectorButton: View {
                 } label: {
                     HStack {
                         if model.provider == .private {
-                            Image(systemName: "lock.shield.fill")
+                            OneraIcon.shield.solidImage
                                 .foregroundStyle(theme.success)
                         }
                         Text(model.displayName)
                         Spacer()
-                        Image(systemName: viewModel.isPinned(model.id) ? "pin.slash" : "pin")
+                        (viewModel.isPinned(model.id) ? OneraIcon.pinOff.image : OneraIcon.pin.image)
                     }
                 }
             }
@@ -1262,7 +1543,7 @@ struct MacLaunchView: View {
     @Environment(\.theme) private var theme
     
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: OneraSpacing.lg) {
             ProgressView()
                 .scaleEffect(1.5)
             Text("Loading...")
@@ -1272,7 +1553,7 @@ struct MacLaunchView: View {
     }
 }
 
-// MARK: - Auth View (Compact, centered - like native macOS login)
+// MARK: - Auth View (Codex-style: full-window dark, centered, large pill buttons)
 
 struct MacAuthView: View {
     @Bindable var coordinator: AppCoordinator
@@ -1282,96 +1563,122 @@ struct MacAuthView: View {
     
     @State private var viewModel: AuthViewModel?
     @State private var isHoveringGoogle = false
+    @State private var isHoveringApple = false
+    
+    // Dark background color matching Codex welcome screen
+    private var authBackground: Color { theme.onboardingSheetBackground }
     
     var body: some View {
-        // Centered compact login card
-        VStack(spacing: 32) {
-            // Logo and title
-            VStack(spacing: 16) {
+        VStack(spacing: 0) {
+            Spacer()
+            
+            VStack(spacing: OneraSpacing.xl) {
                 // App icon
-                Image(systemName: "bubble.left.and.bubble.right.fill")
-                    .font(.largeTitle.weight(.light))
-                    .foregroundStyle(theme.textPrimary)
+                OneraIcon.chat.solidImage
+                    .font(.system(size: 44, weight: .light))
+                    .foregroundStyle(theme.onboardingTextPrimary)
+                    .demoModeActivation()
                 
-                VStack(spacing: 4) {
-                    Text("Onera")
-                        .font(.title2.bold())
+                // Title + subtitle
+                VStack(spacing: OneraSpacing.sm) {
+                    Text("Welcome to Onera")
+                        .font(.system(size: 30, weight: .bold))
+                        .foregroundStyle(theme.onboardingTextPrimary)
                     
-                    Text("Private AI conversations")
-                        .font(.subheadline)
-                        .foregroundStyle(theme.textSecondary)
+                    Text("The best way to chat with AI, privately")
+                        .font(.title3)
+                        .foregroundStyle(theme.onboardingTextSecondary)
                 }
-            }
-            .demoModeActivation()
-            
-            // Sign in buttons
-            VStack(spacing: 10) {
-                // Sign in with Apple
-                ZStack {
-                    RoundedRectangle(cornerRadius: OneraRadius.standard, style: .continuous)
-                        .fill(theme.textPrimary)
-                    
-                    SignInWithAppleButton(.continue) { request in
-                        viewModel?.configureAppleRequest(request)
-                    } onCompletion: { result in
-                        Task { await viewModel?.handleAppleSignIn(result: result) }
-                    }
-                    .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-                }
-                .frame(width: 240, height: 40)
-                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard, style: .continuous))
-                .disabled(viewModel?.isLoading ?? false)
                 
-                // Sign in with Google
-                Button {
-                    Task { await viewModel?.signInWithGoogle() }
-                } label: {
-                    HStack(spacing: 8) {
-                        Image("google")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 16, height: 16)
-                        Text("Continue with Google")
-                            .font(.subheadline.weight(.medium))
+                // Large pill sign-in buttons
+                VStack(spacing: OneraSpacing.sm) {
+                    // Continue with Apple — native SignInWithAppleButton overlaid on custom style
+                    ZStack {
+                        // Visual layer: custom styled button
+                        HStack(spacing: OneraSpacing.sm) {
+                            Image(systemName: "apple.logo")
+                                .font(.body.weight(.medium))
+                            Text("Continue with Apple")
+                                .font(.body.weight(.medium))
+                        }
+                        .foregroundStyle(.black)
+                        .frame(width: 340, height: 56)
+                        .background(.white, in: RoundedRectangle(cornerRadius: OneraRadius.xxl, style: .continuous))
+                        
+                        // Functional layer: native Apple sign-in (handles auth correctly)
+                        SignInWithAppleButton(.continue) { request in
+                            viewModel?.configureAppleRequest(request)
+                        } onCompletion: { result in
+                            Task { await viewModel?.handleAppleSignIn(result: result) }
+                        }
+                        .signInWithAppleButtonStyle(.white)
+                        .blendMode(.overlay)
+                        .opacity(0.02)
+                        .allowsHitTesting(true)
                     }
-                    .frame(width: 240, height: 40)
-                    .foregroundStyle(theme.textPrimary)
-                    .background(theme.secondaryBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: OneraRadius.standard, style: .continuous)
-                            .stroke(theme.border, lineWidth: 1)
-                    )
+                    .frame(width: 340, height: 56)
+                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.xxl, style: .continuous))
+                    .scaleEffect(isHoveringApple ? 1.02 : 1.0)
+                    .animation(.easeInOut(duration: 0.15), value: isHoveringApple)
+                    .onHover { isHoveringApple = $0 }
+                    .disabled(viewModel?.isLoading ?? false)
+                    
+                    // Continue with Google - bordered pill
+                    Button {
+                        Task { await viewModel?.signInWithGoogle() }
+                    } label: {
+                        HStack(spacing: OneraSpacing.sm) {
+                            Image("google")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: OneraIconSize.sm, height: OneraIconSize.sm)
+                            Text("Continue with Google")
+                                .font(.body.weight(.medium))
+                        }
+                        .foregroundStyle(theme.onboardingTextPrimary)
+                        .frame(width: 340, height: 56)
+                        .background(
+                            RoundedRectangle(cornerRadius: OneraRadius.xxl, style: .continuous)
+                                .fill(Color.white.opacity(0.08))
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.xxl, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: OneraRadius.xxl, style: .continuous)
+                                .stroke(.white.opacity(0.2), lineWidth: 1)
+                        )
+                        .contentShape(RoundedRectangle(cornerRadius: OneraRadius.xxl, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .scaleEffect(isHoveringGoogle ? 1.02 : 1.0)
+                    .animation(.easeInOut(duration: 0.15), value: isHoveringGoogle)
+                    .onHover { isHoveringGoogle = $0 }
+                    .disabled(viewModel?.isLoading ?? false)
                 }
-                .buttonStyle(.plain)
-                .disabled(viewModel?.isLoading ?? false)
+                
+                // Loading indicator
+                if viewModel?.isLoading ?? false {
+                    ProgressView()
+                        .tint(theme.onboardingTextPrimary)
+                        .scaleEffect(0.8)
+                }
             }
             
-            // Loading indicator
-            if viewModel?.isLoading ?? false {
-                ProgressView()
-                    .scaleEffect(0.7)
-            }
+            Spacer()
             
-            // Terms and privacy
-            HStack(spacing: 4) {
+            // Terms at very bottom
+            HStack(spacing: OneraSpacing.xs) {
                 Link("Terms", destination: URL(string: "https://onera.chat/terms")!)
                 Text("·")
-                    .foregroundStyle(theme.textTertiary)
                 Link("Privacy", destination: URL(string: "https://onera.chat/privacy")!)
             }
             .font(.caption)
-            .foregroundStyle(theme.textSecondary)
+            .foregroundStyle(theme.onboardingTextTertiary)
+            .padding(.bottom, OneraSpacing.xxl)
         }
-        .padding(OneraSpacing.max)
-        .frame(width: 320)
-        .background(
-            RoundedRectangle(cornerRadius: OneraRadius.medium, style: .continuous)
-                .fill(theme.background)
-                .shadow(color: theme.textPrimary.opacity(0.15), radius: 20, y: 10)
-        )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(theme.tertiaryBackground)
+        .background(authBackground)
+        .ignoresSafeArea(.all)
+        .toolbarBackground(.hidden, for: .windowToolbar)
         .onAppear {
             viewModel = AuthViewModel(
                 authService: dependencies.authService,
@@ -1444,7 +1751,7 @@ struct MacApiKeySetupView: View {
     @State private var selectedProvider: LLMProvider?
     
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: OneraSpacing.lg) {
             Text("Add an API Key")
                 .font(.largeTitle)
                 .fontWeight(.bold)
@@ -1461,7 +1768,7 @@ struct MacApiKeySetupView: View {
                 .buttonStyle(.bordered)
             }
         }
-        .padding(OneraSpacing.max)
+        .padding(OneraSpacing.xxl)
     }
 }
 

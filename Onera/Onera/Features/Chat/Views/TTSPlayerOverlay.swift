@@ -19,23 +19,24 @@ struct TTSPlayerOverlay: View {
     /// Called when user taps stop/close
     let onStop: () -> Void
     
+    @Environment(\.theme) private var theme
     @State private var elapsedSeconds: Int = 0
     @State private var timer: Timer?
     
     var body: some View {
         VStack {
             // Floating pill at top
-            HStack(spacing: 16) {
+            HStack(spacing: OneraSpacing.md) {
                 // Speaker icon with animation
-                Image(systemName: "speaker.wave.2.fill")
+                OneraIcon.speaker.solidImage
                     .font(.body.weight(.medium))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(theme.textOnAccent)
                     .symbolEffect(.bounce.byLayer, options: .repeating, isActive: isPlaying)
                 
                 // Elapsed time display
                 Text(formatElapsedTime(elapsedSeconds))
                     .font(.subheadline.weight(.semibold).monospaced())
-                    .foregroundStyle(.white)
+                    .foregroundStyle(theme.textOnAccent)
                 
                 Spacer()
                 
@@ -44,14 +45,14 @@ struct TTSPlayerOverlay: View {
                     stopTimer()
                     onStop()
                 } label: {
-                    Image(systemName: "xmark")
+                    OneraIcon.close.image
                         .font(.subheadline.bold())
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(theme.textOnAccent.opacity(0.8))
                         .padding(OneraSpacing.sm)
                         .background(Circle().fill(Color.white.opacity(0.2)))
                 }
             }
-            .padding(.horizontal, OneraSpacing.xl)
+            .padding(.horizontal, OneraSpacing.lg)
             .padding(.vertical, OneraSpacing.md)
             .background(
                 Capsule()

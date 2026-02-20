@@ -51,7 +51,7 @@ struct NotesListView: View {
                 Button {
                     viewModel.createNote()
                 } label: {
-                    Image(systemName: "square.and.pencil")
+                    OneraIcon.chatAdd.image
                 }
                 .accessibilityIdentifier("createNoteButton")
             }
@@ -77,7 +77,7 @@ struct NotesListView: View {
                         }
                     }
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    OneraIcon.ellipsisCircle.image
                 }
             }
         }
@@ -140,7 +140,7 @@ struct NotesListView: View {
                 showFolderFilter = true
             } label: {
                 HStack {
-                    Image(systemName: "folder")
+                    OneraIcon.folder.image
                         .foregroundStyle(theme.textSecondary)
                     
                     Text(selectedFilterFolderName)
@@ -152,12 +152,12 @@ struct NotesListView: View {
                         Button {
                             selectedFilterFolderId = nil
                         } label: {
-                            Image(systemName: "xmark.circle.fill")
+                            OneraIcon.closeFilled.image
                                 .foregroundStyle(theme.textSecondary)
                         }
                     }
                     
-                    Image(systemName: "chevron.right")
+                    OneraIcon.chevronRight.image
                         .font(.caption)
                         .foregroundStyle(theme.textSecondary)
                 }
@@ -179,7 +179,7 @@ struct NotesListView: View {
     private var emptyState: some View {
         Section {
             VStack(spacing: 16) {
-                Image(systemName: "note.text")
+                OneraIcon.note.image
                     .font(.largeTitle)
                     .foregroundStyle(theme.textSecondary)
                 
@@ -261,7 +261,7 @@ private struct NoteRowView: View {
                     Spacer()
                     
                     if note.pinned {
-                        Image(systemName: "pin.fill")
+                        OneraIcon.pin.solidImage
                             .font(.caption2)
                             .foregroundStyle(theme.warning)
                     }

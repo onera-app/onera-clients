@@ -52,7 +52,7 @@ struct FolderPickerSheet: View {
                             viewModel.startCreatingFolder()
                         } label: {
                             HStack(spacing: 12) {
-                                Image(systemName: "folder.badge.plus")
+                                OneraIcon.folderAdd.image
                                     .font(.body)
                                     .foregroundStyle(theme.accent)
                                 
@@ -69,7 +69,7 @@ struct FolderPickerSheet: View {
                     } else {
                         // New folder creation row
                         HStack(spacing: 12) {
-                            Image(systemName: "folder.badge.plus")
+                            OneraIcon.folderAdd.image
                                 .font(.body)
                                 .foregroundStyle(.secondary)
                             
@@ -82,7 +82,7 @@ struct FolderPickerSheet: View {
                                     await viewModel.createFolder()
                                 }
                             } label: {
-                                Image(systemName: "checkmark.circle.fill")
+                                OneraIcon.check.solidImage
                                     .font(.title2)
                                     .foregroundStyle(theme.success)
                             }
@@ -91,7 +91,7 @@ struct FolderPickerSheet: View {
                             Button {
                                 viewModel.cancelCreatingFolder()
                             } label: {
-                                Image(systemName: "xmark.circle.fill")
+                                OneraIcon.closeFilled.image
                                     .font(.title2)
                                     .foregroundStyle(.secondary)
                             }
@@ -144,7 +144,7 @@ private struct FolderPickerRow: View {
                 Spacer()
                 
                 if isSelected {
-                    Image(systemName: "checkmark")
+                    OneraIcon.checkSimple.image
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(theme.accent)
                 }
@@ -152,7 +152,7 @@ private struct FolderPickerRow: View {
             .padding(.horizontal, OneraSpacing.lg)
             .padding(.vertical, OneraSpacing.md)
             .background(isSelected ? theme.accent.opacity(0.1) : Color.clear)
-            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
+            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
         }
         .buttonStyle(.plain)
         .foregroundStyle(.primary)
@@ -194,17 +194,17 @@ private struct FolderPickerNodeView: View {
                         Button {
                             viewModel.toggleExpanded(folderId: node.id)
                         } label: {
-                            Image(systemName: "chevron.right")
-                                .font(.caption2.weight(.semibold))
-                                .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                                .foregroundStyle(.secondary)
+                    OneraIcon.chevronRight.image
+                        .font(.caption2.weight(.semibold))
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                        .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
                     } else {
                         Color.clear.frame(width: 16)
                     }
                     
-                    Image(systemName: "folder.fill")
+                    OneraIcon.folder.solidImage
                         .font(.body)
                         .foregroundStyle(isSelected ? theme.accent : theme.textSecondary)
                     
@@ -214,7 +214,7 @@ private struct FolderPickerNodeView: View {
                     Spacer()
                     
                     if isSelected {
-                        Image(systemName: "checkmark")
+                        OneraIcon.checkSimple.image
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(theme.accent)
                     }
@@ -223,7 +223,7 @@ private struct FolderPickerNodeView: View {
                 .padding(.trailing, OneraSpacing.lg)
                 .padding(.vertical, OneraSpacing.md)
                 .background(isSelected ? theme.accent.opacity(0.1) : Color.clear)
-                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
             }
             .buttonStyle(.plain)
             .foregroundStyle(.primary)

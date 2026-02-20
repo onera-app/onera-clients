@@ -67,7 +67,7 @@ struct FolderTreeView: View {
             onSelectFolder(nil)
         } label: {
             HStack(spacing: 8) {
-                Image(systemName: "tray")
+                OneraIcon.inbox.image
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 
@@ -79,7 +79,7 @@ struct FolderTreeView: View {
             .padding(.horizontal, OneraSpacing.md)
             .padding(.vertical, OneraSpacing.sm)
             .background(
-                RoundedRectangle(cornerRadius: OneraRadius.standard)
+                RoundedRectangle(cornerRadius: OneraRadius.md)
                     .fill(selectedFolderId == nil ? theme.secondaryBackground : Color.clear)
             )
         }
@@ -91,7 +91,7 @@ struct FolderTreeView: View {
     
     private var newFolderRow: some View {
         HStack(spacing: 8) {
-            Image(systemName: "folder.fill")
+            OneraIcon.folder.solidImage
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             
@@ -109,7 +109,7 @@ struct FolderTreeView: View {
                     await viewModel.createFolder()
                 }
             } label: {
-                Image(systemName: "checkmark.circle.fill")
+                OneraIcon.check.solidImage
                     .font(.body)
                     .foregroundStyle(.green)
             }
@@ -118,7 +118,7 @@ struct FolderTreeView: View {
             Button {
                 viewModel.cancelCreatingFolder()
             } label: {
-                Image(systemName: "xmark.circle.fill")
+                OneraIcon.closeFilled.image
                     .font(.body)
                     .foregroundStyle(.secondary)
             }
@@ -134,7 +134,7 @@ struct FolderTreeView: View {
             viewModel.startCreatingFolder()
         } label: {
             HStack(spacing: 8) {
-                Image(systemName: "plus")
+                OneraIcon.plus.image
                     .font(.subheadline)
                 
                 Text("New folder")
@@ -184,7 +184,7 @@ private struct FolderNodeView: View {
                 Button {
                     viewModel.toggleExpanded(folderId: node.id)
                 } label: {
-                    Image(systemName: "chevron.right")
+                    OneraIcon.chevronRight.image
                         .font(.caption2.weight(.semibold))
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
                         .opacity(hasChildren ? 1 : 0)
@@ -193,7 +193,7 @@ private struct FolderNodeView: View {
                 .frame(width: 20)
                 
                 // Folder icon
-                Image(systemName: isExpanded ? "folder.fill" : "folder")
+                (isExpanded ? OneraIcon.folder.solidImage : OneraIcon.folder.image)
                     .font(.subheadline)
                     .foregroundStyle(isSelected ? .primary : .secondary)
                 
@@ -224,7 +224,7 @@ private struct FolderNodeView: View {
             .padding(.trailing, OneraSpacing.sm)
             .padding(.vertical, OneraSpacing.xs)
             .background(
-                RoundedRectangle(cornerRadius: OneraRadius.standard)
+                RoundedRectangle(cornerRadius: OneraRadius.md)
                     .fill(isSelected ? theme.secondaryBackground : Color.clear)
             )
             .contentShape(Rectangle())
@@ -300,7 +300,7 @@ private struct FolderNodeView: View {
                 Label("Delete", systemImage: "trash")
             }
         } label: {
-            Image(systemName: "ellipsis")
+            OneraIcon.ellipsis.image
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: 28, height: 28)
@@ -314,7 +314,7 @@ private struct FolderNodeView: View {
     
     private var subfolderCreationRow: some View {
         HStack(spacing: 8) {
-            Image(systemName: "folder.fill")
+            OneraIcon.folder.solidImage
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             
@@ -332,7 +332,7 @@ private struct FolderNodeView: View {
                     await viewModel.createFolder()
                 }
             } label: {
-                Image(systemName: "checkmark.circle.fill")
+                OneraIcon.check.solidImage
                     .font(.body)
                     .foregroundStyle(.green)
             }
@@ -341,7 +341,7 @@ private struct FolderNodeView: View {
             Button {
                 viewModel.cancelCreatingFolder()
             } label: {
-                Image(systemName: "xmark.circle.fill")
+                OneraIcon.closeFilled.image
                     .font(.body)
                     .foregroundStyle(.secondary)
             }

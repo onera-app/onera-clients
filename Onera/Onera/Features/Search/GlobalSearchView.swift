@@ -126,7 +126,7 @@ struct GlobalSearchView: View {
         }
         .frame(width: 600, height: 500)
         .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
+        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.lg))
         .shadow(color: .black.opacity(0.2), radius: 20, y: 10)
         .onAppear {
             isSearchFocused = true
@@ -158,8 +158,8 @@ struct GlobalSearchView: View {
     // MARK: - Search Bar
     
     private var searchBar: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "magnifyingglass")
+        HStack(spacing: OneraSpacing.sm) {
+            OneraIcon.search.image
                 .font(.title3)
                 .foregroundStyle(theme.textSecondary)
             
@@ -172,7 +172,7 @@ struct GlobalSearchView: View {
                 Button {
                     searchText = ""
                 } label: {
-                    Image(systemName: "xmark.circle.fill")
+                    OneraIcon.closeFilled.image
                         .foregroundStyle(theme.textSecondary)
                 }
                 .buttonStyle(.plain)
@@ -182,7 +182,7 @@ struct GlobalSearchView: View {
                 .font(.caption)
                 .foregroundStyle(theme.textTertiary)
                 .padding(.horizontal, OneraSpacing.xs)
-                .padding(.vertical, OneraSpacing.micro)
+                .padding(.vertical, OneraSpacing.xxxs)
                 .background(theme.secondaryBackground)
                 .clipShape(RoundedRectangle(cornerRadius: OneraRadius.xs))
         }
@@ -193,7 +193,7 @@ struct GlobalSearchView: View {
     
     private var filterChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            HStack(spacing: OneraSpacing.xs) {
                 FilterChip(
                     title: "All",
                     isSelected: selectedFilter == nil,
@@ -246,10 +246,10 @@ struct GlobalSearchView: View {
     // MARK: - Empty View
     
     private var emptyView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: OneraSpacing.md) {
             Spacer()
             
-            Image(systemName: searchText.isEmpty ? "magnifyingglass" : "magnifyingglass.circle")
+            (searchText.isEmpty ? OneraIcon.search.image : OneraIcon.search.solidImage)
                 .font(.largeTitle.weight(.light))
                 .foregroundStyle(theme.textTertiary)
             
@@ -278,7 +278,7 @@ struct GlobalSearchView: View {
     // MARK: - Loading View
     
     private var loadingView: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: OneraSpacing.sm) {
             Spacer()
             ProgressView()
             Text("Searching...")
@@ -421,7 +421,7 @@ private struct FilterChip: View {
     
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 4) {
+            HStack(spacing: OneraSpacing.xxs) {
                 if let icon {
                     Image(systemName: icon)
                         .font(.caption)
@@ -446,7 +446,7 @@ private struct SearchResultRow: View {
     @Environment(\.theme) private var theme
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: OneraSpacing.sm) {
             // Type icon
             Image(systemName: result.type.iconName)
                 .font(.subheadline)
@@ -461,7 +461,7 @@ private struct SearchResultRow: View {
                         .lineLimit(1)
                     
                     if result.isPinned {
-                        Image(systemName: "pin.fill")
+                        OneraIcon.pin.solidImage
                             .font(.caption2)
                             .foregroundStyle(theme.warning)
                     }

@@ -25,7 +25,7 @@ struct CustomNavigationBar: View {
                 menuTapTrigger.toggle()
                 onMenuTap()
             } label: {
-                Image(systemName: "sidebar.left")
+                OneraIcon.sidebar.image
                     .font(OneraTypography.iconXLarge)
                     .foregroundStyle(theme.textPrimary)
                     .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
@@ -49,7 +49,7 @@ struct CustomNavigationBar: View {
                 newConversationTrigger.toggle()
                 onNewConversation()
             } label: {
-                Image(systemName: "square.and.pencil")
+                OneraIcon.chatAdd.image
                     .font(OneraTypography.iconXLarge)
                     .foregroundStyle(theme.textPrimary)
                     .frame(width: AccessibilitySize.minTouchTarget, height: AccessibilitySize.minTouchTarget)
@@ -87,7 +87,7 @@ struct CustomNavigationBar: View {
                                 HStack {
                                     Text(model.displayName)
                                     if modelSelector.selectedModel?.id == model.id {
-                                        Image(systemName: "checkmark")
+                                        OneraIcon.checkSimple.image
                                     }
                                 }
                             }
@@ -107,7 +107,7 @@ struct CustomNavigationBar: View {
                         .foregroundStyle(theme.textPrimary)
                         .lineLimit(1)
                     
-                    Image(systemName: "chevron.down")
+                    OneraIcon.chevronDown.image
                         .font(OneraTypography.buttonSmall)
                         .foregroundStyle(theme.textSecondary)
                         .accessibilityHidden(true)

@@ -120,12 +120,12 @@ private struct CitationCard: View {
                     Spacer()
                     
                     // Expand/collapse indicator
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                    (isExpanded ? OneraIcon.chevronUp.image : OneraIcon.chevronDown.image)
                         .font(.caption)
                         .foregroundStyle(theme.textTertiary)
                 }
                 .padding(.horizontal, OneraSpacing.md)
-                .padding(.vertical, OneraSpacing.compact)
+                .padding(.vertical, OneraSpacing.sm)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -151,7 +151,7 @@ private struct CitationCard: View {
                             openURL(url)
                         } label: {
                             HStack(spacing: 4) {
-                                Image(systemName: "arrow.up.right.square")
+                                OneraIcon.openExternal.image
                                     .font(.caption)
                                 Text(url.host ?? url.absoluteString)
                                     .font(.caption)
@@ -163,13 +163,13 @@ private struct CitationCard: View {
                         .padding(.horizontal, OneraSpacing.md)
                     }
                 }
-                .padding(.bottom, OneraSpacing.compact)
+                .padding(.bottom, OneraSpacing.sm)
             }
         }
         .background(theme.secondaryBackground)
-        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
+        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
         .overlay(
-            RoundedRectangle(cornerRadius: OneraRadius.standard)
+            RoundedRectangle(cornerRadius: OneraRadius.md)
                 .stroke(theme.border, lineWidth: 1)
         )
     }

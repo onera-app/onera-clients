@@ -95,8 +95,8 @@ struct MessageInputView: View {
             
             // Web search indicator bar
             if let searchEnabled = searchEnabled, searchEnabled.wrappedValue {
-                HStack(spacing: 4) {
-                    Image(systemName: "globe")
+                HStack(spacing: OneraSpacing.xxs) {
+                    OneraIcon.globe.image
                         .font(.caption2)
                     Text("Web search · \(currentProviderName)")
                         .font(.caption2)
@@ -104,7 +104,7 @@ struct MessageInputView: View {
                     Button {
                         searchEnabled.wrappedValue = false
                     } label: {
-                        Image(systemName: "xmark")
+                        OneraIcon.close.image
                             .font(.caption2)
                     }
                     .accessibilityLabel("Disable web search")
@@ -116,10 +116,10 @@ struct MessageInputView: View {
             }
             
             // Input pill
-            HStack(alignment: .bottom, spacing: 8) {
+            HStack(alignment: .bottom, spacing: OneraSpacing.xs) {
                 // Plus button (attachment + search)
                 plusMenu
-                    .frame(width: 32, height: 32)
+                    .frame(width: OneraIconSize.xl, height: OneraIconSize.xl)
                 
                 // Native multi-line TextField — grows automatically, no manual height calc
                 TextField("Ask anything", text: $text, axis: .vertical)
@@ -134,10 +134,10 @@ struct MessageInputView: View {
                 
                 // Right action button
                 rightActionButton
-                    .frame(width: 32, height: 32)
+                    .frame(width: OneraIconSize.xl, height: OneraIconSize.xl)
             }
             .padding(.horizontal, OneraSpacing.md)
-            .padding(.vertical, OneraSpacing.compact)
+            .padding(.vertical, OneraSpacing.sm)
             .oneraGlassRounded(24, showBorder: true, showShadow: false)
             .frame(maxWidth: maxInputWidth)
             .frame(maxWidth: .infinity)
@@ -218,10 +218,10 @@ struct MessageInputView: View {
             Button {
                 onStop?()
             } label: {
-                Image(systemName: "stop.fill")
+                OneraIcon.stop.solidImage
                     .font(.subheadline.bold())
-                    .foregroundStyle(.white)
-                    .frame(width: 32, height: 32)
+                    .foregroundStyle(theme.textOnAccent)
+                    .frame(width: OneraIconSize.xl, height: OneraIconSize.xl)
                     .background(theme.error)
                     .clipShape(Circle())
             }
@@ -229,10 +229,10 @@ struct MessageInputView: View {
         } else if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             let sendEnabled = canSend && !isSending
             Button(action: onSend) {
-                Image(systemName: "arrow.up")
+                OneraIcon.send.image
                     .font(.subheadline.bold())
-                    .foregroundStyle(sendEnabled ? .white : theme.textSecondary)
-                    .frame(width: 32, height: 32)
+                    .foregroundStyle(sendEnabled ? theme.textOnAccent : theme.textSecondary)
+                    .frame(width: OneraIconSize.xl, height: OneraIconSize.xl)
                     .background(sendEnabled ? theme.accent : theme.textSecondary.opacity(0.3))
                     .clipShape(Circle())
             }
@@ -245,10 +245,10 @@ struct MessageInputView: View {
             Button {
                 onStopRecording?()
             } label: {
-                Image(systemName: "stop.fill")
+                OneraIcon.stop.solidImage
                     .font(.subheadline.bold())
-                    .foregroundStyle(.white)
-                    .frame(width: 32, height: 32)
+                    .foregroundStyle(theme.textOnAccent)
+                    .frame(width: OneraIconSize.xl, height: OneraIconSize.xl)
                     .background(theme.error)
                     .clipShape(Circle())
             }
@@ -257,10 +257,10 @@ struct MessageInputView: View {
             Button {
                 onStartRecording?()
             } label: {
-                Image(systemName: "mic.fill")
+                OneraIcon.mic.solidImage
                     .font(.body)
                     .foregroundStyle(theme.textSecondary)
-                    .frame(width: 32, height: 32)
+                    .frame(width: OneraIconSize.xl, height: OneraIconSize.xl)
             }
             .accessibilityLabel("Start voice recording")
             .accessibilityHint("Starts voice recording to dictate your message")
@@ -403,7 +403,7 @@ struct MessageInputView: View {
                                     Text(provider.displayName)
                                     if provider.rawValue == (UserDefaults.standard.string(forKey: "defaultSearchProvider") ?? "tavily") {
                                         Spacer()
-                                        Image(systemName: "checkmark")
+                                        OneraIcon.checkSimple.image
                                     }
                                 }
                             }
@@ -413,10 +413,10 @@ struct MessageInputView: View {
             }
         } label: {
             ZStack(alignment: .topTrailing) {
-                Image(systemName: "plus")
+                OneraIcon.plus.image
                     .font(.body.weight(.medium))
                     .foregroundStyle(theme.textPrimary)
-                    .frame(width: 32, height: 32)
+                    .frame(width: OneraIconSize.xl, height: OneraIconSize.xl)
                 
                 // Web search enabled indicator dot
                 if let searchEnabled = searchEnabled, searchEnabled.wrappedValue {
@@ -582,7 +582,7 @@ struct MessageInputView: View {
             .accessibilityHint("Stops voice recording and processes your speech")
         }
         .padding(.horizontal, OneraSpacing.lg)
-        .padding(.vertical, OneraSpacing.compact)
+        .padding(.vertical, OneraSpacing.sm)
         .background(
             Capsule()
                 .fill(.ultraThinMaterial)
@@ -605,10 +605,10 @@ struct MessageInputView: View {
                 }
             }
             .padding(.horizontal, OneraSpacing.lg)
-            .padding(.vertical, OneraSpacing.compact)
+            .padding(.vertical, OneraSpacing.sm)
         }
         .background(
-            RoundedRectangle(cornerRadius: OneraRadius.large, style: .continuous)
+            RoundedRectangle(cornerRadius: OneraRadius.xl, style: .continuous)
                 .fill(.ultraThinMaterial)
         )
         .padding(.horizontal, OneraSpacing.md)
@@ -638,8 +638,8 @@ private struct MentionPopupView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: 4) {
-                Image(systemName: "at")
+            HStack(spacing: OneraSpacing.xxs) {
+                OneraIcon.mention.image
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                 Text("Prompts")
@@ -653,8 +653,8 @@ private struct MentionPopupView: View {
                 Button {
                     onSelect(prompt)
                 } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "text.quote")
+                    HStack(spacing: OneraSpacing.xs) {
+                        OneraIcon.quote.image
                             .font(.caption)
                             .foregroundStyle(.tertiary)
                             .frame(width: 16)
@@ -678,7 +678,7 @@ private struct MentionPopupView: View {
                     .padding(.horizontal, OneraSpacing.sm)
                     .padding(.vertical, OneraSpacing.xs)
                     .background(index == selectedIndex ? theme.accent.opacity(0.15) : Color.clear)
-                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.small))
+                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -687,7 +687,7 @@ private struct MentionPopupView: View {
         }
         .padding(OneraSpacing.xs)
         .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
+        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.lg))
         .shadow(color: .black.opacity(0.15), radius: 8, y: 2)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Prompt suggestions")
@@ -728,13 +728,13 @@ private struct AttachmentPreviewItem: View {
                 }
             }
             .frame(width: 60, height: 60)
-            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
+            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
             
             // Remove button
             Button(action: onRemove) {
-                Image(systemName: "xmark.circle.fill")
+                OneraIcon.closeFilled.image
                     .font(OneraTypography.iconLarge)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(theme.textOnAccent)
                     .background(Circle().fill(.black.opacity(0.6)))
             }
             .offset(x: 6, y: -6)
@@ -751,7 +751,7 @@ private struct AttachmentPreviewItem: View {
         Rectangle()
             .fill(theme.secondaryBackground)
             .overlay {
-                Image(systemName: "photo")
+                OneraIcon.photo.image
                     .foregroundStyle(theme.textSecondary)
             }
     }
@@ -761,7 +761,7 @@ private struct AttachmentPreviewItem: View {
             .fill(theme.tertiaryBackground)
             .overlay {
                 VStack(spacing: OneraSpacing.xxs) {
-                    Image(systemName: "doc.fill")
+                    OneraIcon.document.solidImage
                         .font(OneraTypography.title3)
                         .foregroundStyle(theme.textSecondary)
                     Text(attachment.fileName ?? "File")

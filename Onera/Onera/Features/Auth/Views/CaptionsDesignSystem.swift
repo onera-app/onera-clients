@@ -5,18 +5,21 @@
 //  Captions-inspired design system: gradient onboarding, dark home,
 //  dark drawer, pill buttons, warm accents, generous spacing.
 //
+//  Note: CaptionsSpacing and CaptionsRadius have been removed.
+//  All spacing/radius now use OneraSpacing / OneraRadius tokens.
+//
 
 import SwiftUI
 
-// MARK: - Captions Color Palette (Deprecated)
+// MARK: - Captions Color Palette (Onboarding Only)
 
-/// Design tokens inspired by the Captions app aesthetic.
-/// - Note: Deprecated — use `@Environment(\.theme)` tokens instead.
-/// These constants are only retained for the onboarding button styles.
+/// Hardcoded colors for the Captions-style onboarding flow.
+/// These exist because the onboarding gradient is brand-specific,
+/// not theme-dependent. Everything else should use `@Environment(\.theme)`.
 enum CaptionsColors {
-    
+
     // MARK: Gradients
-    
+
     /// Sky-blue → light peach gradient for onboarding / welcome background
     static let welcomeGradient = LinearGradient(
         colors: [
@@ -27,71 +30,42 @@ enum CaptionsColors {
         startPoint: .top,
         endPoint: .bottom
     )
-    
+
     // MARK: Dark Surfaces (Home / Drawer)
-    
+
     /// Primary background – near-black warm charcoal
-    static let darkBackground = Color(red: 0.07, green: 0.07, blue: 0.07)     // ~#121212
-    
+    static let darkBackground = Color(red: 0.07, green: 0.07, blue: 0.07)
+
     /// Elevated card / drawer background
-    static let darkSurface = Color(red: 0.11, green: 0.11, blue: 0.11)        // ~#1C1C1C
-    
+    static let darkSurface = Color(red: 0.11, green: 0.11, blue: 0.11)
+
     /// Pill button / banner / input field background
-    static let darkPill = Color(white: 0.18)                                   // ~#2E2E2E
-    
+    static let darkPill = Color(white: 0.18)
+
     /// Selected / highlighted row in the drawer
-    static let darkSelected = Color(white: 0.22)                               // ~#383838
-    
+    static let darkSelected = Color(white: 0.22)
+
     // MARK: Bottom Sheet (Login card)
-    
+
     /// The dark card that holds sign-in buttons
-    static let sheetBackground = Color(red: 0.09, green: 0.09, blue: 0.09)    // ~#171717
-    
+    static let sheetBackground = Color(red: 0.09, green: 0.09, blue: 0.09)
+
     // MARK: Text
-    
+
     static let textPrimary = Color.white
-    static let textSecondary = Color(white: 0.60)                              // ~#999
-    static let textTertiary = Color(white: 0.40)                               // ~#666
-    
+    static let textSecondary = Color(white: 0.60)
+    static let textTertiary = Color(white: 0.40)
+
     // MARK: Accents
-    
-    /// Gold / amber accent (used for "Get MAX" style badges)
-    static let goldAccent = Color(red: 0.85, green: 0.68, blue: 0.30)         // ~#D9AD4D
-    
-    /// Purple profile avatar accent
-    static let profilePurple = Color(red: 0.62, green: 0.47, blue: 0.90)      // ~#9E78E6
-    
-    /// Cyan informational icon
-    static let infoCyan = Color(red: 0.30, green: 0.75, blue: 0.95)           // ~#4DBFF2
-    
-    /// Standard blue for primary CTA buttons
-    static let ctaBlue = Color(red: 0.25, green: 0.52, blue: 0.96)            // ~#4085F5
-    
+
+    static let goldAccent = Color(red: 0.85, green: 0.68, blue: 0.30)
+    static let profilePurple = Color(red: 0.62, green: 0.47, blue: 0.90)
+    static let infoCyan = Color(red: 0.30, green: 0.75, blue: 0.95)
+    static let ctaBlue = Color(red: 0.25, green: 0.52, blue: 0.96)
+
     // MARK: Borders
-    
+
     static let subtleBorder = Color.white.opacity(0.08)
-}
-
-// MARK: - Captions Spacing
-
-enum CaptionsSpacing {
-    static let xxs: CGFloat = 4
-    static let xs: CGFloat = 8
-    static let sm: CGFloat = 12
-    static let md: CGFloat = 16
-    static let lg: CGFloat = 24
-    static let xl: CGFloat = 32
-    static let xxl: CGFloat = 48
-}
-
-// MARK: - Captions Radii
-
-enum CaptionsRadius {
-    static let small: CGFloat = 8
-    static let medium: CGFloat = 14
-    static let large: CGFloat = 20
-    static let sheet: CGFloat = 28
-    static let pill: CGFloat = 999
 }
 
 // MARK: - Captions Button Styles
@@ -100,15 +74,15 @@ enum CaptionsRadius {
 struct CaptionsPrimaryButtonStyle: ButtonStyle {
     var backgroundColor: Color = .white
     var foregroundColor: Color = .black
-    
+
     func makeBody(configuration: ButtonStyleConfiguration) -> some View {
         configuration.label
             .font(.body.weight(.semibold))
             .foregroundStyle(foregroundColor)
             .frame(maxWidth: .infinity)
-            .frame(height: 56)
+            .frame(height: OneraButton.heightXl)
             .background(backgroundColor)
-            .clipShape(RoundedRectangle(cornerRadius: CaptionsRadius.medium, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.lg, style: .continuous))
             .opacity(configuration.isPressed ? 0.85 : 1.0)
             .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
             .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
@@ -118,15 +92,15 @@ struct CaptionsPrimaryButtonStyle: ButtonStyle {
 /// Dark pill button used on the login card (e.g. "Continue with Google")
 struct CaptionsDarkButtonStyle: ButtonStyle {
     var pillColor: Color = CaptionsColors.darkPill
-    
+
     func makeBody(configuration: ButtonStyleConfiguration) -> some View {
         configuration.label
             .font(.body.weight(.semibold))
             .foregroundStyle(Color.white)
             .frame(maxWidth: .infinity)
-            .frame(height: 56)
+            .frame(height: OneraButton.heightXl)
             .background(pillColor)
-            .clipShape(RoundedRectangle(cornerRadius: CaptionsRadius.medium, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.lg, style: .continuous))
             .opacity(configuration.isPressed ? 0.7 : 1.0)
             .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
             .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
@@ -139,8 +113,8 @@ struct CaptionsPillChipStyle: ButtonStyle {
         configuration.label
             .font(.subheadline.weight(.medium))
             .foregroundStyle(CaptionsColors.textPrimary)
-            .padding(.horizontal, CaptionsSpacing.md)
-            .padding(.vertical, CaptionsSpacing.sm)
+            .padding(.horizontal, OneraSpacing.md)
+            .padding(.vertical, OneraSpacing.sm)
             .background(CaptionsColors.darkPill)
             .clipShape(Capsule())
             .opacity(configuration.isPressed ? 0.7 : 1.0)
@@ -156,29 +130,29 @@ struct CaptionsDrawerRow: View {
     var isSelected: Bool = false
     var action: () -> Void = {}
     @Environment(\.theme) private var theme
-    
+
     var body: some View {
         Button(action: action) {
-            HStack(spacing: CaptionsSpacing.md) {
+            HStack(spacing: OneraSpacing.md) {
                 Image(systemName: icon)
                     .font(.body)
-                    .frame(width: 24, height: 24)
+                    .frame(width: OneraIconSize.md, height: OneraIconSize.md)
                     .foregroundStyle(isSelected ? theme.textPrimary : theme.textSecondary)
-                
+
                 Text(title)
                     .font(.body.weight(isSelected ? .semibold : .regular))
                     .foregroundStyle(isSelected ? theme.textPrimary : theme.textSecondary)
-                
+
                 Spacer()
             }
-            .padding(.horizontal, CaptionsSpacing.md)
-            .padding(.vertical, CaptionsSpacing.sm)
+            .padding(.horizontal, OneraSpacing.md)
+            .padding(.vertical, OneraSpacing.sm)
             .background(
                 isSelected
                     ? theme.onboardingSelected
                     : Color.clear
             )
-            .clipShape(RoundedRectangle(cornerRadius: CaptionsRadius.small, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md, style: .continuous))
         }
         .buttonStyle(.plain)
     }
@@ -189,15 +163,15 @@ struct CaptionsDrawerRow: View {
 struct CaptionsSectionHeader: View {
     let title: String
     @Environment(\.theme) private var theme
-    
+
     var body: some View {
         Text(title.uppercased())
             .font(.caption.weight(.semibold))
             .foregroundStyle(theme.textTertiary)
             .tracking(1.2)
-            .padding(.horizontal, CaptionsSpacing.md)
-            .padding(.top, CaptionsSpacing.lg)
-            .padding(.bottom, CaptionsSpacing.xs)
+            .padding(.horizontal, OneraSpacing.md)
+            .padding(.top, OneraSpacing.lg)
+            .padding(.bottom, OneraSpacing.xs)
     }
 }
 
@@ -208,9 +182,9 @@ struct CaptionsProfileFooter: View {
     let name: String
     var subtitle: String = "Free"
     @Environment(\.theme) private var theme
-    
+
     var body: some View {
-        HStack(spacing: CaptionsSpacing.sm) {
+        HStack(spacing: OneraSpacing.sm) {
             // Avatar circle
             Text(initial)
                 .font(.headline.weight(.bold))
@@ -218,21 +192,21 @@ struct CaptionsProfileFooter: View {
                 .frame(width: 40, height: 40)
                 .background(theme.accent)
                 .clipShape(Circle())
-            
-            VStack(alignment: .leading, spacing: 2) {
+
+            VStack(alignment: .leading, spacing: OneraSpacing.xxs) {
                 Text(name)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(theme.textPrimary)
-                
+
                 Text(subtitle)
                     .font(.caption)
                     .foregroundStyle(theme.textTertiary)
             }
-            
+
             Spacer()
         }
-        .padding(.horizontal, CaptionsSpacing.md)
-        .padding(.vertical, CaptionsSpacing.sm)
+        .padding(.horizontal, OneraSpacing.md)
+        .padding(.vertical, OneraSpacing.sm)
     }
 }
 
@@ -241,15 +215,15 @@ struct CaptionsProfileFooter: View {
 /// Bottom text input bar matching the Captions style
 struct CaptionsInputBarStyle: ViewModifier {
     @Environment(\.theme) private var theme
-    
+
     func body(content: Content) -> some View {
         content
-            .padding(.horizontal, CaptionsSpacing.md)
-            .padding(.vertical, CaptionsSpacing.sm)
+            .padding(.horizontal, OneraSpacing.md)
+            .padding(.vertical, OneraSpacing.sm)
             .background(theme.secondaryBackground)
-            .clipShape(RoundedRectangle(cornerRadius: CaptionsRadius.large, style: .continuous))
-            .padding(.horizontal, CaptionsSpacing.md)
-            .padding(.bottom, CaptionsSpacing.xs)
+            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.xl, style: .continuous))
+            .padding(.horizontal, OneraSpacing.md)
+            .padding(.bottom, OneraSpacing.xs)
     }
 }
 
@@ -264,9 +238,9 @@ extension View {
 #if DEBUG
 #Preview("Captions Colors") {
     ScrollView {
-        VStack(spacing: 16) {
+        VStack(spacing: OneraSpacing.md) {
             // Gradient
-            RoundedRectangle(cornerRadius: OneraRadius.large)
+            RoundedRectangle(cornerRadius: OneraRadius.xl)
                 .fill(CaptionsColors.welcomeGradient)
                 .frame(height: 200)
                 .overlay(
@@ -274,17 +248,17 @@ extension View {
                         .font(.headline)
                         .foregroundStyle(.black)
                 )
-            
+
             // Dark surfaces
-            HStack(spacing: 8) {
+            HStack(spacing: OneraSpacing.xs) {
                 colorSwatch("BG", CaptionsColors.darkBackground)
                 colorSwatch("Surface", CaptionsColors.darkSurface)
                 colorSwatch("Pill", CaptionsColors.darkPill)
                 colorSwatch("Selected", CaptionsColors.darkSelected)
             }
-            
+
             // Accents
-            HStack(spacing: 8) {
+            HStack(spacing: OneraSpacing.xs) {
                 colorSwatch("Gold", CaptionsColors.goldAccent)
                 colorSwatch("Purple", CaptionsColors.profilePurple)
                 colorSwatch("Cyan", CaptionsColors.infoCyan)
@@ -297,8 +271,8 @@ extension View {
 }
 
 private func colorSwatch(_ label: String, _ color: Color) -> some View {
-    VStack(spacing: 4) {
-        RoundedRectangle(cornerRadius: OneraRadius.standard)
+    VStack(spacing: OneraSpacing.xxs) {
+        RoundedRectangle(cornerRadius: OneraRadius.md)
             .fill(color)
             .frame(height: 50)
         Text(label)

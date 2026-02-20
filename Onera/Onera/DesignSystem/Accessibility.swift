@@ -301,7 +301,7 @@ enum AccessibilityAnnouncement {
     VStack(spacing: 20) {
         // Icon button with proper touch target
         Button { } label: {
-            Image(systemName: "plus")
+            OneraIcon.plus.image
                 .font(.title3)
         }
         .iconButton(label: "Add new item", hint: "Creates a new conversation")
@@ -309,7 +309,7 @@ enum AccessibilityAnnouncement {
         
         // Toggle button
         Button { } label: {
-            Image(systemName: "eye.fill")
+            OneraIcon.eye.solidImage
                 .font(.body)
         }
         .touchTarget()
@@ -321,7 +321,7 @@ enum AccessibilityAnnouncement {
         
         // Combined row
         HStack {
-            Image(systemName: "folder.fill")
+            OneraIcon.folder.solidImage
             Text("Documents")
             Spacer()
             Text("5 items")

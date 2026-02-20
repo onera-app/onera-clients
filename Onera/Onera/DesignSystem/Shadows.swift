@@ -2,41 +2,63 @@
 //  Shadows.swift
 //  Onera
 //
-//  Centralized shadow styles
+//  Centralized shadow/elevation tokens
 //
 
 import SwiftUI
 
-/// Onera Design System - Shadow Tokens
-/// Consistent shadow styles used throughout the app
+/// Onera Design System — Shadow Tokens
+///
+/// Four distinct elevation levels with clear visual differentiation.
+/// Each level has unique opacity, radius, and offset values.
 enum OneraShadow {
     
-    /// Shadow style presets
+    /// Shadow elevation levels
+    enum Level {
+        /// Extra-subtle lift for cards in light mode (opacity: 0.06, radius: 2)
+        case xs
+        
+        /// Standard elevation for cards and surfaces (opacity: 0.08, radius: 4)
+        case sm
+        
+        /// Medium elevation for dropdowns and popovers (opacity: 0.10, radius: 8)
+        case md
+        
+        /// High elevation for modals and floating panels (opacity: 0.14, radius: 16)
+        case lg
+    }
+    
+    /// Get shadow parameters for a given elevation level
+    static func parameters(for level: Level) -> (color: Color, radius: CGFloat, x: CGFloat, y: CGFloat) {
+        switch level {
+        case .xs:
+            return (.black.opacity(0.06), 2, 0, 1)
+        case .sm:
+            return (.black.opacity(0.08), 4, 0, 2)
+        case .md:
+            return (.black.opacity(0.10), 8, 0, 4)
+        case .lg:
+            return (.black.opacity(0.14), 16, 0, 8)
+        }
+    }
+    
+    // MARK: - Backward Compatibility
+    
+    /// Legacy shadow style type (maps to new Level)
     enum Style {
-        /// Subtle shadow for cards and surfaces (opacity: 0.08, radius: 6)
         case subtle
-        
-        /// Medium shadow for elevated elements (opacity: 0.1, radius: 6)
         case medium
-        
-        /// Elevated shadow for floating elements (opacity: 0.1, radius: 8)
         case elevated
-        
-        /// Glass effect shadow (opacity: 0.1, radius: 8)
         case glass
     }
     
-    /// Get shadow parameters for a given style
+    /// Legacy API — use `parameters(for level:)` instead
     static func parameters(for style: Style) -> (color: Color, radius: CGFloat, x: CGFloat, y: CGFloat) {
         switch style {
-        case .subtle:
-            return (.black.opacity(0.08), 6, 0, 2)
-        case .medium:
-            return (.black.opacity(0.1), 6, 0, 2)
-        case .elevated:
-            return (.black.opacity(0.1), 8, 0, 2)
-        case .glass:
-            return (.black.opacity(0.1), 8, 0, 2)
+        case .subtle:   return parameters(for: .xs)
+        case .medium:   return parameters(for: .sm)
+        case .elevated: return parameters(for: .md)
+        case .glass:    return parameters(for: .md)
         }
     }
 }
@@ -44,6 +66,20 @@ enum OneraShadow {
 // MARK: - Shadow View Modifier
 
 struct ShadowModifier: ViewModifier {
+    let level: OneraShadow.Level
+    
+    func body(content: Content) -> some View {
+        let params = OneraShadow.parameters(for: level)
+        return content.shadow(
+            color: params.color,
+            radius: params.radius,
+            x: params.x,
+            y: params.y
+        )
+    }
+}
+
+struct LegacyShadowModifier: ViewModifier {
     let style: OneraShadow.Style
     
     func body(content: Content) -> some View {
@@ -60,23 +96,28 @@ struct ShadowModifier: ViewModifier {
 // MARK: - View Extension
 
 extension View {
-    /// Apply a standard shadow style
+    /// Apply shadow at a specific elevation level
+    func elevation(_ level: OneraShadow.Level) -> some View {
+        modifier(ShadowModifier(level: level))
+    }
+    
+    /// Apply a standard shadow style (legacy API)
     func shadow(_ style: OneraShadow.Style) -> some View {
-        modifier(ShadowModifier(style: style))
+        modifier(LegacyShadowModifier(style: style))
     }
     
     /// Apply subtle shadow (cards, surfaces)
     func subtleShadow() -> some View {
-        shadow(.subtle)
+        elevation(.xs)
     }
     
     /// Apply elevated shadow (floating elements)
     func elevatedShadow() -> some View {
-        shadow(.elevated)
+        elevation(.md)
     }
     
     /// Apply glass effect shadow
     func glassShadow() -> some View {
-        shadow(.glass)
+        elevation(.md)
     }
 }

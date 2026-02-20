@@ -44,7 +44,7 @@ struct OnboardingView: View {
                     Button {
                         // Help action
                     } label: {
-                        Image(systemName: "questionmark.circle.fill")
+                        OneraIcon.info.solidImage
                             .font(.title2)
                             .foregroundStyle(theme.onboardingTextPrimary.opacity(0.5))
                             .frame(width: 44, height: 44)
@@ -136,7 +136,7 @@ private struct SecurityBrandingContent: View {
     
     var body: some View {
         VStack(spacing: OneraSpacing.xxl) {
-            Image(systemName: "lock.shield.fill")
+            OneraIcon.shield.solidImage
                 .font(.system(size: 56))
                 .foregroundStyle(theme.onboardingTextPrimary.opacity(0.75))
             
@@ -153,21 +153,21 @@ private struct SecurityBrandingContent: View {
             
             HStack(spacing: OneraSpacing.lg) {
                 encryptionNode(icon: "doc.text", label: "Your Data")
-                Image(systemName: "arrow.right")
+                OneraIcon.forward.image
                     .foregroundStyle(theme.onboardingTextTertiary)
                 encryptionNode(icon: "lock.fill", label: "Encrypted")
-                Image(systemName: "arrow.right")
+                OneraIcon.forward.image
                     .foregroundStyle(theme.onboardingTextTertiary)
                 encryptionNode(icon: "icloud.fill", label: "Stored")
             }
             .padding()
             .background(theme.onboardingTextPrimary.opacity(0.15))
-            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.lg, style: .continuous))
         }
     }
     
     private func encryptionNode(icon: String, label: String) -> some View {
-        VStack(spacing: 4) {
+        VStack(spacing: OneraSpacing.xxs) {
             Image(systemName: icon)
                 .font(.title3)
                 .foregroundStyle(theme.onboardingTextPrimary.opacity(0.7))
@@ -185,7 +185,7 @@ private struct ReadyBrandingContent: View {
     
     var body: some View {
         VStack(spacing: OneraSpacing.xxl) {
-            Image(systemName: "checkmark.seal.fill")
+            OneraIcon.verified.image
                 .font(.system(size: 56))
                 .foregroundStyle(theme.onboardingTextPrimary.opacity(0.75))
             
@@ -211,8 +211,8 @@ private struct ReadyBrandingContent: View {
         HStack(spacing: OneraSpacing.lg) {
             Text("\(number)")
                 .font(.headline.weight(.bold))
-                .foregroundStyle(.white)
-                .frame(width: 32, height: 32)
+                .foregroundStyle(theme.textOnAccent)
+                .frame(width: OneraIconSize.xl, height: OneraIconSize.xl)
                 .background(theme.onboardingTextPrimary.opacity(0.7))
                 .clipShape(Circle())
             
@@ -229,7 +229,7 @@ private struct ReadyBrandingContent: View {
         }
         .padding()
         .background(theme.onboardingTextPrimary.opacity(0.15))
-        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md, style: .continuous))
     }
 }
 

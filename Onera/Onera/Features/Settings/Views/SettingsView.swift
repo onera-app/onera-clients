@@ -102,7 +102,7 @@ struct SettingsView: View {
                             theme.secondaryBackground
                             Text(user.initials)
                                 .font(OneraTypography.displayLarge)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(theme.textOnAccent)
                         }
                     }
                     .frame(width: 80, height: 80)
@@ -123,7 +123,7 @@ struct SettingsView: View {
                     } label: {
                         Text("Edit profile")
                             .font(OneraTypography.subheadline)
-                            .padding(.horizontal, OneraSpacing.xl)
+                            .padding(.horizontal, OneraSpacing.lg)
                             .padding(.vertical, OneraSpacing.sm)
                             .background(theme.secondaryBackground)
                             .clipShape(RoundedRectangle(cornerRadius: OneraRadius.bubble))
@@ -131,7 +131,7 @@ struct SettingsView: View {
                     .buttonStyle(.plain)
                 } else {
                     // No user state
-                    Image(systemName: "person.circle.fill")
+                    OneraIcon.userCircle.solidImage
                         .font(.largeTitle)
                         .foregroundStyle(theme.textSecondary)
                     
@@ -177,7 +177,7 @@ struct SettingsView: View {
                 HStack {
                     Label("View Recovery Phrase", systemImage: "key.fill")
                     Spacer()
-                    Image(systemName: "chevron.right")
+                    OneraIcon.chevronRight.image
                         .font(OneraTypography.caption)
                         .foregroundStyle(theme.textSecondary)
                 }
@@ -192,7 +192,7 @@ struct SettingsView: View {
                     HStack {
                         Label("Lock Session", systemImage: "lock.fill")
                         Spacer()
-                        Image(systemName: "chevron.right")
+                        OneraIcon.chevronRight.image
                             .font(OneraTypography.caption)
                             .foregroundStyle(theme.textSecondary)
                     }
@@ -285,7 +285,7 @@ struct SettingsView: View {
                 HStack {
                     Label("Privacy Policy", systemImage: "hand.raised")
                     Spacer()
-                    Image(systemName: "chevron.right")
+                    OneraIcon.chevronRight.image
                         .font(OneraTypography.caption)
                         .foregroundStyle(theme.textSecondary)
                 }
@@ -295,7 +295,7 @@ struct SettingsView: View {
                 HStack {
                     Label("Terms of Service", systemImage: "doc.text")
                     Spacer()
-                    Image(systemName: "chevron.right")
+                    OneraIcon.chevronRight.image
                         .font(OneraTypography.caption)
                         .foregroundStyle(theme.textSecondary)
                 }
@@ -319,7 +319,7 @@ struct SettingsView: View {
                 HStack {
                     Label("Help Center", systemImage: "questionmark.circle")
                     Spacer()
-                    Image(systemName: "chevron.right")
+                    OneraIcon.chevronRight.image
                         .font(OneraTypography.caption)
                         .foregroundStyle(theme.textSecondary)
                 }
@@ -455,7 +455,7 @@ struct RecoveryPhraseDisplayView: View {
                 RecoveryPhraseGrid(phrase: phrase)
                     .padding()
                     .background(.regularMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.large))
+                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.xl))
                 
                 Button {
                     #if os(iOS)
@@ -524,8 +524,8 @@ struct DeviceManagementView: View {
                 }
             } else if let error = error {
                 Section {
-                    VStack(spacing: 8) {
-                        Image(systemName: "exclamationmark.triangle")
+                    VStack(spacing: OneraSpacing.xs) {
+                        OneraIcon.warning.image
                             .font(.title2)
                             .foregroundStyle(theme.warning)
                         Text("Failed to load devices")
@@ -572,8 +572,8 @@ struct DeviceManagementView: View {
                 
                 // Info Section
                 Section {
-                    HStack(spacing: 12) {
-                        Image(systemName: "lock.shield")
+                    HStack(spacing: OneraSpacing.sm) {
+                        OneraIcon.shield.image
                             .foregroundStyle(theme.success)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("End-to-End Encrypted")
@@ -756,7 +756,7 @@ private struct DeviceRow: View {
     }
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: OneraSpacing.sm) {
             // Device icon
             Image(systemName: deviceIcon)
                 .font(.title2)
@@ -772,21 +772,21 @@ private struct DeviceRow: View {
                     if isCurrentDevice {
                         Text("This device")
                             .font(OneraTypography.caption2)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(theme.textOnAccent)
                             .padding(.horizontal, OneraSpacing.xs)
-                            .padding(.vertical, OneraSpacing.micro)
+                            .padding(.vertical, OneraSpacing.xxxs)
                             .background(theme.success)
                             .clipShape(Capsule())
                     }
                     
                     if device.trusted {
-                        Image(systemName: "checkmark.shield.fill")
+                        OneraIcon.shieldVerified.image
                             .font(.caption)
                             .foregroundStyle(theme.success)
                     }
                 }
                 
-                HStack(spacing: 4) {
+                HStack(spacing: OneraSpacing.xxs) {
                     if !platformName.isEmpty {
                         Text(platformName)
                     }
@@ -822,7 +822,7 @@ struct WatchSyncButton: View {
                     ProgressView()
                         .controlSize(.small)
                 } else if syncSuccess {
-                    Image(systemName: "checkmark.circle.fill")
+                    OneraIcon.check.solidImage
                         .foregroundStyle(theme.success)
                 }
             }

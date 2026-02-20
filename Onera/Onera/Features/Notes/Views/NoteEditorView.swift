@@ -91,61 +91,61 @@ struct NoteEditorView: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
                             Button { toggleBold() } label: {
-                                Image(systemName: "bold")
+                                OneraIcon.bold.image
                             }
                             .accessibilityLabel("Bold")
                             
                             Button { toggleItalic() } label: {
-                                Image(systemName: "italic")
+                                OneraIcon.italic.image
                             }
                             .accessibilityLabel("Italic")
                             
                             Button { toggleStrikethrough() } label: {
-                                Image(systemName: "strikethrough")
+                                OneraIcon.strikethrough.image
                             }
                             .accessibilityLabel("Strikethrough")
                             
                             Divider()
                             
                             Button { insertHeading() } label: {
-                                Image(systemName: "number")
+                                OneraIcon.heading.image
                             }
                             .accessibilityLabel("Heading")
                             
                             Button { insertBulletList() } label: {
-                                Image(systemName: "list.bullet")
+                                OneraIcon.listBullet.image
                             }
                             .accessibilityLabel("Bullet list")
                             
                             Button { insertNumberedList() } label: {
-                                Image(systemName: "list.number")
+                                OneraIcon.listNumber.image
                             }
                             .accessibilityLabel("Numbered list")
                             
                             Button { insertTaskList() } label: {
-                                Image(systemName: "checklist")
+                                OneraIcon.listCheck.image
                             }
                             .accessibilityLabel("Task list")
                             
                             Divider()
                             
                             Button { insertInlineCode() } label: {
-                                Image(systemName: "chevron.left.forwardslash.chevron.right")
+                                OneraIcon.code.image
                             }
                             .accessibilityLabel("Inline code")
                             
                             Button { insertCodeBlock() } label: {
-                                Image(systemName: "text.page")
+                                OneraIcon.paragraph.image
                             }
                             .accessibilityLabel("Code block")
                             
                             Button { insertLink() } label: {
-                                Image(systemName: "link")
+                                OneraIcon.link.image
                             }
                             .accessibilityLabel("Link")
                             
                             Button { insertBlockquote() } label: {
-                                Image(systemName: "text.quote")
+                                OneraIcon.quote.image
                             }
                             .accessibilityLabel("Blockquote")
                         }
@@ -216,18 +216,18 @@ struct NoteEditorView: View {
                 showFolderPicker = true
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: "folder")
+                    OneraIcon.folder.image
                         .font(.subheadline)
                     Text(selectedFolderName)
                         .font(.subheadline)
-                    Image(systemName: "chevron.down")
+                    OneraIcon.chevronDown.image
                         .font(.caption2)
                 }
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, OneraSpacing.md)
                 .padding(.vertical, OneraSpacing.xs)
                 .background(theme.secondaryBackground)
-                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
             }
             .disabled(folderViewModel == nil)
             
@@ -237,7 +237,7 @@ struct NoteEditorView: View {
             Button {
                 isPinned.toggle()
             } label: {
-                Image(systemName: isPinned ? "pin.fill" : "pin")
+                (isPinned ? OneraIcon.pin.solidImage : OneraIcon.pin.image)
                     .font(.body)
                     .foregroundStyle(isPinned ? theme.warning : theme.textSecondary)
             }
@@ -246,7 +246,7 @@ struct NoteEditorView: View {
             Button {
                 isArchived.toggle()
             } label: {
-                Image(systemName: isArchived ? "archivebox.fill" : "archivebox")
+                (isArchived ? OneraIcon.archive.solidImage : OneraIcon.archive.image)
                     .font(.body)
                     .foregroundStyle(isArchived ? theme.accent : theme.textSecondary)
             }

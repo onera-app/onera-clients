@@ -126,7 +126,7 @@ struct E2EEUnlockView: View {
     // MARK: - Loading View
     
     private var loadingView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: OneraSpacing.md) {
             Spacer()
             ProgressView()
                 .scaleEffect(1.2)
@@ -138,10 +138,10 @@ struct E2EEUnlockView: View {
     }
     
     private var passkeyUnlockingView: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: OneraSpacing.lg) {
             Spacer()
             
-            Image(systemName: "person.badge.key.fill")
+            OneraIcon.passkeySolid.image
                 .font(.largeTitle)
                 .foregroundStyle(.blue)
             
@@ -160,8 +160,8 @@ struct E2EEUnlockView: View {
     private var unlockOptionsView: some View {
         List {
             Section {
-                VStack(spacing: 16) {
-                    Image(systemName: "lock.fill")
+                VStack(spacing: OneraSpacing.md) {
+                    OneraIcon.lock.solidImage
                         .font(.largeTitle)
                         .foregroundStyle(.blue)
                     
@@ -181,22 +181,22 @@ struct E2EEUnlockView: View {
                         Task { await viewModel.unlockWithPasskey() }
                     } label: {
                         HStack {
-                            Image(systemName: "person.badge.key.fill")
+                            OneraIcon.passkeySolid.image
                                 .font(.title2)
                                 .foregroundStyle(.blue)
                                 .frame(width: 32)
                             
                             VStack(alignment: .leading, spacing: 2) {
-                                HStack(spacing: 6) {
+                                HStack(spacing: OneraSpacing.xs) {
                                     Text("Passkey")
                                         .font(.body.weight(.medium))
                                         .foregroundStyle(Color.primary)
                                     Text("Recommended")
                                         .font(.caption2.weight(.medium))
                                         .padding(.horizontal, OneraSpacing.xs)
-                                        .padding(.vertical, OneraSpacing.micro)
+                                        .padding(.vertical, OneraSpacing.xxxs)
                                         .background(.blue)
-                                        .foregroundStyle(.white)
+                                        .foregroundStyle(theme.textOnAccent)
                                         .clipShape(Capsule())
                                 }
                                 Text("Use Face ID or Touch ID")
@@ -206,7 +206,7 @@ struct E2EEUnlockView: View {
                             
                             Spacer()
                             
-                            Image(systemName: "chevron.right")
+                            OneraIcon.chevronRight.image
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(.tertiary)
                         }
@@ -219,7 +219,7 @@ struct E2EEUnlockView: View {
                         currentMethod = .password
                     } label: {
                         HStack {
-                            Image(systemName: "key.fill")
+                            OneraIcon.key.solidImage
                                 .font(.title2)
                                 .foregroundStyle(.orange)
                                 .frame(width: 32)
@@ -235,7 +235,7 @@ struct E2EEUnlockView: View {
                             
                             Spacer()
                             
-                            Image(systemName: "chevron.right")
+                            OneraIcon.chevronRight.image
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(.tertiary)
                         }
@@ -246,7 +246,7 @@ struct E2EEUnlockView: View {
                     currentMethod = .recovery
                 } label: {
                     HStack {
-                        Image(systemName: "rectangle.grid.3x2")
+                        OneraIcon.recoveryGrid.image
                             .font(.title2)
                             .foregroundStyle(.purple)
                             .frame(width: 32)
@@ -262,7 +262,7 @@ struct E2EEUnlockView: View {
                         
                         Spacer()
                         
-                        Image(systemName: "chevron.right")
+                        OneraIcon.chevronRight.image
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.tertiary)
                     }
@@ -278,7 +278,7 @@ struct E2EEUnlockView: View {
                         showingSignOutConfirmation = true
                     } label: {
                         HStack {
-                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                            OneraIcon.logout.image
                                 .font(.title2)
                                 .foregroundStyle(.red)
                                 .frame(width: 32)
@@ -318,8 +318,8 @@ struct E2EEUnlockView: View {
     private var passkeyUnlockView: some View {
         List {
             Section {
-                VStack(spacing: 20) {
-                    Image(systemName: "person.badge.key.fill")
+                VStack(spacing: OneraSpacing.lg) {
+                    OneraIcon.passkeySolid.image
                         .font(.largeTitle)
                         .foregroundStyle(.blue)
                     
@@ -366,8 +366,8 @@ struct E2EEUnlockView: View {
     private var passwordUnlockView: some View {
         List {
             Section {
-                VStack(spacing: 16) {
-                    Image(systemName: "key.fill")
+                VStack(spacing: OneraSpacing.md) {
+                    OneraIcon.key.solidImage
                         .font(.largeTitle)
                         .foregroundStyle(.orange)
                     
@@ -392,7 +392,7 @@ struct E2EEUnlockView: View {
                     Button {
                         passwordViewModel.togglePasswordVisibility()
                     } label: {
-                        Image(systemName: passwordViewModel.showPassword ? "eye.slash" : "eye")
+                        (passwordViewModel.showPassword ? OneraIcon.eyeOff.image : OneraIcon.eye.image)
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
@@ -439,8 +439,8 @@ struct E2EEUnlockView: View {
     private var recoveryPhraseView: some View {
         List {
             Section {
-                VStack(spacing: 16) {
-                    Image(systemName: "rectangle.grid.3x2")
+                VStack(spacing: OneraSpacing.md) {
+                    OneraIcon.recoveryGrid.image
                         .font(.largeTitle)
                         .foregroundStyle(.purple)
                     
@@ -480,7 +480,7 @@ struct E2EEUnlockView: View {
                 Section {
                     LazyVGrid(
                         columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())],
-                        spacing: 8
+                        spacing: OneraSpacing.xs
                     ) {
                         ForEach(0..<Configuration.Mnemonic.wordCount, id: \.self) { index in
                             wordInputField(index: index)
@@ -523,7 +523,7 @@ struct E2EEUnlockView: View {
     }
     
     private func wordInputField(index: Int) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: OneraSpacing.xxs) {
             Text("\(index + 1).")
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
@@ -550,7 +550,7 @@ struct E2EEUnlockView: View {
         .padding(.horizontal, OneraSpacing.sm)
         .padding(.vertical, OneraSpacing.sm)
         .background(theme.tertiaryBackground)
-        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.small, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md, style: .continuous))
     }
 }
 

@@ -35,7 +35,7 @@ struct PromptsListView: View {
                 Button {
                     viewModel.createPrompt()
                 } label: {
-                    Image(systemName: "plus")
+                    OneraIcon.plus.image
                 }
                 .accessibilityLabel("Create new prompt")
                 .accessibilityIdentifier("createPromptButton")
@@ -70,7 +70,7 @@ struct PromptsListView: View {
     private var emptyState: some View {
         Section {
             VStack(spacing: 16) {
-                Image(systemName: "text.quote")
+                OneraIcon.quote.image
                     .font(.largeTitle)
                     .foregroundStyle(theme.textSecondary)
                     .accessibilityHidden(true)

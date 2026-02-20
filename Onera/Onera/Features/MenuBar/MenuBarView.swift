@@ -8,6 +8,8 @@
 #if os(macOS)
 import SwiftUI
 import AppKit
+import PhotosUI
+import UniformTypeIdentifiers
 
 // MARK: - Menu Bar View
 
@@ -53,7 +55,7 @@ struct MenuBarView: View {
     
     private var header: some View {
         HStack {
-            Image(systemName: "bubble.left.and.bubble.right.fill")
+            OneraIcon.chat.solidImage
                 .foregroundStyle(theme.accent)
                 .font(.title3)
             
@@ -66,7 +68,7 @@ struct MenuBarView: View {
             Button {
                 NSApp.activate(ignoringOtherApps: true)
             } label: {
-                Image(systemName: "macwindow")
+                OneraIcon.window.image
                     .foregroundStyle(theme.textSecondary)
             }
             .buttonStyle(.plain)
@@ -74,14 +76,14 @@ struct MenuBarView: View {
             .accessibilityLabel("Open main window")
         }
         .padding(.horizontal, OneraSpacing.md)
-        .padding(.vertical, OneraSpacing.compact)
+        .padding(.vertical, OneraSpacing.sm)
         .background(.regularMaterial) // HIG: Use materials for depth
     }
     
     // MARK: - Quick Input
     
     private var quickInputSection: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: OneraSpacing.xs) {
             HStack {
                 TextField("Ask anything...", text: $inputText, axis: .vertical)
                     .textFieldStyle(.plain)
@@ -95,18 +97,18 @@ struct MenuBarView: View {
                     Button {
                         sendQuickMessage()
                     } label: {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(theme.accent)
+                    OneraIcon.update.image
+                    .font(.title2)
+                    .foregroundStyle(theme.accent)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Send message")
                     .disabled(isLoading)
                 }
             }
-            .padding(OneraSpacing.compact)
+            .padding(OneraSpacing.sm)
             .background(theme.secondaryBackground)
-            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
+            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
             
             if isLoading {
                 HStack {
@@ -124,7 +126,7 @@ struct MenuBarView: View {
     // MARK: - Recent Chats
     
     private var recentChatsSection: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: OneraSpacing.xxs) {
             Text("Recent")
                 .font(.caption)
                 .foregroundStyle(theme.textSecondary)
@@ -136,14 +138,14 @@ struct MenuBarView: View {
                     .font(.caption)
                     .foregroundStyle(theme.textTertiary)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, OneraSpacing.xl)
+                    .padding(.vertical, OneraSpacing.lg)
             } else {
                 ForEach(recentChats.prefix(5)) { chat in
                     Button {
                         openChat(chat.id)
                     } label: {
                         HStack {
-                            VStack(alignment: .leading, spacing: 2) {
+                            VStack(alignment: .leading, spacing: OneraSpacing.xxxs) {
                                 Text(chat.title)
                                     .font(.subheadline)
                                     .lineLimit(1)
@@ -155,7 +157,7 @@ struct MenuBarView: View {
                             
                             Spacer()
                             
-                            Image(systemName: "chevron.right")
+                            OneraIcon.chevronRight.image
                                 .font(.caption)
                                 .foregroundStyle(theme.textTertiary)
                         }
@@ -174,7 +176,7 @@ struct MenuBarView: View {
     // MARK: - Footer Actions
     
     private var footerActions: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: OneraSpacing.sm) {
             Button {
                 createNewChat()
             } label: {
@@ -203,7 +205,7 @@ struct MenuBarView: View {
                 NSApp.activate(ignoringOtherApps: true)
                 #endif
             } label: {
-                Image(systemName: "gearshape")
+                OneraIcon.settings.image
                     .font(.caption)
                     .foregroundStyle(theme.textSecondary)
             }
@@ -273,6 +275,10 @@ struct MacChatView: View {
     @State private var pendingPromptResolvedContent: String? = nil
     @State private var variableValues: [String: String] = [:]
     @State private var showVariableSheet = false
+    
+    // Attachment support
+    @State private var selectedPhotoItems: [PhotosPickerItem] = []
+    @State private var showingPhotosPicker = false
     
     /// Prompts filtered by the current @mention query
     private var filteredMentionPrompts: [PromptSummary] {
@@ -417,74 +423,87 @@ struct MacChatView: View {
         pendingPromptResolvedContent = nil
     }
     
-    // MARK: - Empty State
+    // MARK: - Empty State (Codex style: "Let's build" + project dropdown + 3-col cards)
     
     private let starterPrompts: [(icon: String, title: String, prompt: String)] = [
-        ("lightbulb", "Explain a concept", "Explain quantum computing in simple terms"),
-        ("envelope", "Draft an email", "Help me write a professional email to my team about project updates"),
-        ("terminal", "Write code", "Write a Python function that finds the longest palindromic substring"),
-        ("chart.bar", "Analyze data", "What are the key metrics I should track for a SaaS product?"),
+        ("gamecontroller", "Build a classic Snake game in this conversation.", "Build a classic Snake game"),
+        ("doc.text", "Create a summary of what we've discussed.", "Create a one-page summary of this conversation."),
+        ("pencil.and.outline", "Create a plan to build an AI-powered feature.", "Create a plan to build an AI-powered feature for my app."),
     ]
     
     private var emptyState: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 0) {
             Spacer()
             
-            Image(systemName: "bubble.left.and.text.bubble.right")
-                .font(.largeTitle.weight(.light))
-                .foregroundStyle(theme.textTertiary)
-            
-            VStack(spacing: 4) {
-                Text("Start a conversation")
-                    .font(.title3)
-                    .fontWeight(.medium)
+            // Codex-style centered hero
+            VStack(spacing: OneraSpacing.sm) {
+                // Cloud/brain icon
+                OneraIcon.cloud.image
+                    .font(.system(size: 44, weight: .light))
+                    .foregroundStyle(theme.textTertiary)
+                    .overlay(
+                        OneraIcon.code.image
+                            .font(.body.weight(.medium))
+                            .foregroundStyle(theme.background)
+                            .offset(y: 2)
+                    )
                 
-                HStack(spacing: 4) {
-                    Image(systemName: "lock.fill")
-                        .font(.caption2)
-                    Text("End-to-end encrypted")
+                Text("Let's build")
+                    .font(.title.weight(.bold))
+                    .foregroundStyle(theme.textPrimary)
+                
+                // Project dropdown placeholder
+                HStack(spacing: OneraSpacing.xxs) {
+                    Text("onera")
+                        .font(.title2)
+                        .foregroundStyle(theme.textSecondary)
+                    OneraIcon.chevronDown.image
+                        .font(.caption)
+                        .foregroundStyle(theme.textTertiary)
                 }
-                .font(.caption)
-                .foregroundStyle(theme.textSecondary)
             }
             
-            // Starter prompts grid
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                ForEach(starterPrompts, id: \.title) { item in
-                    Button {
-                        viewModel.inputText = item.prompt
-                        Task { await viewModel.sendMessage() }
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: item.icon)
-                                .font(.subheadline)
-                                .foregroundStyle(theme.textSecondary)
-                                .frame(width: 20)
-                            
-                            VStack(alignment: .leading, spacing: 2) {
+            Spacer()
+            
+            // Starter cards - 3 column grid (Codex style)
+            VStack(alignment: .trailing, spacing: 0) {
+                Button {
+                    // Explore more action
+                } label: {
+                    Text("Explore more")
+                        .font(.caption)
+                        .foregroundStyle(theme.textTertiary)
+                }
+                .buttonStyle(.plain)
+                .padding(.bottom, OneraSpacing.sm)
+                
+                HStack(spacing: OneraSpacing.md) {
+                    ForEach(starterPrompts, id: \.title) { item in
+                        Button {
+                            viewModel.inputText = item.prompt
+                            Task { await viewModel.sendMessage() }
+                        } label: {
+                            VStack(alignment: .leading, spacing: OneraSpacing.sm) {
+                                Text(item.icon == "gamecontroller" ? "🎮" : item.icon == "doc.text" ? "📄" : "✏️")
+                                    .font(.title2)
+                                
                                 Text(item.title)
-                                    .font(.caption)
-                                    .fontWeight(.medium)
-                                Text(item.prompt)
-                                    .font(.caption2)
-                                    .foregroundStyle(theme.textSecondary)
-                                    .lineLimit(1)
+                                    .font(.subheadline)
+                                    .foregroundStyle(theme.textPrimary)
+                                    .multilineTextAlignment(.leading)
+                                    .lineLimit(3)
                             }
-                            
-                            Spacer(minLength: 0)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(OneraSpacing.lg)
+                            .background(theme.secondaryBackground)
+                            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.lg, style: .continuous))
                         }
-                        .padding(OneraSpacing.compact)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.quaternary.opacity(0.5))
-                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.mediumSmall))
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, OneraSpacing.xxl)
-            .padding(.top, OneraSpacing.xxs)
-            
-            Spacer()
+            .padding(.bottom, OneraSpacing.md)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -557,7 +576,7 @@ struct MacChatView: View {
         }
     }
     
-    // MARK: - Input Area
+    // MARK: - Input Area (T3 Code style - bordered text area with model bar)
     
     private var inputArea: some View {
         VStack(spacing: 0) {
@@ -575,66 +594,331 @@ struct MacChatView: View {
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
             
-            HStack(alignment: .bottom, spacing: 8) {
-                // Search toggle — glass circle with provider picker
-                searchToggleButton
-                
-                // Input field — glass pill
-                HStack(spacing: 6) {
-                    TextField("Ask anything...", text: $viewModel.inputText, axis: .vertical)
-                        .textFieldStyle(.plain)
-                        .font(.subheadline)
-                        .lineLimit(1...10)
-                        .focused($isInputFocused)
-                        .onSubmit {
-                            if showMentionPopover && !filteredMentionPrompts.isEmpty {
-                                let idx = min(mentionSelectedIndex, filteredMentionPrompts.count - 1)
-                                selectMentionPrompt(filteredMentionPrompts[idx])
-                            } else if !viewModel.inputText.isEmpty {
-                                Task { await viewModel.sendMessage() }
+            // Web search indicator (shown when search is enabled)
+            if viewModel.searchEnabled && hasSearchProvider {
+                HStack(spacing: OneraSpacing.xs) {
+                    if viewModel.isSearching {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        OneraIcon.globe.image
+                            .font(.caption)
+                            .foregroundStyle(theme.accent)
+                    }
+                    Text(viewModel.isSearching ? "Searching \(currentProviderName)..." : "Web search enabled (\(currentProviderName))")
+                        .font(.caption)
+                        .foregroundStyle(theme.textSecondary)
+                    Spacer()
+                    Button {
+                        viewModel.searchEnabled = false
+                    } label: {
+                        OneraIcon.close.image
+                            .font(.caption2)
+                            .foregroundStyle(theme.textTertiary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Disable web search")
+                }
+                .padding(.horizontal, OneraSpacing.lg)
+                .padding(.vertical, OneraSpacing.xs)
+                .background(theme.accent.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md, style: .continuous))
+                .padding(.horizontal, OneraSpacing.lg)
+                .padding(.bottom, OneraSpacing.xxs)
+            }
+            
+            // T3 Code style: bordered container with text area + bottom bar
+            VStack(spacing: 0) {
+                // Attachment previews (shown when there are attachments)
+                if !viewModel.attachments.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: OneraSpacing.sm) {
+                            ForEach(viewModel.attachments) { attachment in
+                                macAttachmentPreview(attachment: attachment) {
+                                    viewModel.attachments.removeAll { $0.id == attachment.id }
+                                }
                             }
                         }
-                    
-                    // Send / Stop button inside the pill
-                    if viewModel.isStreaming {
-                        Button {
-                            viewModel.stopStreaming()
-                        } label: {
-                            Image(systemName: "stop.fill")
-                                .font(.caption2)
-                                .foregroundStyle(.white)
-                                .frame(width: 24, height: 24)
-                                .background(theme.error)
-                                .clipShape(Circle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Stop generating")
-                    } else if !viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        Button {
-                            Task { await viewModel.sendMessage() }
-                        } label: {
-                            Image(systemName: "arrow.up")
-                                .font(.caption.bold())
-                                .foregroundStyle(.white)
-                                .frame(width: 24, height: 24)
-                                .background(viewModel.canSend ? theme.accent : theme.textSecondary.opacity(0.5))
-                                .clipShape(Circle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Send message")
-                        .disabled(!viewModel.canSend)
-                        .keyboardShortcut(.return, modifiers: .command)
+                        .padding(.horizontal, OneraSpacing.lg)
+                        .padding(.vertical, OneraSpacing.sm)
                     }
+                    
+                    Divider()
+                        .foregroundStyle(theme.border)
                 }
-                .padding(.horizontal, OneraSpacing.md)
-                .padding(.vertical, OneraSpacing.sm)
-                .background(theme.secondaryBackground)
-                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.large))
+                
+                // Text input area
+                TextField("Ask Onera anything, @ to add files, / for commands", text: $viewModel.inputText, axis: .vertical)
+                    .textFieldStyle(.plain)
+                    .font(.body)
+                    .lineLimit(2...10)
+                    .focused($isInputFocused)
+                    .onSubmit {
+                        if showMentionPopover && !filteredMentionPrompts.isEmpty {
+                            let idx = min(mentionSelectedIndex, filteredMentionPrompts.count - 1)
+                            selectMentionPrompt(filteredMentionPrompts[idx])
+                        } else if !viewModel.inputText.isEmpty {
+                            Task { await viewModel.sendMessage() }
+                        }
+                    }
+                    .padding(.horizontal, OneraSpacing.lg)
+                    .padding(.top, OneraSpacing.md)
+                    .padding(.bottom, OneraSpacing.sm)
+                
+                // Bottom bar: + | model | quality | search | ... spacer ... | mic | send
+                HStack(spacing: OneraSpacing.xs) {
+                    // + attachment menu (file picker, photos, web search)
+                    Menu {
+                        Section("Attach") {
+                            Button {
+                                showingPhotosPicker = true
+                            } label: {
+                                Label("Photo Library", systemImage: "photo.on.rectangle")
+                            }
+                            Button {
+                                openFilePicker()
+                            } label: {
+                                Label("Choose File", systemImage: "doc")
+                            }
+                        }
+                        
+                        if hasSearchProvider {
+                            Section("Search") {
+                                Button {
+                                    viewModel.searchEnabled.toggle()
+                                } label: {
+                                    Label(
+                                        viewModel.searchEnabled ? "Disable Web Search" : "Enable Web Search",
+                                        systemImage: viewModel.searchEnabled ? "globe.badge.chevron.backward" : "globe"
+                                    )
+                                }
+                                
+                                Menu("Search Provider") {
+                                    ForEach(SearchProvider.allCases) { provider in
+                                        Button {
+                                            UserDefaults.standard.set(provider.rawValue, forKey: "defaultSearchProvider")
+                                            if !viewModel.searchEnabled {
+                                                viewModel.searchEnabled = true
+                                            }
+                                        } label: {
+                                            HStack {
+                                                Text(provider.displayName)
+                                                if provider.rawValue == (UserDefaults.standard.string(forKey: "defaultSearchProvider") ?? "tavily") {
+                                                    Spacer()
+                                                    OneraIcon.checkSimple.image
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        OneraIcon.plus.image
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(theme.textSecondary)
+                            .frame(width: OneraIconSize.lg, height: OneraIconSize.lg)
+                    }
+                    .menuStyle(.borderlessButton)
+                    .fixedSize()
+                    .help("Attach file, photo, or toggle web search")
+                    
+                    // Web search quick toggle (visible when provider configured)
+                    if hasSearchProvider {
+                        Button {
+                            viewModel.searchEnabled.toggle()
+                        } label: {
+                            OneraIcon.globe.image
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(viewModel.searchEnabled ? theme.accent : theme.textTertiary)
+                                .frame(width: OneraIconSize.lg, height: OneraIconSize.lg)
+                        }
+                        .buttonStyle(.plain)
+                        .help(viewModel.searchEnabled ? "Web search enabled (\(currentProviderName))" : "Enable web search")
+                    }
+                    
+                    // Model selector dropdown
+                    modelSelectorInline
+                    
+                    dividerBar
+                    
+                    // Quality level selector
+                    qualitySelector
+                    
+                    Spacer()
+                    
+                    // Mic button (speech recognition)
+                    Button {
+                        if viewModel.isRecording {
+                            viewModel.stopRecording()
+                        } else {
+                            Task { await viewModel.startRecording() }
+                        }
+                    } label: {
+                        (viewModel.isRecording ? OneraIcon.mic.solidImage : OneraIcon.mic.image)
+                            .font(.subheadline)
+                            .foregroundStyle(viewModel.isRecording ? theme.error : theme.textTertiary)
+                            .frame(width: OneraIconSize.lg, height: OneraIconSize.lg)
+                    }
+                    .buttonStyle(.plain)
+                    .help(viewModel.isRecording ? "Stop recording" : "Voice input")
+                    
+                    // Send / Stop button
+                    sendButton
+                }
+                .padding(.horizontal, OneraSpacing.sm)
+                .padding(.bottom, OneraSpacing.sm)
             }
+            .background(theme.secondaryBackground)
+            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.lg, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: OneraRadius.lg, style: .continuous)
+                    .stroke(
+                        isInputFocused ? theme.accent : theme.border,
+                        lineWidth: isInputFocused ? 1.5 : 1
+                    )
+            )
             .padding(.horizontal, OneraSpacing.lg)
             .padding(.vertical, OneraSpacing.md)
+            .photosPicker(isPresented: $showingPhotosPicker, selection: $selectedPhotoItems, maxSelectionCount: 5, matching: .images)
+            .onChange(of: selectedPhotoItems) { _, newItems in
+                Task { await processSelectedPhotos(newItems) }
+                selectedPhotoItems = []
+            }
+            
         }
     }
+    
+    // MARK: - Inline Model Selector
+    
+    private var modelSelectorInline: some View {
+        Menu {
+            if let modelVM = viewModel.modelSelector as ModelSelectorViewModel? {
+                ForEach(modelVM.allModels) { model in
+                    Button {
+                        modelVM.selectModel(model)
+                    } label: {
+                        HStack {
+                            Text(model.displayName)
+                            if modelVM.selectedModel?.id == model.id {
+                                OneraIcon.checkSimple.image
+                            }
+                        }
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: OneraSpacing.xxs) {
+                Text(viewModel.modelSelector.selectedModel?.displayName ?? "Select Model")
+                    .font(.caption)
+                    .foregroundStyle(theme.textSecondary)
+                OneraIcon.chevronDown.image
+                    .font(.caption2)
+                    .foregroundStyle(theme.textTertiary)
+            }
+            .padding(.horizontal, OneraSpacing.sm)
+            .padding(.vertical, OneraSpacing.xxs)
+            .background(theme.tertiaryBackground)
+            .clipShape(Capsule())
+        }
+        .menuIndicator(.hidden)
+        .fixedSize()
+    }
+    
+    // MARK: - Quality Selector
+    
+    @AppStorage("responseQuality") private var responseQuality: String = "high"
+    
+    private var qualitySelector: some View {
+        Menu {
+            Button { responseQuality = "low" } label: {
+                HStack { Text("low"); if responseQuality == "low" { OneraIcon.checkSimple.image } }
+            }
+            Button { responseQuality = "medium" } label: {
+                HStack { Text("medium"); if responseQuality == "medium" { OneraIcon.checkSimple.image } }
+            }
+            Button { responseQuality = "high" } label: {
+                HStack { Text("high"); if responseQuality == "high" { OneraIcon.checkSimple.image } }
+            }
+        } label: {
+            HStack(spacing: OneraSpacing.xxs) {
+                Text(responseQuality)
+                    .font(.caption)
+                    .foregroundStyle(theme.textSecondary)
+                OneraIcon.chevronDown.image
+                    .font(.caption2)
+                    .foregroundStyle(theme.textTertiary)
+            }
+            .padding(.horizontal, OneraSpacing.sm)
+            .padding(.vertical, OneraSpacing.xxs)
+            .background(theme.tertiaryBackground)
+            .clipShape(Capsule())
+        }
+        .menuIndicator(.hidden)
+        .fixedSize()
+    }
+    
+    // MARK: - Access Mode Indicator
+    
+    private var accessModeIndicator: some View {
+        HStack(spacing: OneraSpacing.xxs) {
+            OneraIcon.lock.solidImage
+                .font(.caption2)
+                .foregroundStyle(theme.textTertiary)
+            Text("Full access")
+                .font(.caption)
+                .foregroundStyle(theme.textSecondary)
+        }
+        .padding(.horizontal, OneraSpacing.sm)
+        .padding(.vertical, OneraSpacing.xxs)
+    }
+    
+    // MARK: - Divider Bar
+    
+    private var dividerBar: some View {
+        Rectangle()
+            .fill(theme.border)
+            .frame(width: 1, height: 14)
+            .padding(.horizontal, OneraSpacing.xxs)
+    }
+    
+    // MARK: - Send Button
+    
+    private var sendButton: some View {
+        Group {
+            if viewModel.isStreaming {
+                Button {
+                    viewModel.stopStreaming()
+                } label: {
+                    OneraIcon.stop.solidImage
+                        .font(.caption2)
+                        .foregroundStyle(theme.textOnAccent)
+                        .frame(width: OneraIconSize.lg, height: OneraIconSize.lg)
+                        .background(theme.error)
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Stop generating")
+            } else {
+                Button {
+                    Task { await viewModel.sendMessage() }
+                } label: {
+                    OneraIcon.send.image
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(viewModel.canSend ? theme.textOnAccent : theme.textTertiary)
+                        .frame(width: OneraIconSize.lg, height: OneraIconSize.lg)
+                        .background(viewModel.canSend ? theme.accent : theme.textSecondary.opacity(0.15))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Send message")
+                .disabled(!viewModel.canSend)
+                .keyboardShortcut(.return, modifiers: .command)
+            }
+        }
+    }
+    
+
     
     // MARK: - Search Toggle
     
@@ -650,65 +934,135 @@ struct MacChatView: View {
         return SearchProvider(rawValue: providerRaw)?.displayName ?? "Tavily"
     }
     
-    private var searchToggleButton: some View {
-        Menu {
-            // Toggle on/off
-            Button {
-                viewModel.searchEnabled.toggle()
-            } label: {
-                Label(
-                    viewModel.searchEnabled ? "Disable Web Search" : "Enable Web Search",
-                    systemImage: viewModel.searchEnabled ? "globe.badge.chevron.backward" : "globe"
-                )
+    // MARK: - File Picker (macOS NSOpenPanel)
+    
+    private func openFilePicker() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedContentTypes = [.image, .pdf, .plainText, .json, .data]
+        panel.message = "Choose files to attach"
+        
+        panel.begin { response in
+            guard response == .OK else { return }
+            for url in panel.urls {
+                handleDocumentPicked(url: url)
             }
+        }
+    }
+    
+    private func handleDocumentPicked(url: URL) {
+        guard url.startAccessingSecurityScopedResource() else { return }
+        defer { url.stopAccessingSecurityScopedResource() }
+        
+        do {
+            let data = try Data(contentsOf: url)
+            let fileName = url.lastPathComponent
+            let mimeType = getMimeType(for: url)
             
-            Divider()
-            
-            // Provider picker
-            Text("Search Provider")
-            ForEach(SearchProvider.allCases) { provider in
-                Button {
-                    UserDefaults.standard.set(provider.rawValue, forKey: "defaultSearchProvider")
-                    if !viewModel.searchEnabled {
-                        viewModel.searchEnabled = true
-                    }
-                } label: {
-                    HStack {
-                        Text(provider.displayName)
-                        if provider.rawValue == (UserDefaults.standard.string(forKey: "defaultSearchProvider") ?? "tavily") {
-                            Spacer()
-                            Image(systemName: "checkmark")
+            let type: AttachmentType = mimeType.starts(with: "image/") ? .image : .file
+            let attachment = Attachment(
+                type: type,
+                data: data,
+                mimeType: mimeType,
+                fileName: fileName
+            )
+            viewModel.attachments.append(attachment)
+        } catch {
+            print("[MacChatView] Failed to read file: \(error)")
+        }
+    }
+    
+    private func getMimeType(for url: URL) -> String {
+        let pathExtension = url.pathExtension.lowercased()
+        if let utType = UTType(filenameExtension: pathExtension) {
+            return utType.preferredMIMEType ?? "application/octet-stream"
+        }
+        switch pathExtension {
+        case "jpg", "jpeg": return "image/jpeg"
+        case "png": return "image/png"
+        case "gif": return "image/gif"
+        case "pdf": return "application/pdf"
+        case "txt": return "text/plain"
+        case "md": return "text/markdown"
+        case "json": return "application/json"
+        default: return "application/octet-stream"
+        }
+    }
+    
+    // MARK: - Photo Processing
+    
+    private func processSelectedPhotos(_ items: [PhotosPickerItem]) async {
+        for item in items {
+            do {
+                if let data = try await item.loadTransferable(type: Data.self) {
+                    if let _ = NSImage(data: data) {
+                        let fileName = "photo_\(UUID().uuidString.prefix(8)).jpg"
+                        let attachment = Attachment(
+                            type: .image,
+                            data: data,
+                            mimeType: "image/jpeg",
+                            fileName: fileName
+                        )
+                        await MainActor.run {
+                            viewModel.attachments.append(attachment)
                         }
                     }
                 }
-            }
-        } label: {
-            Group {
-                if viewModel.isSearching {
-                    ProgressView()
-                        .controlSize(.small)
-                        .frame(width: 32, height: 32)
-                } else {
-                    Image(systemName: "globe")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(viewModel.searchEnabled ? theme.accent : theme.textSecondary)
-                        .frame(width: 32, height: 32)
-                }
-            }
-        } primaryAction: {
-            if hasSearchProvider {
-                viewModel.searchEnabled.toggle()
+            } catch {
+                print("[MacChatView] Failed to load photo: \(error)")
             }
         }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
-        .background(theme.secondaryBackground)
-        .clipShape(Circle())
-        .help(
-            !hasSearchProvider ? "Configure a search provider in Settings > Tools" :
-            viewModel.searchEnabled ? "Web search enabled (\(currentProviderName))" : "Enable web search"
-        )
-        .opacity(hasSearchProvider ? 1.0 : 0.5)
+    }
+    
+    // MARK: - Attachment Preview
+    
+    private func macAttachmentPreview(attachment: Attachment, onRemove: @escaping () -> Void) -> some View {
+        ZStack(alignment: .topTrailing) {
+            Group {
+                switch attachment.type {
+                case .image:
+                    if let nsImage = NSImage(data: attachment.data) {
+                        Image(nsImage: nsImage)
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        Rectangle()
+                            .fill(theme.secondaryBackground)
+                            .overlay {
+                                OneraIcon.photo.image
+                                    .foregroundStyle(theme.textSecondary)
+                            }
+                    }
+                case .file:
+                    Rectangle()
+                        .fill(theme.tertiaryBackground)
+                        .overlay {
+                            VStack(spacing: OneraSpacing.xxs) {
+                                OneraIcon.document.solidImage
+                                    .font(.title3)
+                                    .foregroundStyle(theme.textSecondary)
+                                Text(attachment.fileName ?? "File")
+                                    .font(.caption2)
+                                    .lineLimit(1)
+                                    .foregroundStyle(theme.textSecondary)
+                            }
+                        }
+                }
+            }
+            .frame(width: 60, height: 60)
+            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
+            
+            Button(action: onRemove) {
+                OneraIcon.closeFilled.image
+                    .font(.caption)
+                    .foregroundStyle(theme.textOnAccent)
+                    .background(Circle().fill(.black.opacity(0.6)))
+            }
+            .buttonStyle(.plain)
+            .offset(x: 6, y: -6)
+        }
     }
 }
 
@@ -744,16 +1098,17 @@ struct MacMessageBubble: View {
     }
     
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        VStack(alignment: .leading, spacing: 0) {
             if message.isUser {
-                Spacer(minLength: 60)
-                userMessageView
+                // User messages: right-aligned bubble
+                HStack(alignment: .top) {
+                    Spacer(minLength: 40)
+                    userMessageView
+                }
             } else {
                 assistantMessageView
-                Spacer(minLength: 60)
             }
         }
-
     }
     
     // MARK: - User Message
@@ -764,19 +1119,19 @@ struct MacMessageBubble: View {
     }
     
     private var userMessageView: some View {
-        VStack(alignment: .trailing, spacing: 4) {
+        VStack(alignment: .trailing, spacing: OneraSpacing.xxs) {
             if isEditing {
                 // Edit mode
-                VStack(alignment: .trailing, spacing: 8) {
+                VStack(alignment: .trailing, spacing: OneraSpacing.xs) {
                     TextEditor(text: $editText)
                         .font(.body)
                         .frame(minHeight: 60, maxHeight: 200)
                         .scrollContentBackground(.hidden)
                         .padding(OneraSpacing.sm)
                         .background(theme.secondaryBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
+                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
                     
-                    HStack(spacing: 8) {
+                    HStack(spacing: OneraSpacing.xs) {
                         Button("Cancel") {
                             isEditing = false
                         }
@@ -800,20 +1155,20 @@ struct MacMessageBubble: View {
                 }
                 .padding(OneraSpacing.md)
                 .background(theme.userBubble)
-                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.lg))
             } else {
                 // Normal display
-                VStack(alignment: .trailing, spacing: 8) {
+                VStack(alignment: .trailing, spacing: OneraSpacing.xs) {
                     // Show attached images if any
                     if !imageAttachments.isEmpty {
-                        HStack(spacing: 8) {
+                        HStack(spacing: OneraSpacing.xs) {
                             ForEach(imageAttachments) { attachment in
                                 if let nsImage = NSImage(data: attachment.data) {
                                     Image(nsImage: nsImage)
                                         .resizable()
                                         .aspectRatio(contentMode: .fill)
                                         .frame(width: 80, height: 80)
-                                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
+                                        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
                                 }
                             }
                         }
@@ -832,7 +1187,7 @@ struct MacMessageBubble: View {
                 }
                 .padding(OneraSpacing.md)
                 .background(theme.userBubble)
-                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.lg))
                 
                 // Actions
                 if !message.isStreaming {
@@ -845,23 +1200,21 @@ struct MacMessageBubble: View {
     // MARK: - Assistant Message
     
     private var assistantMessageView: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: OneraSpacing.xs) {
             // Reasoning view (if available)
             if let reasoning = parsedContent.thinkingContent, !reasoning.isEmpty {
                 MacReasoningView(reasoning: reasoning, isStreaming: message.isStreaming && parsedContent.displayContent.isEmpty)
             }
             
-            // Main content with markdown rendering
+            // Main content with markdown rendering - T3 Code style: no bubble bg, clean text
             if !parsedContent.displayContent.isEmpty || message.isStreaming {
                 MarkdownContentView(content: parsedContent.displayContent, isStreaming: message.isStreaming)
-                    .padding(OneraSpacing.md)
-                    .background(theme.assistantBubble)
-                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.medium))
+                    .padding(.vertical, OneraSpacing.sm)
             }
             
-            // Message metadata + branch navigation + actions (below bubble)
+            // Message metadata + branch navigation + actions (below content)
             if !message.isStreaming {
-                HStack(spacing: 12) {
+                HStack(spacing: OneraSpacing.sm) {
                     // Model name and timestamp
                     messageMetadata
                     
@@ -885,7 +1238,7 @@ struct MacMessageBubble: View {
     
     @ViewBuilder
     private var messageMetadata: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: OneraSpacing.xs) {
             if let model = message.model {
                 Text(ModelOption.formatModelName(model))
                     .font(.caption)
@@ -901,11 +1254,11 @@ struct MacMessageBubble: View {
     // MARK: - Branch Navigation
     
     private func branchNavigationView(info: (current: Int, total: Int)) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: OneraSpacing.xxs) {
             Button {
                 onPreviousBranch?()
             } label: {
-                Image(systemName: "chevron.left")
+                OneraIcon.back.image
                     .font(.caption2)
             }
             .buttonStyle(.plain)
@@ -919,7 +1272,7 @@ struct MacMessageBubble: View {
             Button {
                 onNextBranch?()
             } label: {
-                Image(systemName: "chevron.right")
+                OneraIcon.chevronRight.image
                     .font(.caption2)
             }
             .buttonStyle(.plain)
@@ -932,7 +1285,7 @@ struct MacMessageBubble: View {
     // MARK: - Action Buttons
     
     private var userActionButtons: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: OneraSpacing.xs) {
             copyButton
             
             if onEdit != nil {
@@ -948,7 +1301,7 @@ struct MacMessageBubble: View {
     }
     
     private var assistantActionButtons: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: OneraSpacing.xs) {
             copyButton
             
             if onRegenerate != nil {
@@ -966,8 +1319,8 @@ struct MacMessageBubble: View {
         Button {
             copyToClipboard()
         } label: {
-            HStack(spacing: 4) {
-                Image(systemName: showCopiedFeedback ? "checkmark.circle.fill" : "doc.on.doc")
+            HStack(spacing: OneraSpacing.xxs) {
+                (showCopiedFeedback ? OneraIcon.check.solidImage : OneraIcon.copy.image)
                     .font(.caption)
                 if showCopiedFeedback {
                     Text("Copied!")
@@ -986,7 +1339,7 @@ struct MacMessageBubble: View {
             editText = message.content
             isEditing = true
         } label: {
-            Image(systemName: "pencil")
+            OneraIcon.edit.image
                 .font(.caption)
         }
         .buttonStyle(.plain)
@@ -1000,7 +1353,7 @@ struct MacMessageBubble: View {
         Button(role: .destructive) {
             showDeleteConfirmation = true
         } label: {
-            Image(systemName: "trash")
+            OneraIcon.trash.image
                 .font(.caption)
                 .foregroundStyle(theme.error.opacity(0.7))
         }
@@ -1046,12 +1399,12 @@ struct MacMessageBubble: View {
                 Label("Be Creative", systemImage: "sparkles")
             }
         } label: {
-            HStack(spacing: 2) {
-                Image(systemName: "arrow.clockwise")
+            HStack(spacing: OneraSpacing.xxxs) {
+                OneraIcon.regenerate.image
                     .font(.caption)
                     .rotationEffect(.degrees(isRegenerating ? 360 : 0))
                     .animation(isRegenerating ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isRegenerating)
-                Image(systemName: "chevron.down")
+                OneraIcon.chevronDown.image
                     .font(.caption2.bold())
             }
         }
@@ -1064,7 +1417,7 @@ struct MacMessageBubble: View {
         Button {
             doSpeak()
         } label: {
-            Image(systemName: isSpeaking ? "stop.fill" : "speaker.wave.2")
+            (isSpeaking ? OneraIcon.stop.solidImage : OneraIcon.speaker.image)
                 .font(.caption)
                 .foregroundStyle(isSpeaking ? theme.error : theme.textSecondary)
         }
@@ -1125,15 +1478,15 @@ struct MacReasoningView: View {
     @State private var isExpanded = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: OneraSpacing.xs) {
             // Header
             Button {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                     isExpanded.toggle()
                 }
             } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: isStreaming ? "brain" : "lightbulb")
+                HStack(spacing: OneraSpacing.xs) {
+                    (isStreaming ? OneraIcon.brain.image : OneraIcon.lightbulb.image)
                         .font(.caption)
                         .foregroundStyle(theme.info)
                     
@@ -1144,7 +1497,7 @@ struct MacReasoningView: View {
                     
                     Spacer()
                     
-                    Image(systemName: "chevron.right")
+                    OneraIcon.chevronRight.image
                         .font(.caption2)
                         .foregroundStyle(theme.textSecondary)
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
@@ -1152,7 +1505,7 @@ struct MacReasoningView: View {
                 .padding(.horizontal, OneraSpacing.md)
                 .padding(.vertical, OneraSpacing.sm)
                 .background(theme.info.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
+                .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
             }
             .buttonStyle(.plain)
             
@@ -1164,7 +1517,7 @@ struct MacReasoningView: View {
                     .textSelection(.enabled)
                     .padding(OneraSpacing.md)
                     .background(theme.secondaryBackground.opacity(0.5))
-                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
+                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
@@ -1220,7 +1573,7 @@ struct DetachedNoteView: View {
     var body: some View {
         Group {
             if isLoading {
-                VStack(spacing: 16) {
+                VStack(spacing: OneraSpacing.md) {
                     ProgressView()
                     Text("Loading note...")
                         .font(.caption)
@@ -1228,8 +1581,8 @@ struct DetachedNoteView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = error {
-                VStack(spacing: 16) {
-                    Image(systemName: "exclamationmark.triangle")
+                VStack(spacing: OneraSpacing.md) {
+                    OneraIcon.warning.image
                         .font(.largeTitle)
                         .foregroundStyle(theme.textSecondary)
                     Text("Failed to load note")
@@ -1247,8 +1600,8 @@ struct DetachedNoteView: View {
                 MacNoteEditorView(viewModel: vm)
                     .navigationTitle(vm.editingNote?.title ?? "Note")
             } else {
-                VStack(spacing: 16) {
-                    Image(systemName: "note.text")
+                VStack(spacing: OneraSpacing.md) {
+                    OneraIcon.note.image
                         .font(.largeTitle)
                         .foregroundStyle(theme.textSecondary)
                     Text("Note not found")
@@ -1319,7 +1672,7 @@ struct MacNoteEditorView: View {
                     isPinned.toggle()
                     scheduleAutoSave()
                 } label: {
-                    Image(systemName: isPinned ? "pin.fill" : "pin")
+                    (isPinned ? OneraIcon.pin.solidImage : OneraIcon.pin.image)
                         .foregroundStyle(isPinned ? theme.warning : theme.textSecondary)
                 }
                 .buttonStyle(.plain)
@@ -1330,7 +1683,7 @@ struct MacNoteEditorView: View {
                 
                 // Save indicator
                 if isSaving {
-                    HStack(spacing: 4) {
+                    HStack(spacing: OneraSpacing.xxs) {
                         ProgressView()
                             .scaleEffect(0.6)
                         Text("Saving...")
@@ -1347,7 +1700,7 @@ struct MacNoteEditorView: View {
                 Button {
                     Task { await saveNote() }
                 } label: {
-                    Image(systemName: "square.and.arrow.down")
+                    OneraIcon.saveLocal.image
                 }
                 .buttonStyle(.plain)
                 .disabled(isSaving || !hasChanges)
@@ -1370,7 +1723,7 @@ struct MacNoteEditorView: View {
                 .onChange(of: title) { _, _ in scheduleAutoSave() }
             
             // Markdown formatting toolbar
-            HStack(spacing: 2) {
+            HStack(spacing: OneraSpacing.xxxs) {
                 FormatButton(icon: "bold", help: "Bold (⌘B)") {
                     wrapSelection(prefix: "**", suffix: "**")
                 }
@@ -1525,7 +1878,7 @@ private struct FormatButton: View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.caption)
-                .frame(width: 26, height: 26)
+                .frame(width: OneraIconSize.lg, height: OneraIconSize.lg)
                 .foregroundStyle(theme.textSecondary)
         }
         .buttonStyle(.plain)
@@ -1836,7 +2189,7 @@ private struct MacCredentialsListView: View {
                 Button {
                     Task { await viewModel.refreshCredentials() }
                 } label: {
-                    Image(systemName: "arrow.clockwise")
+                    OneraIcon.regenerate.image
                 }
                 .buttonStyle(.plain)
                 .help("Refresh")
@@ -1845,7 +2198,7 @@ private struct MacCredentialsListView: View {
                 Button {
                     viewModel.showAddCredential = true
                 } label: {
-                    Image(systemName: "plus")
+                    OneraIcon.plus.image
                 }
                 .buttonStyle(.plain)
                 .help("Add API Key")
@@ -1887,14 +2240,14 @@ private struct MacCredentialsListView: View {
     }
     
     private var emptyState: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: OneraSpacing.md) {
             Spacer()
             
-            Image(systemName: "key.horizontal")
+            OneraIcon.key.image
                 .font(.largeTitle.weight(.light))
                 .foregroundStyle(theme.textTertiary)
             
-            VStack(spacing: 8) {
+            VStack(spacing: OneraSpacing.xs) {
                 Text("No API Keys")
                     .font(.title3)
                     .fontWeight(.medium)
@@ -1942,7 +2295,7 @@ private struct MacCredentialRow: View {
     @Environment(\.theme) private var theme
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: OneraSpacing.sm) {
             // Provider icon
             ZStack {
                 Circle()
@@ -1952,10 +2305,10 @@ private struct MacCredentialRow: View {
                     .font(.caption.bold())
                     .foregroundStyle(providerColor)
             }
-            .frame(width: 32, height: 32)
+            .frame(width: OneraIconSize.xl, height: OneraIconSize.xl)
             
             // Info
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: OneraSpacing.xxxs) {
                 Text(credential.name)
                     .font(.body)
                     .fontWeight(.medium)
@@ -2117,7 +2470,7 @@ struct SecuritySettingsView: View {
                     Label {
                         Text("End-to-End Encryption")
                     } icon: {
-                        Image(systemName: "lock.shield.fill")
+                        OneraIcon.shield.solidImage
                             .foregroundStyle(theme.success)
                     }
                     
@@ -2173,7 +2526,7 @@ struct SecuritySettingsView: View {
                         Label("Password", systemImage: "key.fill")
                         Spacer()
                         if hasPasswordEncryption {
-                            Image(systemName: "checkmark.circle.fill")
+                            OneraIcon.check.solidImage
                                 .foregroundStyle(theme.success)
                         } else {
                             Text("Not Set")
@@ -2187,7 +2540,7 @@ struct SecuritySettingsView: View {
                             Label("Passkey (Touch ID)", systemImage: "touchid")
                             Spacer()
                             if hasPasskeys {
-                                Image(systemName: "checkmark.circle.fill")
+                                OneraIcon.check.solidImage
                                     .foregroundStyle(theme.success)
                             } else {
                                 Text("Not Set")
@@ -2200,7 +2553,7 @@ struct SecuritySettingsView: View {
                     HStack {
                         Label("Recovery Phrase", systemImage: "doc.text")
                         Spacer()
-                        Image(systemName: "checkmark.circle.fill")
+                        OneraIcon.check.solidImage
                             .foregroundStyle(theme.success)
                     }
                 }
@@ -2214,7 +2567,7 @@ struct SecuritySettingsView: View {
                     HStack {
                         Label("View Recovery Phrase", systemImage: "eye")
                         Spacer()
-                        Image(systemName: "chevron.right")
+                        OneraIcon.chevronRight.image
                             .font(.caption)
                             .foregroundStyle(theme.textTertiary)
                     }
@@ -2251,7 +2604,7 @@ struct SecuritySettingsView: View {
             
             // About Section
             Section {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: OneraSpacing.xs) {
                     Text("About E2EE")
                         .font(.headline)
                     
@@ -2372,15 +2725,15 @@ private struct MacResetEncryptionSheet: View {
     @Environment(\.theme) private var theme
     
     var body: some View {
-        VStack(spacing: 24) {
-            Image(systemName: "exclamationmark.triangle.fill")
+        VStack(spacing: OneraSpacing.lg) {
+            OneraIcon.warning.solidImage
                 .font(.largeTitle)
                 .foregroundStyle(theme.error)
             
             Text("Reset Encryption")
                 .font(.title2.bold())
             
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: OneraSpacing.xs) {
                 Text("This will permanently delete all your encryption keys.")
                     .font(.body)
                 
@@ -2389,7 +2742,7 @@ private struct MacResetEncryptionSheet: View {
                     .foregroundStyle(theme.error)
             }
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: OneraSpacing.xxs) {
                 Text("Type **RESET MY ENCRYPTION** to confirm:")
                     .font(.callout)
                 
@@ -2455,12 +2808,12 @@ private struct MacRecoveryPhraseSheet: View {
             Divider()
             
             // Content
-            VStack(spacing: 24) {
-                Image(systemName: "exclamationmark.shield.fill")
+            VStack(spacing: OneraSpacing.lg) {
+                OneraIcon.shieldAlert.image
                     .font(.largeTitle)
                     .foregroundStyle(theme.warning)
                 
-                VStack(spacing: 8) {
+                VStack(spacing: OneraSpacing.xs) {
                     Text("Keep this phrase secret!")
                         .font(.headline)
                     
@@ -2474,13 +2827,13 @@ private struct MacRecoveryPhraseSheet: View {
                     ProgressView()
                 } else if let phrase = recoveryPhrase {
                     // Recovery phrase display
-                    VStack(spacing: 12) {
+                    VStack(spacing: OneraSpacing.sm) {
                         Text(phrase)
                             .font(.system(.body, design: .monospaced))
                             .padding()
                             .frame(maxWidth: .infinity)
                             .background(theme.secondaryBackground)
-                            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
+                            .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
                             .textSelection(.enabled)
                         
                         Button {
@@ -2524,9 +2877,9 @@ struct PromptMentionList: View {
     @Environment(\.theme) private var theme
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: 4) {
-                Image(systemName: "at")
+        VStack(alignment: .leading, spacing: OneraSpacing.xxxs) {
+            HStack(spacing: OneraSpacing.xxs) {
+                OneraIcon.mention.image
                     .font(.caption2)
                     .foregroundStyle(theme.textSecondary)
                 Text("Prompts")
@@ -2540,8 +2893,8 @@ struct PromptMentionList: View {
                 Button {
                     onSelect(prompt)
                 } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "text.quote")
+                    HStack(spacing: OneraSpacing.xs) {
+                        OneraIcon.quote.image
                             .font(.caption)
                             .foregroundStyle(theme.textTertiary)
                             .frame(width: 16)
@@ -2564,7 +2917,7 @@ struct PromptMentionList: View {
                     .padding(.horizontal, OneraSpacing.sm)
                     .padding(.vertical, OneraSpacing.xs)
                     .background(index == selectedIndex ? theme.accent.opacity(0.15) : Color.clear)
-                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.small))
+                    .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -2572,7 +2925,7 @@ struct PromptMentionList: View {
         }
         .padding(OneraSpacing.xs)
         .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.standard))
+        .clipShape(RoundedRectangle(cornerRadius: OneraRadius.md))
         .shadow(color: theme.textPrimary.opacity(0.15), radius: 8, y: 2)
     }
 }
