@@ -1301,7 +1301,7 @@ struct MacMessageBubble: View {
     }
     
     private var assistantActionButtons: some View {
-        HStack(spacing: OneraSpacing.xs) {
+        HStack(spacing: OneraSpacing.xxs) {
             copyButton
             
             if onRegenerate != nil {
@@ -1319,15 +1319,21 @@ struct MacMessageBubble: View {
         Button {
             copyToClipboard()
         } label: {
-            HStack(spacing: OneraSpacing.xxs) {
-                (showCopiedFeedback ? OneraIcon.check.solidImage : OneraIcon.copy.image)
-                    .font(.caption)
+            Group {
                 if showCopiedFeedback {
-                    Text("Copied!")
-                        .font(.caption)
+                    HStack(spacing: OneraSpacing.xxs) {
+                        OneraIcon.check.solidImage
+                        Text("Copied!")
+                    }
+                } else {
+                    OneraIcon.copy.image
                 }
             }
-            .foregroundStyle(showCopiedFeedback ? theme.success : theme.textSecondary)
+            .font(.caption)
+            .foregroundStyle(showCopiedFeedback ? theme.success : theme.textTertiary)
+            .padding(.horizontal, OneraSpacing.xs)
+            .padding(.vertical, OneraSpacing.xxs)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help(showCopiedFeedback ? "Copied!" : "Copy message")
@@ -1396,18 +1402,17 @@ struct MacMessageBubble: View {
             Button {
                 doRegenerate(modifier: "Please be more creative and think outside the box.")
             } label: {
-                Label("Be Creative", systemImage: "sparkles")
-            }
-        } label: {
-            HStack(spacing: OneraSpacing.xxxs) {
                 OneraIcon.regenerate.image
                     .font(.caption)
+                    .foregroundStyle(theme.textTertiary)
                     .rotationEffect(.degrees(isRegenerating ? 360 : 0))
                     .animation(isRegenerating ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isRegenerating)
-                OneraIcon.chevronDown.image
-                    .font(.caption2.bold())
+                    .padding(.horizontal, OneraSpacing.xs)
+                    .padding(.vertical, OneraSpacing.xxs)
+                    .contentShape(Rectangle())
             }
         }
+        .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
         .fixedSize()
         .help("Regenerate response")
@@ -1419,7 +1424,10 @@ struct MacMessageBubble: View {
         } label: {
             (isSpeaking ? OneraIcon.stop.solidImage : OneraIcon.speaker.image)
                 .font(.caption)
-                .foregroundStyle(isSpeaking ? theme.error : theme.textSecondary)
+                .foregroundStyle(isSpeaking ? theme.error : theme.textTertiary)
+                .padding(.horizontal, OneraSpacing.xs)
+                .padding(.vertical, OneraSpacing.xxs)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help(isSpeaking ? "Stop speaking" : "Read aloud")

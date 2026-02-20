@@ -214,37 +214,9 @@ struct MacMainView: View {
                 Section {
                     projectThreadsSections
                 } header: {
-                    HStack {
-                        Text("Chats")
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(theme.textTertiary)
-                        
-                        Spacer()
-                        
-                        Button {
-                            folderViewModel?.startCreatingFolder()
-                        } label: {
-                            OneraIcon.folderAdd.image
-                                .font(.caption)
-                                .foregroundStyle(theme.textTertiary)
-                        }
-                        .buttonStyle(.plain)
-                        .help("Add project")
-                        
-                        Menu {
-                            Button { } label: { Label("All Chats", systemImage: "list.bullet") }
-                            Button { } label: { Label("Pinned Only", systemImage: "pin") }
-                            Divider()
-                            Button { } label: { Label("Sort by Date", systemImage: "calendar") }
-                            Button { } label: { Label("Sort by Name", systemImage: "textformat.abc") }
-                        } label: {
-                            OneraIcon.filter.image
-                                .font(.caption)
-                                .foregroundStyle(theme.textTertiary)
-                        }
-                        .menuIndicator(.hidden)
-                        .fixedSize()
-                    }
+                    Text("Chats")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(theme.textTertiary)
                 }
             }
         }
