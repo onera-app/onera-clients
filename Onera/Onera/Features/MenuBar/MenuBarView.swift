@@ -1402,15 +1402,17 @@ struct MacMessageBubble: View {
             Button {
                 doRegenerate(modifier: "Please be more creative and think outside the box.")
             } label: {
-                OneraIcon.regenerate.image
-                    .font(.caption)
-                    .foregroundStyle(theme.textTertiary)
-                    .rotationEffect(.degrees(isRegenerating ? 360 : 0))
-                    .animation(isRegenerating ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isRegenerating)
-                    .padding(.horizontal, OneraSpacing.xs)
-                    .padding(.vertical, OneraSpacing.xxs)
-                    .contentShape(Rectangle())
+                Label("Be Creative", systemImage: "sparkles")
             }
+        } label: {
+            OneraIcon.regenerate.image
+                .font(.caption)
+                .foregroundStyle(theme.textTertiary)
+                .rotationEffect(.degrees(isRegenerating ? 360 : 0))
+                .animation(isRegenerating ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isRegenerating)
+                .padding(.horizontal, OneraSpacing.xs)
+                .padding(.vertical, OneraSpacing.xxs)
+                .contentShape(Rectangle())
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
